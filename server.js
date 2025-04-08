@@ -214,6 +214,52 @@ async function initializeTools() {
       registerTool('gemini_get_chat_history', GEMINI_SERVER_CONFIG);
       registerTool('gemini_generate_with_images', GEMINI_SERVER_CONFIG);
       registerTool('gemini_generate_embedding', GEMINI_SERVER_CONFIG);
+      
+      // Register new tool calling capability
+      registerTool('gemini_generate_with_tools', GEMINI_SERVER_CONFIG);
+      registerTool('gemini_register_tool', GEMINI_SERVER_CONFIG);
+      
+      // Import and initialize the Gemini server
+      try {
+        // Dynamically import the Gemini server
+        const { default: geminiServer } = await import('./servers/gemini-server.js');
+        console.log('Gemini server module loaded successfully');
+        
+        // Register other tools with Gemini so it can call them
+        for (const tool of toolsCache.allTools) {
+          try {
+            // For each tool, create its schema and register with Gemini
+            const toolSchema = {
+              name: tool.id,
+              description: tool.description || `${tool.name} tool`,
+              functions: [{
+                name: tool.id,
+                description: tool.description || `${tool.name} functionality`,
+                parameters: {
+                  type: "object",
+                  properties: {} // Schema would be extracted from the tool's actual parameters
+                }
+              }]
+            };
+            
+            // Register the tool with Gemini
+            await fetch(`${GEMINI_SERVER_CONFIG.url}/api/register-tool`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                toolId: tool.id, 
+                toolInfo: toolSchema 
+              })
+            });
+            
+            console.log(`Registered tool ${tool.id} with Gemini for tool calling`);
+          } catch (error) {
+            console.error(`Error registering tool ${tool.id} with Gemini:`, error);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing Gemini server:', error);
+      }
     } else {
       console.log('Skipping Gemini server registration: No API key provided');
     }

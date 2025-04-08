@@ -1,198 +1,133 @@
 # Gemini API Integration
 
-The Smart MCP Server integrates with Google's Gemini API to provide powerful text generation, chat functionality, and other AI capabilities. This document provides instructions on setting up and using the Gemini integration.
+This document explains how to integrate and use Google's Gemini API with the smart-mcp-server.
 
-## Table of Contents
+## Overview
 
-- [Prerequisites](#prerequisites)
-- [Configuration](#configuration)
-- [API Reference](#api-reference)
-  - [Text Generation](#text-generation)
-  - [Chat Functionality](#chat-functionality)
-  - [Image-Based Generation](#image-based-generation)
-  - [Embeddings](#embeddings)
-- [Context-Aware Selector Integration](#context-aware-selector-integration)
-- [Examples](#examples)
-- [Error Handling](#error-handling)
-- [Server Implementation](#server-implementation)
-- [Security Considerations](#security-considerations)
+The Smart MCP Server integrates with Google's Gemini API to provide powerful generative AI capabilities. This integration enables:
+
+- Text generation with various configurations
+- JSON response formatting
+- Streaming responses for real-time applications
+- Mixed content handling
 
 ## Prerequisites
 
-To use the Gemini integration, you'll need:
+To use the Gemini API integration, you'll need:
 
-1. A Google AI Studio account with access to the Gemini API
+1. A Google AI Studio account
 2. A valid Gemini API key
-3. Node.js 18.0 or higher
-4. The `@google/generative-ai` and `mime-types` npm packages
+3. Node.js v18 or later
 
-## Configuration
+## Setup
 
-Configuration is managed through environment variables in the `.env` file:
+### 1. Get an API Key
+
+1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Create or sign in to your Google account
+3. Generate an API key
+4. Make sure your API key has access to the Gemini models you want to use
+
+### 2. Configure Environment Variables
+
+Create a `.env` file in the root of your project based on the `.env.example` template:
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit with your favorite editor
+nano .env
+```
+
+Update the following values:
 
 ```
-# Gemini Configuration
-GEMINI_API_KEY=your-api-key-here
-GEMINI_MODEL=gemini-pro
-GEMINI_MAX_TOKENS=8192
-GEMINI_TEMPERATURE=0.7
-GEMINI_TOP_P=0.95
+GEMINI_API_KEY=your-actual-api-key
+GEMINI_MODEL=gemini-2.0-flash  # or another Gemini model
+GEMINI_MAX_TOKENS=2048  # adjust based on your needs
+GEMINI_TEMPERATURE=0.7  # 0.0 to 1.0, lower for more deterministic responses
+GEMINI_TOP_P=0.9
 GEMINI_TOP_K=40
-GEMINI_SERVER_PORT=3006
 ```
 
-### Environment Variables
+### 3. Install Dependencies
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `GEMINI_API_KEY` | Your Gemini API key (required) | - |
-| `GEMINI_MODEL` | The Gemini model to use | gemini-pro |
-| `GEMINI_MAX_TOKENS` | Maximum tokens to generate | 8192 |
-| `GEMINI_TEMPERATURE` | Controls randomness (0.0-1.0) | 0.7 |
-| `GEMINI_TOP_P` | Nucleus sampling parameter | 0.95 |
-| `GEMINI_TOP_K` | Top-K sampling parameter | 40 |
-| `GEMINI_SERVER_PORT` | Port for the Gemini server | 3006 |
-
-## API Reference
-
-### Text Generation
-
-Generate text content from a prompt:
-
-```javascript
-import geminiClient from './lib/gemini-client.js';
-
-const result = await geminiClient.generateText('Your prompt here', {
-  temperature: 0.7,
-  maxTokens: 500
-});
-
-console.log(result.text);
+```bash
+npm install @google/generative-ai
 ```
 
-#### Parameters
+## Available Models
 
-- `prompt` (string, required): The text prompt
-- `options` (object, optional):
-  - `temperature` (number, default: 0.7): Controls randomness
-  - `maxTokens` (number, default: 8192): Maximum tokens to generate
-  - `topP` (number, default: 0.95): Nucleus sampling parameter
-  - `topK` (number, default: 40): Top-K sampling parameter
+The Gemini integration supports various models:
 
-### Chat Functionality
+| Model | Description | Use Cases |
+|-------|-------------|-----------|
+| gemini-2.0-flash | Fast and efficient text generation | General text, code, chat |
+| gemini-1.5-flash | Previous generation, still effective | Simpler text generation |
+| gemini-1.5-pro | More powerful, handles complex tasks | Complex reasoning, planning |
 
-Create a chat session and send messages:
+## Usage Examples
+
+### Basic Text Generation
 
 ```javascript
-// Create a new chat session
-const chat = geminiClient.createChat();
+import { GeminiClient } from '../lib/gemini-client.js';
 
-// Send a message and get response
-const response = await chat.sendMessage('Hello, Gemini!');
-console.log(response.text());
-
-// Send a follow-up message
-const followUpResponse = await chat.sendMessage('Tell me more about that.');
-console.log(followUpResponse.text());
+const client = new GeminiClient();
+const result = await client.generateText("Explain JavaScript Promises");
+console.log(result);
 ```
 
-Using the tool API:
+### JSON Generation
 
 ```javascript
-// Create a session
-const sessionResult = await geminiTool.createChatSession({});
-const sessionId = sessionResult.sessionId;
+import { GeminiClient } from '../lib/gemini-client.js';
 
-// Send a message
-const msgResult = await geminiTool.sendChatMessage({
-  sessionId,
-  message: 'Hello, Gemini!'
-});
+const client = new GeminiClient({ temperature: 0.2 }); // Lower temperature for structured data
+const prompt = `Generate a JSON object for a user profile with name, email, and age.
+The response must be valid JSON with no other text.`;
 
-console.log(msgResult.result.text);
+const result = await client.generateJson(prompt);
+console.log(result);
 ```
 
-### Image-Based Generation
-
-Generate content using both text and images:
+### Streaming Responses
 
 ```javascript
-const result = await geminiClient.generateWithImages(
-  'Describe what you see in this image',
-  ['/path/to/image.jpg', '/path/to/another.png']
-);
+import { GeminiClient } from '../lib/gemini-client.js';
 
-console.log(result.text);
-```
+const client = new GeminiClient();
+const stream = await client.generateStream("Explain quantum computing");
 
-### Embeddings
-
-Generate vector embeddings for text:
-
-```javascript
-const embedding = await geminiClient.generateEmbedding('Your text here');
-console.log(`Generated embedding with ${embedding.length} dimensions`);
-```
-
-## Context-Aware Selector Integration
-
-The Gemini tools are integrated with the context-aware selector, which allows them to be recommended based on user context. The following tools are available:
-
-- `gemini_generate_text`: Text generation
-- `gemini_create_chat`: Create a chat session
-- `gemini_chat_message`: Send a message in a chat session
-- `gemini_get_chat_history`: Retrieve chat history
-- `gemini_generate_with_images`: Generate content from text and images
-- `gemini_generate_embedding`: Generate text embeddings
-
-The context keywords used to recommend Gemini tools include: "generate", "chat", "text", "ai", "gemini", "create", "model", "image".
-
-## Examples
-
-See the `examples/gemini-example.js` file for complete usage examples, including:
-
-- Text generation
-- Chat conversations
-- Embedding generation
-
-## Error Handling
-
-The Gemini client and tool handle errors gracefully:
-
-- API key validation errors are returned clearly
-- Invalid parameters are checked before API calls
-- Network and server errors are caught and returned with descriptive messages
-
-For example:
-
-```javascript
-try {
-  const result = await geminiClient.generateText('');
-} catch (error) {
-  console.error('Error:', error.message);
-  // Handle the error appropriately
+for await (const chunk of stream) {
+  process.stdout.write(chunk); // Display each chunk as it arrives
 }
 ```
 
-## Server Implementation
+## Handling Errors
 
-The Gemini server (`servers/gemini-server.js`) provides HTTP endpoints for all Gemini functionality:
+The Gemini integration includes error handling for common issues:
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Server health check |
-| `/api/initialize` | GET | Initialize and validate configuration |
-| `/api/generate` | POST | Generate text |
-| `/api/chat/session` | POST | Create a chat session |
-| `/api/chat/message` | POST | Send a chat message |
-| `/api/chat/history/:sessionId` | GET | Get chat history |
-| `/api/generate/images` | POST | Generate content with images |
-| `/api/embed` | POST | Generate text embeddings |
+- API key validation
+- Rate limiting
+- Model availability
+- Response parsing errors
 
-## Security Considerations
+See the examples in `examples/gemini-response-types-example.js` for implementation details.
 
-- API keys are stored in environment variables, not in code
-- Rate limiting is implemented to prevent abuse
-- All API endpoints validate input parameters
-- Error messages are sanitized to avoid revealing sensitive information
-- Session management includes automatic cleanup of inactive sessions 
+## Troubleshooting
+
+If you encounter issues:
+
+1. Verify your API key is valid and has the necessary permissions
+2. Check you haven't exceeded your quota or rate limits
+3. Try using a different Gemini model
+4. Ensure your prompts follow Google's content policy
+5. Check network connectivity and proxy settings
+
+## Additional Resources
+
+- [Google AI Studio Documentation](https://ai.google.dev/docs)
+- [Gemini API Reference](https://ai.google.dev/api/rest/v1beta/models)
+- [Content Guidelines](https://ai.google.dev/docs/content_guidelines)

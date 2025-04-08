@@ -1,287 +1,412 @@
 /**
- * Gemini Tool
+ * Gemini Tool Implementation
  * 
- * Tool for interacting with Google's Gemini API for text generation and chat functionality.
+ * This module implements the Gemini API as a tool for the MCP server.
  */
 
-import geminiClient from '../lib/gemini-client.js';
-import logger from '../logger.js';
+import fetch from 'node-fetch';
+import GEMINI_ACTIONS from '../schema/gemini-actions.js';
+import dotenv from 'dotenv';
 
-// Cache for chat sessions
+// Load environment variables
+dotenv.config();
+
+// Default configuration
+const DEFAULT_CONFIG = {
+  apiKey: process.env.GEMINI_API_KEY,
+  serverUrl: `http://localhost:${process.env.GEMINI_SERVER_PORT || 3006}`,
+  model: process.env.GEMINI_MODEL || 'gemini-1.5-pro-preview-0425'
+};
+
+// Chat sessions storage (in-memory for simplicity)
 const chatSessions = new Map();
 
-// Clean up old chat sessions periodically (every hour)
-setInterval(() => {
-  const now = Date.now();
-  const MAX_AGE_MS = 3600000; // 1 hour
-  
-  for (const [sessionId, session] of chatSessions.entries()) {
-    if (now - session.lastUsed > MAX_AGE_MS) {
-      chatSessions.delete(sessionId);
-      logger.debug(`Cleaned up inactive chat session: ${sessionId}`);
-    }
-  }
-}, 3600000);
+// Tool registry for tools that Gemini can use
+const registeredTools = new Map();
 
 /**
  * Initialize the Gemini tool
- * Validates the API key and configuration
+ * @returns {Promise<boolean>} - True if initialization is successful
  */
-export async function initializeTool() {
+async function initializeTool() {
   try {
-    const isValid = await geminiClient.validateApiKey();
-    if (!isValid) {
-      logger.error('Invalid Gemini API key or configuration');
+    // Check server health
+    const healthResponse = await fetch(`${DEFAULT_CONFIG.serverUrl}/health`);
+    
+    if (!healthResponse.ok) {
+      console.error('Gemini server health check failed');
       return false;
     }
     
-    logger.info('Gemini tool initialized successfully');
+    // Initialize API
+    const initResponse = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/initialize`);
+    const initData = await initResponse.json();
+    
+    if (initData.status !== 'success') {
+      console.error('Gemini API initialization failed:', initData.message);
+      return false;
+    }
+    
+    console.log('Gemini tool initialized successfully with model:', initData.model);
     return true;
   } catch (error) {
-    logger.error('Failed to initialize Gemini tool:', error);
+    console.error('Failed to initialize Gemini tool:', error);
     return false;
   }
 }
 
 /**
- * Generate text with Gemini
- * @param {object} params - Parameters for text generation
- * @returns {Promise<object>} - Generated content
+ * Generate text using Gemini
+ * @param {object} params - Generation parameters
+ * @returns {Promise<object>} - Generation result
  */
-export async function generateText(params) {
+async function generateText(params) {
+  validateParams(params, ['prompt']);
+  
   try {
-    const { prompt, options = {} } = params;
+    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: params.prompt,
+        options: {
+          temperature: params.temperature,
+          maxTokens: params.maxTokens,
+          topP: params.topP,
+          topK: params.topK
+        }
+      })
+    });
     
-    if (!prompt) {
-      throw new Error('Prompt is required for text generation');
+    if (!response.ok) {
+      throw new Error(`Generation failed with status: ${response.status}`);
     }
     
-    const result = await geminiClient.generateText(prompt, options);
-    
-    // Log usage for analytics
-    logger.debug(`Gemini text generation: ${prompt.substring(0, 50)}... (${result.text.length} chars)`);
-    
+    const data = await response.json();
     return {
       success: true,
-      result
+      result: data.result
     };
   } catch (error) {
-    logger.error('Error generating text with Gemini:', error);
     return {
       success: false,
-      error: error.message || 'Failed to generate text'
+      error: error.message
     };
   }
 }
 
 /**
- * Create a new chat session
- * @param {object} params - Parameters for chat creation
- * @returns {Promise<object>} - Chat session info
+ * Create a chat session
+ * @param {object} params - Session parameters
+ * @returns {Promise<object>} - Session information
  */
-export async function createChatSession(params) {
+async function createChatSession(params = {}) {
   try {
-    const { options = {} } = params;
-    const sessionId = generateSessionId();
-    
-    const chat = geminiClient.createChat(options);
-    
-    chatSessions.set(sessionId, {
-      chat,
-      options,
-      created: Date.now(),
-      lastUsed: Date.now(),
-      messages: []
+    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/chat/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ options: params })
     });
     
-    logger.debug(`Created new Gemini chat session: ${sessionId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to create chat session: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Store session ID
+    const sessionId = data.sessionId;
+    chatSessions.set(sessionId, { 
+      createdAt: new Date(),
+      history: [] 
+    });
     
     return {
       success: true,
       sessionId
     };
   } catch (error) {
-    logger.error('Error creating Gemini chat session:', error);
     return {
       success: false,
-      error: error.message || 'Failed to create chat session'
+      error: error.message
     };
   }
 }
 
 /**
  * Send a message in a chat session
- * @param {object} params - Parameters for sending a message
- * @returns {Promise<object>} - Chat response
+ * @param {object} params - Message parameters
+ * @returns {Promise<object>} - Response result
  */
-export async function sendChatMessage(params) {
+async function sendChatMessage(params) {
+  validateParams(params, ['sessionId', 'message']);
+  
   try {
     const { sessionId, message, options = {} } = params;
     
-    if (!sessionId) {
-      throw new Error('Session ID is required for chat');
+    // Check if session exists
+    if (!chatSessions.has(sessionId)) {
+      throw new Error(`Chat session ${sessionId} not found`);
     }
     
-    if (!message) {
-      throw new Error('Message is required for chat');
+    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/chat/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, message, options })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to send message: ${response.status}`);
     }
     
+    const data = await response.json();
+    
+    // Update session history
     const session = chatSessions.get(sessionId);
-    if (!session) {
-      throw new Error(`Chat session not found: ${sessionId}`);
-    }
-    
-    // Update last used timestamp
-    session.lastUsed = Date.now();
-    
-    // Add message to history
-    session.messages.push({
+    session.history.push({
       role: 'user',
-      content: message,
-      timestamp: new Date().toISOString()
+      content: message
     });
-    
-    // Send message
-    const result = await geminiClient.sendChatMessage(session.chat, message, options);
-    
-    // Add response to history
-    session.messages.push({
+    session.history.push({
       role: 'model',
-      content: result.text,
-      timestamp: new Date().toISOString()
+      content: data.result.text
     });
-    
-    logger.debug(`Gemini chat message in session ${sessionId}: ${message.substring(0, 50)}...`);
     
     return {
       success: true,
-      result,
-      history: session.messages
+      result: data.result
     };
   } catch (error) {
-    logger.error('Error sending Gemini chat message:', error);
     return {
       success: false,
-      error: error.message || 'Failed to send chat message'
+      error: error.message
     };
   }
 }
 
 /**
- * Get chat history
- * @param {object} params - Parameters for retrieving chat history
+ * Get chat session history
+ * @param {object} params - Parameters with sessionId
  * @returns {Promise<object>} - Chat history
  */
-export async function getChatHistory(params) {
+async function getChatHistory(params) {
+  validateParams(params, ['sessionId']);
+  
   try {
     const { sessionId } = params;
     
-    if (!sessionId) {
-      throw new Error('Session ID is required');
+    // Check if session exists
+    if (!chatSessions.has(sessionId)) {
+      throw new Error(`Chat session ${sessionId} not found`);
     }
     
     const session = chatSessions.get(sessionId);
-    if (!session) {
-      throw new Error(`Chat session not found: ${sessionId}`);
-    }
-    
-    // Update last used timestamp
-    session.lastUsed = Date.now();
     
     return {
       success: true,
-      history: session.messages,
-      created: session.created
+      history: session.history,
+      createdAt: session.createdAt
     };
   } catch (error) {
-    logger.error('Error retrieving Gemini chat history:', error);
     return {
       success: false,
-      error: error.message || 'Failed to retrieve chat history'
+      error: error.message
     };
   }
 }
 
 /**
  * Generate content with images
- * @param {object} params - Parameters for generating content with images
- * @returns {Promise<object>} - Generated content
+ * @param {object} params - Generation parameters
+ * @returns {Promise<object>} - Generation result
  */
-export async function generateWithImages(params) {
+async function generateWithImages(params) {
+  validateParams(params, ['prompt', 'imagePaths']);
+  
   try {
-    const { prompt, imagePaths, options = {} } = params;
+    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/generate-with-images`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
     
-    if (!prompt) {
-      throw new Error('Prompt is required for image content generation');
+    if (!response.ok) {
+      throw new Error(`Generation with images failed: ${response.status}`);
     }
     
-    if (!imagePaths || !Array.isArray(imagePaths) || imagePaths.length === 0) {
-      throw new Error('At least one image path is required');
-    }
-    
-    const result = await geminiClient.generateWithImages(prompt, imagePaths, options);
-    
-    logger.debug(`Gemini image content generation: ${prompt.substring(0, 50)}... with ${imagePaths.length} images`);
-    
+    const data = await response.json();
     return {
       success: true,
-      result
+      result: data.result
     };
   } catch (error) {
-    logger.error('Error generating content with images in Gemini:', error);
     return {
       success: false,
-      error: error.message || 'Failed to generate content with images'
+      error: error.message
     };
   }
 }
 
 /**
  * Generate embeddings for text
- * @param {object} params - Parameters for generating embeddings
- * @returns {Promise<object>} - Embedding vector
+ * @param {object} params - Embedding parameters
+ * @returns {Promise<object>} - Embedding result
  */
-export async function generateEmbedding(params) {
+async function generateEmbedding(params) {
+  validateParams(params, ['text']);
+  
   try {
-    const { text } = params;
+    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/embed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
     
-    if (!text) {
-      throw new Error('Text is required for embedding generation');
+    if (!response.ok) {
+      throw new Error(`Embedding generation failed: ${response.status}`);
     }
     
-    const embedding = await geminiClient.generateEmbedding(text);
-    
-    logger.debug(`Gemini embedding generation: ${text.substring(0, 50)}...`);
-    
+    const data = await response.json();
     return {
       success: true,
-      embedding
+      embedding: data.embedding
     };
   } catch (error) {
-    logger.error('Error generating embedding with Gemini:', error);
     return {
       success: false,
-      error: error.message || 'Failed to generate embedding'
+      error: error.message
     };
   }
 }
 
 /**
- * Generate a unique session ID
- * @returns {string} - Unique session ID
+ * Register a tool for Gemini to use
+ * @param {object} params - Tool registration parameters
+ * @returns {Promise<object>} - Registration result
  */
-function generateSessionId() {
-  return 'gemini-' + Math.random().toString(36).substring(2, 15) + 
-    Math.random().toString(36).substring(2, 15);
+async function registerTool(params) {
+  validateParams(params, ['toolId', 'toolInfo']);
+  
+  try {
+    const { toolId, toolInfo } = params;
+    
+    // Register tool with Gemini server
+    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/register-tool`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ toolId, toolInfo })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Tool registration failed: ${response.status}`);
+    }
+    
+    // Store locally as well
+    registeredTools.set(toolId, toolInfo);
+    
+    const data = await response.json();
+    return {
+      success: true,
+      message: data.message
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 }
 
-// Export all functions
-export default {
-  initializeTool,
-  generateText,
-  createChatSession,
-  sendChatMessage,
-  getChatHistory,
-  generateWithImages,
-  generateEmbedding
-}; 
+/**
+ * Generate text with the ability to call tools
+ * @param {object} params - Generation parameters
+ * @returns {Promise<object>} - Generation result with tool calls
+ */
+async function generateWithTools(params) {
+  validateParams(params, ['prompt']);
+  
+  try {
+    const { prompt, tools = [], options = {} } = params;
+    
+    // Verify all tools are registered
+    for (const toolId of tools) {
+      if (!registeredTools.has(toolId)) {
+        throw new Error(`Tool ${toolId} is not registered`);
+      }
+    }
+    
+    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/generate-with-tools`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, tools, options })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Generation with tools failed: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return {
+      success: true,
+      result: data.result
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Validate required parameters
+ * @param {object} params - Parameter object
+ * @param {string[]} required - Required parameter names
+ * @throws {Error} - If required parameter is missing
+ */
+function validateParams(params, required) {
+  for (const param of required) {
+    if (params[param] === undefined) {
+      throw new Error(`Missing required parameter: ${param}`);
+    }
+  }
+}
+
+// Define the Gemini tool interface
+const geminiTool = {
+  id: 'gemini',
+  name: 'Gemini AI',
+  description: 'Google\'s Gemini AI model for text generation, chat, and embeddings',
+  category: 'ai',
+  capabilities: {
+    textGeneration: true,
+    chat: true,
+    multimodal: true,
+    embeddings: true,
+    toolCalling: true,
+    version: '1.0.0'
+  },
+  securityPolicy: {
+    allowedContextTypes: ['text', 'image'],
+    maxTokensPerRequest: 8192,
+    rateLimits: {
+      requests: 100,
+      timeWindow: 60 * 1000 // 1 minute
+    },
+    auditLogging: true
+  },
+  actions: GEMINI_ACTIONS,
+  handlers: {
+    initializeTool,
+    generateText,
+    createChatSession,
+    sendChatMessage,
+    getChatHistory,
+    generateWithImages,
+    generateEmbedding,
+    registerTool,
+    generateWithTools
+  }
+};
+
+export default geminiTool; 

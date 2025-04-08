@@ -1,164 +1,146 @@
 /**
- * Gemini API Integration Example
+ * Gemini API Examples
  * 
- * This script demonstrates how to use the Gemini API integration
- * for text generation, chat, and other capabilities.
+ * This file demonstrates using the Gemini API through our client wrapper.
  */
 
-import geminiClient from '../lib/gemini-client.js';
-import dotenv from 'dotenv';
+import geminiClient, { GeminiClient } from '../lib/gemini-client.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables
-dotenv.config();
-
-// Utility to log with timestamp
-function log(message) {
-  console.log(`[${new Date().toISOString()}] ${message}`);
-}
-
-// Sleep utility
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+// Get the directory name
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Run a text generation example
+ * Example 1: Simple text generation
  */
-async function textGenerationExample() {
-  log('EXAMPLE: Text Generation');
+async function generateTextExample() {
+  // Generate a simple text completion
+  const prompt = "What are three major benefits of using AI for communication protocols?";
+  
+  console.log(`\n=== Example 1: Text Generation ===`);
+  console.log(`Prompt: ${prompt}`);
   
   try {
-    const prompt = 'Explain the core principles of the Bauhaus design movement in 3 paragraphs.';
-    log(`Prompt: ${prompt}`);
-    
-    const result = await geminiClient.generateText(prompt, {
-      temperature: 0.7,
-      maxTokens: 500
-    });
-    
-    log('Generated Text:');
-    console.log('-'.repeat(80));
-    console.log(result.text);
-    console.log('-'.repeat(80));
-    
-    log('Generation completed successfully');
+    const result = await geminiClient.generateText(prompt);
+    console.log(`\nResponse:\n${result.text}`);
   } catch (error) {
-    log(`Error in text generation: ${error.message}`);
+    console.error('Error generating text:', error.message);
   }
 }
 
 /**
- * Run a chat example
+ * Example 2: Chat conversation
  */
 async function chatExample() {
-  log('EXAMPLE: Chat Conversation');
+  console.log(`\n=== Example 2: Chat Conversation ===`);
   
   try {
-    // Start a new chat
-    const chat = geminiClient.createChat({
-      history: [] // Start with an empty history
-    });
+    // Create a chat session
+    const chat = geminiClient.createChat();
     
     // First message
-    log('USER: Tell me about Model Context Protocol');
+    console.log(`User: Hello, I'd like to learn about Model Context Protocols.`);
+    const response1 = await geminiClient.sendChatMessage(
+      chat, 
+      "Hello, I'd like to learn about Model Context Protocols."
+    );
+    console.log(`Gemini: ${response1.text}`);
     
-    let response = await chat.sendMessage('Tell me about Model Context Protocol');
+    // Follow-up question
+    console.log(`\nUser: What are the key components of a Model Context Protocol?`);
+    const response2 = await geminiClient.sendChatMessage(
+      chat, 
+      "What are the key components of a Model Context Protocol?"
+    );
+    console.log(`Gemini: ${response2.text}`);
     
-    log('MODEL:');
-    console.log('-'.repeat(80));
-    console.log(response.text());
-    console.log('-'.repeat(80));
-    
-    // Wait a bit
-    await sleep(1000);
-    
-    // Second message
-    log('USER: How is it related to AI assistants?');
-    
-    response = await chat.sendMessage('How is it related to AI assistants?');
-    
-    log('MODEL:');
-    console.log('-'.repeat(80));
-    console.log(response.text());
-    console.log('-'.repeat(80));
-    
-    // Wait a bit
-    await sleep(1000);
-    
-    // Third message
-    log('USER: What are the main components of the protocol?');
-    
-    response = await chat.sendMessage('What are the main components of the protocol?');
-    
-    log('MODEL:');
-    console.log('-'.repeat(80));
-    console.log(response.text());
-    console.log('-'.repeat(80));
-    
-    log('Chat completed successfully');
+    // Another follow-up
+    console.log(`\nUser: Can you provide an example of how they're implemented?`);
+    const response3 = await geminiClient.sendChatMessage(
+      chat, 
+      "Can you provide an example of how they're implemented?"
+    );
+    console.log(`Gemini: ${response3.text}`);
   } catch (error) {
-    log(`Error in chat: ${error.message}`);
+    console.error('Error in chat conversation:', error.message);
   }
 }
 
 /**
- * Run an embedding example
+ * Example 3: Image input
  */
-async function embeddingExample() {
-  log('EXAMPLE: Text Embedding');
+async function imageInputExample() {
+  console.log(`\n=== Example 3: Image Input ===`);
+  
+  // Example image path (adjust as needed)
+  const imagePath = path.join(__dirname, '..', 'test', 'fixtures', 'test-image.jpg');
+  
+  if (!fs.existsSync(imagePath)) {
+    console.log(`Note: Image example skipped. Place a test image at: ${imagePath}`);
+    return;
+  }
   
   try {
-    const text = 'The Model Context Protocol defines standards for AI model integration';
-    log(`Text to embed: ${text}`);
+    const prompt = "What's in this image? Provide a detailed description.";
+    console.log(`Prompt with image: ${prompt}`);
     
-    const embedding = await geminiClient.generateEmbedding(text);
-    
-    log(`Generated embedding with ${embedding.length} dimensions`);
-    log(`First 5 values: ${embedding.slice(0, 5).join(', ')}...`);
-    
-    log('Embedding completed successfully');
+    const result = await geminiClient.generateWithImages(prompt, [imagePath]);
+    console.log(`\nResponse:\n${result.text}`);
   } catch (error) {
-    log(`Error in embedding: ${error.message}`);
+    console.error('Error with image input:', error.message);
   }
 }
 
 /**
- * Main function to run examples
+ * Example 4: Custom configuration
+ */
+async function customConfigExample() {
+  console.log(`\n=== Example 4: Custom Configuration ===`);
+  
+  try {
+    // Create a custom client with different parameters
+    const customClient = new GeminiClient({
+      model: "gemini-2.5-pro-preview-03-25",
+      temperature: 0.2,
+      maxTokens: 150
+    });
+    
+    // Generate text with the custom client
+    const prompt = "Generate a brief, structured protocol for integrating a database with an AI model.";
+    console.log(`Prompt with low temperature: ${prompt}`);
+    
+    const result = await customClient.generateText(prompt);
+    console.log(`\nResponse (more focused due to low temperature):\n${result.text}`);
+  } catch (error) {
+    console.error('Error with custom configuration:', error.message);
+  }
+}
+
+/**
+ * Run all examples
  */
 async function runExamples() {
-  log('Starting Gemini API examples...');
+  console.log('[' + new Date().toISOString() + '] Starting Gemini API examples...');
   
   try {
-    // Validate API key first
-    log('Validating API key...');
+    // Check if API key is valid
     const isValid = await geminiClient.validateApiKey();
-    
     if (!isValid) {
-      log('ERROR: Invalid API key. Please check your .env file and set a valid GEMINI_API_KEY.');
-      return;
+      throw new Error('Invalid or missing Gemini API key. Set GEMINI_API_KEY environment variable.');
     }
     
-    log('API key is valid. Running examples...');
-    
-    // Run text generation example
-    await textGenerationExample();
-    console.log('\n');
-    
-    // Run chat example
+    await generateTextExample();
     await chatExample();
-    console.log('\n');
+    await imageInputExample();
+    await customConfigExample();
     
-    // Run embedding example
-    await embeddingExample();
-    
-    log('All examples completed.');
+    console.log('\n[' + new Date().toISOString() + '] All examples completed successfully!');
   } catch (error) {
-    log(`Error running examples: ${error.message}`);
+    console.error('[' + new Date().toISOString() + '] Error running examples:', error);
   }
 }
 
 // Run the examples
-runExamples().catch(error => {
-  log(`Unhandled error: ${error.message}`);
-  process.exit(1);
-}); 
+runExamples(); 
