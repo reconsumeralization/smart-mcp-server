@@ -1,146 +1,252 @@
 # Smart MCP Server
 
-A context-aware Model Context Protocol (MCP) server that intelligently manages tool presentation and execution.
+A context-aware Model Context Protocol (MCP) server that intelligently manages tool presentation and execution based on user context and requirements.
 
-## Overview
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2016.0.0-brightgreen)](https://nodejs.org/)
 
-This server acts as a gateway between LLM applications and tool servers. It dynamically selects the most relevant tools based on the user's context and query, improving the efficiency and relevance of tool recommendations.
+## 🚀 Overview
 
-## Features
+Smart MCP Server is a powerful middleware that serves as a context-aware bridge between AI models and tools. It analyzes user context, historical patterns, and content to intelligently present the most relevant tools, improving efficiency and reducing cognitive load. This repository provides the core server, a context-aware selector, and integrations with various services including Google's Gemini API.
 
-- **Context-Aware Tool Selection**: Intelligently filters and prioritizes tools based on user queries and context
-- **Tool Proxy**: Manages execution of tools on various servers
-- **Caching**: Improves performance with intelligent caching of tool information
-- **Security**: Implements authentication, rate limiting, and input validation
-- **Workflow System**: Orchestrates parallel execution of tools with dependency management
-- **Extensible**: Easy to add new tool servers and categories
+## ✨ Key Features
 
-## Architecture
+- **Context-Aware Tool Selection**: Intelligently selects and presents tools based on:
+  - User message content and context
+  - Historical usage patterns
+  - Tool categories (filesystem, code editing, AI, etc.)
+  - Essential tool designation
 
-The Smart MCP Server consists of the following components:
+- **Tool Server Architecture**: Manages multiple tool server instances with:
+  - Server lifecycle management
+  - Tool registration
+  - Execution proxying
+  - Error handling
 
-1. **tool-proxy.js**: Handles execution of tools on their respective servers
-2. **context-aware-selector.js**: Analyzes user context to select the most relevant tools
-3. **server-connector.js**: Manages connections to external tool servers
-4. **workflow-manager.js**: Handles parallel tool execution with dependency resolution
-5. **workflow-api.js**: Provides API endpoints for managing workflows
-6. **server.js**: Main server implementation with API routes, security, and more
-7. **index.js**: Simple entry point to start the server
+- **Gemini API Integration**: Full integration with Google's Gemini models:
+  - Text generation 
+  - JSON response formatting
+  - Streaming capabilities
+  - Advanced model configuration
 
-## API Endpoints
+- **Workflow System**: Define, execute, and monitor complex workflows:
+  - Sequential and parallel step execution
+  - Dependency management
+  - Variable storage and interjection
+  - Progress monitoring
+  - Execution history
 
-- **GET /tools** - List available tools (filtered by context if query provided)
-- **POST /execute/:toolId** - Execute a specific tool
-- **GET /categories** - List all tool categories
-- **GET /categories/:category/tools** - Get tools for a specific category
-- **GET /tools/:toolId** - Get detailed information about a specific tool
-- **GET /health** - Server health check endpoint
+- **Documentation Automation**: Tools for gathering and ingesting documentation:
+  - Repository scanning
+  - Markdown parsing
+  - Documentation structure analysis
+  - Knowledge integration
 
-### Workflow API Endpoints
+## 📋 Prerequisites
 
-- **POST /api/workflows** - Register a new workflow
-- **GET /api/workflows** - List all registered workflows
-- **POST /api/workflows/:id/execute** - Execute a workflow
-- **GET /api/workflows/executions/:executionId** - Get workflow execution status
+- Node.js (v16.0.0 or higher)
+- npm (v7.0.0 or higher)
+- For Gemini API: Google AI API key
 
-## Setup
+## 🔧 Installation
 
-### Prerequisites
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/reconsumeralization/smart-mcp-server.git
+   cd smart-mcp-server
+   ```
 
-- Node.js 16+ and npm
-
-### Installation
-
-1. Clone the repository
 2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```bash
-npm install
+3. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+## 🏗️ Project Structure
+
+```
+smart-mcp-server/
+├── context-aware-selector.js  # Tool selection based on context
+├── docs/                      # Documentation files
+├── examples/                  # Example scripts
+├── lib/                       # Shared libraries
+├── schema/                    # Tool schema definitions
+├── server.js                  # Main server implementation
+├── servers/                   # Tool server implementations
+├── test/                      # Test files
+├── tool-proxy.js              # Tool execution proxy
+├── tools/                     # Tool implementations
+└── workflow-monitor.js        # Workflow monitoring system
 ```
 
-3. Create a `.env` file in the root directory (see `.env.example` for required variables)
+## 🚀 Usage
 
 ### Running the Server
 
-```bash
-# Development mode with auto-restart
-npm run server:dev
+Start the main server:
 
-# Production mode
+```bash
 npm run server
 ```
 
-## Customizing Tool Selection
+### Testing the Context-Aware Selector
 
-The context-aware selector uses various signals to determine which tools are most relevant:
+```bash
+npm run test
+```
 
-- Direct mentions of the tool name in the query
-- Keywords related to the tool's category
-- Recently used tools
-- Essential tools that should always be available
+### Running Examples
 
-You can customize the selection logic by modifying the `context-aware-selector.js` file.
+Several example scripts are provided to demonstrate various features:
 
-## Using the Workflow System
+```bash
+# Test Gemini API integration
+node examples/gemini-example.js
 
-The workflow system allows you to orchestrate the execution of multiple tools, potentially in parallel, while respecting dependencies between steps.
+# Test context-aware selector
+node test-context-aware-selector.js
 
-### Workflow Structure
+# Run workflow examples
+node examples/test-workflow.js
+```
 
-A workflow consists of steps, where each step executes a specific tool. Steps can depend on other steps, creating a dependency graph that determines execution order.
+## 🔌 Available Tool Integrations
 
-```json
-{
-  "id": "my-workflow",
+### AI Tools
+- **Gemini API**: Google's generative AI models for text generation, chat, and more
+- **Sequential Thinking**: Step-by-step reasoning tool
+- **Web Research**: Internet search capabilities
+
+### Development Tools
+- **GitHub**: Repository management, issue tracking, PR creation
+- **Filesystem**: File manipulation, code editing
+- **Database**: PostgreSQL integration (planned)
+
+### Memory Tools
+- **Knowledge Graph**: For storing and retrieving structured information
+- **Vector Store**: For semantic search and retrieval
+
+## 📊 Context-Aware Tool Selection
+
+The context-aware selector analyzes user messages and historical usage to present the most relevant tools:
+
+```javascript
+// Example usage
+import { selectToolsForContext } from './context-aware-selector.js';
+
+const userContext = {
+  message: "Help me create a new React component",
+  history: ["git status", "npm install"]
+};
+
+const selectedTools = selectToolsForContext(userContext, allTools);
+```
+
+## 🔄 Workflow System
+
+Define complex workflows with dependencies and execute them:
+
+```javascript
+// Example workflow definition (JSON)
+const workflow = {
+  "id": "db-integration",
+  "description": "Database Integration Workflow",
+  "concurrencyLimit": 3, 
   "steps": [
     {
-      "id": "step1",
-      "toolId": "tool1",
-      "params": { ... }
+      "id": "research-orm",
+      "type": "web-search",
+      "parameters": {
+        "query": "Node.js ORM comparison prisma sequelize"
+      }
     },
-    {
-      "id": "step2",
-      "toolId": "tool2",
-      "params": { ... },
-      "dependencies": ["step1"]
-    }
-  ],
-  "concurrencyLimit": 3
+    // Additional steps...
+  ]
+};
+```
+
+## 🌐 Gemini API Integration
+
+Use Google's Gemini models for various tasks:
+
+```javascript
+import { GeminiClient } from './lib/gemini-client.js';
+
+// Initialize client
+const client = new GeminiClient();
+
+// Generate text
+const result = await client.generateText("Explain quantum computing");
+console.log(result.text);
+
+// Generate JSON
+const userData = await client.generateJson(
+  "Create a JSON user profile with name, email, and age"
+);
+console.log(userData);
+
+// Stream responses
+const stream = await client.generateStream("Write a story about a robot");
+for await (const chunk of stream.stream) {
+  process.stdout.write(chunk.text());
 }
 ```
 
-### Parameter Interpolation
+## 🔍 API Endpoints
 
-The workflow system supports parameter interpolation to pass data between steps:
+The server exposes the following API endpoints:
 
-- Access context values: `${context.value}`
-- Access previous step results: `${steps.stepId.resultProperty}`
+- `POST /api/tools`: Register a new tool
+- `GET /api/tools`: Get all available tools
+- `POST /api/execute`: Execute a tool
+- `GET /api/context`: Get context-aware tool suggestions
+- `POST /api/workflows`: Register a new workflow
+- `GET /api/workflows`: Get all workflows
+- `GET /api/workflows/:id`: Get a specific workflow
+- `POST /api/workflows/:id/execute`: Execute a workflow
 
-### Example Workflows
+## 📚 Documentation
 
-For example workflows, see the `examples/` directory:
+Comprehensive documentation is available in the `docs/` directory:
 
-- `web-search-workflow.json`: Combines web search with sequential thinking
-- `github-analytics-workflow.json`: Analyzes GitHub repositories using multiple tools
+- [Context-Aware Selector](docs/context-aware-selector.md)
+- [Gemini Integration](docs/gemini-integration.md)
+- [Workflow Testing](docs/workflow-testing.md)
 
-## Security Considerations
+## 🛠️ Development
 
-The server implements several security features:
+### Adding a New Tool
 
-- Rate limiting to prevent abuse
-- Input validation to prevent injection attacks
-- Authentication (token-based)
-- Path validation to prevent directory traversal
-- Audit logging for security events
+1. Create a tool implementation in the `tools/` directory
+2. Define the tool schema in the `schema/` directory
+3. Add server implementation in the `servers/` directory
+4. Register the tool in `server.js`
 
-## Adding New Tool Servers
+### Running Tests
 
-To add a new tool server:
+```bash
+npm test
+```
 
-1. Add the server configuration to your `.vscode/mcp.json` file
-2. Add any special tool handling logic to the tool-proxy.js file if needed
-3. Restart the server
+## 🤝 Contributing
 
-## License
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-MIT
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 📞 Contact
+
+Project Maintainer: [Your Name](https://github.com/reconsumeralization)
