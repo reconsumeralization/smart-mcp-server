@@ -1,0 +1,161 @@
+{
+  "id": "freight-logistics-integration",
+  "description": "Comprehensive workflow for integrating freight and logistics operations with MCP",
+  "version": "1.0.0",
+  "concurrencyLimit": 5,
+  "steps": [
+    {
+      "id": "edi-document-processing",
+      "type": "edi-x12-tool",
+      "description": "Process incoming EDI documents (ASN, BOL, etc.)",
+      "parameters": {
+        "documentTypes": ["856", "204", "214", "990"],
+        "validationLevel": 7,
+        "outputFormat": "json",
+        "partnerProfileId": "${context.partnerId}"
+      },
+      "errorHandling": {
+        "retries": 3,
+        "backoffStrategy": "exponential",
+        "fallbackAction": "human-review"
+      }
+    },
+    {
+      "id": "shipment-data-extraction",
+      "type": "gemini-tool",
+      "description": "Extract structured data from shipping documents",
+      "parameters": {
+        "model": "gemini-2.0-pro",
+        "temperature": 0.2,
+        "maxTokens": 1000,
+        "systemPrompt": "Extract key logistics information from the following document. Focus on shipment details, routing, and special handling requirements."
+      },
+      "dependencies": ["edi-document-processing"]
+    },
+    {
+      "id": "route-optimization",
+      "type": "core-rest-api-tool",
+      "description": "Optimize delivery routes using external routing service",
+      "parameters": {
+        "endpoint": "${config.ROUTING_API_ENDPOINT}",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer ${config.ROUTING_API_KEY}"
+        },
+        "body": {
+          "shipments": "${steps.shipment-data-extraction.output.shipments}",
+          "constraints": {
+            "timeWindows": true,
+            "vehicleCapacity": true,
+            "driverHos": true
+          }
+        }
+      },
+      "dependencies": ["shipment-data-extraction"]
+    },
+    {
+      "id": "database-update",
+      "type": "db-sqlserver-tool",
+      "description": "Update TMS database with new shipment information",
+      "parameters": {
+        "connectionProfileId": "tms-database",
+        "operation": "upsert",
+        "table": "Shipments",
+        "data": "${steps.shipment-data-extraction.output}",
+        "keyColumns": ["ShipmentId", "BOLNumber"]
+      },
+      "dependencies": ["shipment-data-extraction"]
+    },
+    {
+      "id": "mft-partner-notification",
+      "type": "mft-as2-tool",
+      "description": "Send shipping updates to partners via AS2",
+      "parameters": {
+        "partnerProfileId": "${context.partnerId}",
+        "documentType": "214",
+        "content": "${steps.route-optimization.output}",
+        "signatureAlgorithm": "sha256",
+        "encryptionAlgorithm": "aes256",
+        "requestMDN": true
+      },
+      "dependencies": ["route-optimization"]
+    },
+    {
+      "id": "notification-dispatch",
+      "type": "core-notify-tool",
+      "description": "Send notifications to relevant stakeholders",
+      "parameters": {
+        "channels": ["email", "sms", "webhook"],
+        "recipients": {
+          "email": ["${context.dispatchEmail}", "${context.customerEmail}"],
+          "sms": ["${context.driverPhone}"],
+          "webhook": ["${context.integrationEndpoint}"]
+        },
+        "template": "shipment-update",
+        "data": {
+          "shipmentId": "${steps.shipment-data-extraction.output.shipmentId}",
+          "status": "ROUTED",
+          "eta": "${steps.route-optimization.output.eta}",
+          "routeDetails": "${steps.route-optimization.output.route}"
+        }
+      },
+      "dependencies": ["route-optimization", "database-update"]
+    },
+    {
+      "id": "document-archival",
+      "type": "mft-sharepoint-tool",
+      "description": "Archive shipping documents and generated data",
+      "parameters": {
+        "connectionProfileId": "logistics-sharepoint",
+        "targetFolder": "/Logistics/Shipments/${YYYY}/${MM}/${DD}",
+        "files": [
+          {
+            "content": "${steps.edi-document-processing.output.original}",
+            "name": "${context.documentId}_original.edi"
+          },
+          {
+            "content": "${steps.route-optimization.output}",
+            "name": "${context.documentId}_route.json"
+          }
+        ],
+        "metadata": {
+          "shipmentId": "${steps.shipment-data-extraction.output.shipmentId}",
+          "documentType": "${context.documentType}",
+          "processedDate": "${now()}"
+        }
+      },
+      "dependencies": ["edi-document-processing", "route-optimization"]
+    }
+  ],
+  "errorHandling": {
+    "globalRetryLimit": 3,
+    "notifyOnError": ["${config.ADMIN_EMAIL}"],
+    "errorLogLevel": "error",
+    "fallbackHandler": "human-intervention-queue"
+  },
+  "monitoring": {
+    "metrics": [
+      "processing_time",
+      "document_count",
+      "error_rate",
+      "route_optimization_savings"
+    ],
+    "alerts": {
+      "errorRate": {
+        "threshold": 0.05,
+        "window": "5m",
+        "action": "notify_admin"
+      },
+      "processingTime": {
+        "threshold": "30s",
+        "window": "1h",
+        "action": "scale_resources"
+      }
+    }
+  },
+  "sla": {
+    "processingTime": "5m",
+    "endToEndDelivery": "15m",
+    "alertThreshold": "80%"
+  }
+} 
