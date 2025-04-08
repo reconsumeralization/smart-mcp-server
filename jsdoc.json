@@ -1,0 +1,42 @@
+{
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc"]
+  },
+  "source": {
+    "include": ["server.js", "index.js", "tool-proxy.js", "workflow-api.js", "context-aware-selector.js", "workflow-manager.js"],
+    "includePattern": ".js$",
+    "excludePattern": "(node_modules|docs)"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": true,
+    "useLongnameInNav": false,
+    "showInheritedInNav": true
+  },
+  "opts": {
+    "destination": "./docs/",
+    "encoding": "utf8",
+    "private": true,
+    "recurse": true,
+    "template": "./node_modules/clean-jsdoc-theme",
+    "theme_opts": {
+      "theme": "dark",
+      "title": "Smart MCP Server API Documentation",
+      "homepageTitle": "Smart MCP Server Documentation",
+      "sections": ["Modules", "Classes", "Interfaces", "Tutorials"],
+      "search": true,
+      "meta": [
+        {"name": "author", "content": "MCP Server Team"},
+        {"name": "description", "content": "Documentation for Smart MCP Server"}
+      ]
+    }
+  },
+  "markdown": {
+    "parser": "gfm",
+    "hardwrap": true
+  }
+} 
