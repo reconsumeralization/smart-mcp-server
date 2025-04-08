@@ -51,17 +51,20 @@ Smart MCP Server is a powerful middleware that serves as a context-aware bridge 
 ## 🔧 Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/reconsumeralization/smart-mcp-server.git
    cd smart-mcp-server
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Configure environment variables:
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
@@ -82,6 +85,184 @@ smart-mcp-server/
 ├── tool-proxy.js              # Tool execution proxy
 ├── tools/                     # Tool implementations
 └── workflow-monitor.js        # Workflow monitoring system
+```
+
+## 🚀 Advanced Examples
+
+### 1. Multi-Tool Orchestration
+
+Combine multiple tools for complex tasks:
+
+```javascript
+import { ToolOrchestrator } from './lib/tool-orchestrator.js';
+
+// Create an orchestrator with error handling and retry logic
+const orchestrator = new ToolOrchestrator({
+  maxRetries: 3,
+  retryDelay: 1000,
+  fallbackStrategy: 'alternative-tool'
+});
+
+// Define a complex task using multiple tools
+const task = orchestrator.createTask()
+  .use('gemini-tool')
+    .withConfig({ temperature: 0.2 })
+    .forStep('analyze-requirements')
+  .use('github-tool')
+    .withAuth(process.env.GITHUB_TOKEN)
+    .forStep('create-pr')
+  .use('database-tool')
+    .withRetry(5)
+    .forStep('store-results');
+
+// Execute with progress monitoring
+const result = await task.execute({
+  onProgress: (step, progress) => console.log(`${step}: ${progress}%`),
+  onError: (step, error) => console.error(`Error in ${step}:`, error)
+});
+```
+
+### 2. Context-Aware Tool Selection with Memory
+
+```javascript
+import { ContextAnalyzer } from './lib/context-analyzer.js';
+import { MemoryStore } from './lib/memory-store.js';
+
+// Initialize with persistent memory
+const memory = new MemoryStore({
+  storage: 'redis',
+  ttl: '24h',
+  namespace: 'tool-selection'
+});
+
+const analyzer = new ContextAnalyzer({
+  memory,
+  embeddings: true,
+  contextWindow: 10
+});
+
+// Analyze context with historical data
+const toolSuggestions = await analyzer.analyze({
+  currentMessage: "Help me optimize this SQL query",
+  userHistory: await memory.getUserHistory('user123'),
+  projectContext: {
+    language: 'SQL',
+    database: 'PostgreSQL',
+    performance: true
+  }
+});
+
+// Get ranked tool suggestions with confidence scores
+const rankedTools = toolSuggestions.getRankedTools();
+console.log(rankedTools);
+// [
+//   { tool: 'database-optimizer', confidence: 0.95 },
+//   { tool: 'query-analyzer', confidence: 0.85 },
+//   { tool: 'performance-monitor', confidence: 0.75 }
+// ]
+```
+
+### 3. Advanced Workflow with Error Recovery
+
+```javascript
+import { WorkflowBuilder } from './lib/workflow-builder.js';
+import { ErrorRecoveryStrategy } from './lib/error-recovery.js';
+
+// Create a workflow with sophisticated error handling
+const workflow = new WorkflowBuilder()
+  .addNode('data-extraction', {
+    tool: 'database-tool',
+    fallback: 'file-system-tool',
+    validation: (data) => data.length > 0
+  })
+  .addNode('data-transformation', {
+    tool: 'gemini-tool',
+    retries: 3,
+    timeout: '5m',
+    recovery: new ErrorRecoveryStrategy({
+      onTimeout: 'switch-model',
+      onError: 'reduce-batch-size',
+      onValidationFail: 'human-review'
+    })
+  })
+  .addNode('data-loading', {
+    tool: 'database-tool',
+    mode: 'batch',
+    batchSize: 1000,
+    monitoring: {
+      metrics: ['throughput', 'latency', 'errors'],
+      alerts: {
+        errorRate: { threshold: 0.01, action: 'pause' },
+        latency: { threshold: '500ms', action: 'reduce-batch-size' }
+      }
+    }
+  })
+  .setEdges([
+    ['data-extraction', 'data-transformation'],
+    ['data-transformation', 'data-loading']
+  ])
+  .build();
+
+// Execute with real-time monitoring
+const execution = await workflow.execute({
+  inputs: { query: 'SELECT * FROM large_table' },
+  monitoring: {
+    interval: '1s',
+    metrics: ['progress', 'resource-usage', 'throughput'],
+    onMetric: (metric) => console.log(`${metric.name}: ${metric.value}`),
+    onAlert: (alert) => handleAlert(alert)
+  }
+});
+```
+
+### 4. AI-Powered Tool Composition
+
+```javascript
+import { AIToolComposer } from './lib/ai-tool-composer.js';
+import { ToolRegistry } from './lib/tool-registry.js';
+
+// Initialize AI-powered tool composer
+const composer = new AIToolComposer({
+  model: 'gemini-2.0-flash',
+  optimization: 'performance',
+  constraints: {
+    maxTools: 5,
+    maxMemory: '2GB',
+    timeout: '10m'
+  }
+});
+
+// Register available tools with capabilities
+const registry = new ToolRegistry()
+  .register('database-tool', {
+    capabilities: ['query', 'transform', 'optimize'],
+    costs: { memory: '500MB', latency: '100ms' }
+  })
+  .register('gemini-tool', {
+    capabilities: ['analyze', 'generate', 'translate'],
+    costs: { memory: '1GB', latency: '2s' }
+  });
+
+// Let AI compose optimal tool chain for task
+const composition = await composer.compose({
+  task: 'Analyze and optimize database performance',
+  context: {
+    database: 'PostgreSQL',
+    dataSize: '10GB',
+    performance: {
+      current: { qps: 1000, latency: '200ms' },
+      target: { qps: 2000, latency: '100ms' }
+    }
+  },
+  registry
+});
+
+// Execute the AI-composed tool chain
+const result = await composition.execute({
+  monitoring: true,
+  optimization: true,
+  reporting: true
+});
 ```
 
 ## 🚀 Usage

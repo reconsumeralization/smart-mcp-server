@@ -10,22 +10,23 @@ Before running the Gemini API examples, you need to:
 
 1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
 2. Create a `.env` file in the project root with your API key:
-   ```env
-   GEMINI_API_KEY=your-api-key-here
-   ```
-   
-   Or set the environment variable before running the script:
-   
-   ```bash
-   # Windows PowerShell
-   $env:GEMINI_API_KEY = "your-api-key-here"
-   
-   # Windows CMD
-   set GEMINI_API_KEY=your-api-key-here
-   
-   # Linux/Mac
-   export GEMINI_API_KEY=your-api-key-here
-   ```
+
+```env
+GEMINI_API_KEY=your-api-key-here
+```
+
+Or set the environment variable before running the script:
+
+```bash
+# Windows PowerShell
+$env:GEMINI_API_KEY = "your-api-key-here"
+
+# Windows CMD
+set GEMINI_API_KEY=your-api-key-here
+
+# Linux/Mac
+export GEMINI_API_KEY=your-api-key-here
+```
 
 ### Example Scripts
 
@@ -38,6 +39,7 @@ node examples/gemini-response-types-example.js
 ```
 
 This example shows:
+
 - Plain text responses
 - JSON responses
 - Streaming responses
@@ -102,22 +104,19 @@ If you encounter issues:
 3. Make sure you have installed all dependencies with `npm install`
 4. For Gemini API issues, verify your API key has access to the models used in examples
 
-## Available Examples
+## Example Categories
 
-### Gemini API Examples
+### Core Examples
 
 - **gemini-example.js**: Basic example showing how to use the Gemini API for text generation and chat.
 - **gemini-advanced-example.js**: Advanced usage of Gemini models, including handling inline data and tool calling.
 - **gemini-with-tools-example.js**: Example of using Gemini with tool calling capabilities to solve more complex tasks.
-- **gemini-response-types-example.js**: Demonstrates configuring Gemini models for different response types, including plain text, JSON, and streaming text. Features error handling and model fallback.
-- **gemini-basic-test.js**: A simple utility to test which Gemini models are available for your API key and account tier. Use this first to determine which models you have access to.
+- **gemini-response-types-example.js**: Demonstrates configuring Gemini models for different response types.
+- **gemini-basic-test.js**: A simple utility to test which Gemini models are available for your API key.
 
-### Database Integration
+### Integration Examples
 
 - **database-integration-workflow.json**: Workflow for integrating PostgreSQL with the MCP server.
-
-### Other Examples
-
 - **workflow-example.json**: Example of a workflow configuration.
 - **gemini-integration-workflow.json**: Workflow for integrating the Gemini API.
 
@@ -147,7 +146,7 @@ For database examples:
 
 See the `.env.example` file in the project root for more environment variables.
 
-## Workflow Examples
+## Workflow Configuration
 
 Workflow examples (JSON files) are not meant to be executed directly. They are configuration files that define workflows to be processed by the MCP server's workflow engine.
 
