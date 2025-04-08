@@ -249,4 +249,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📞 Contact
 
-Project Maintainer: [Your Name](https://github.com/reconsumeralization)
+Project Maintainer: [David Weatherspoon](https://github.com/reconsumeralization)
