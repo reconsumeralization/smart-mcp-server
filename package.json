@@ -1,0 +1,35 @@
+{
+  "name": "smart-mcp-server",
+  "version": "1.0.0",
+  "description": "Context-aware MCP server that intelligently manages tool presentation",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "server": "node server.js",
+    "server:dev": "nodemon server.js",
+    "client": "node test-client.js",
+    "test": "node run-test.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "tools"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "natural": "^6.10.2",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  },
+  "type": "module"
+} 
