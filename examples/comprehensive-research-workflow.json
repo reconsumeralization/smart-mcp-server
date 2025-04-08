@@ -1,0 +1,198 @@
+{
+  "id": "comprehensive-research-workflow",
+  "description": "A workflow that conducts thorough research on a topic combining multiple data sources",
+  "concurrencyLimit": 5,
+  "steps": [
+    {
+      "id": "initial-web-search",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${context.topic}",
+        "explanation": "Initial web search to gather general information on the topic"
+      }
+    },
+    {
+      "id": "technical-web-search",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${context.topic} technical details implementation",
+        "explanation": "Searching for technical details and implementations related to the topic"
+      }
+    },
+    {
+      "id": "recent-developments-search",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${context.topic} recent developments latest news",
+        "explanation": "Searching for the most recent developments and news about the topic"
+      }
+    },
+    {
+      "id": "github-repository-search",
+      "toolId": "mcp_github_search_repositories",
+      "params": {
+        "query": "${context.topic}",
+        "perPage": 5
+      }
+    },
+    {
+      "id": "github-code-search",
+      "toolId": "mcp_github_search_code",
+      "params": {
+        "q": "${context.topic} language:${context.programmingLanguage || 'javascript'}",
+        "per_page": 10
+      }
+    },
+    {
+      "id": "github-issues-search",
+      "toolId": "mcp_github_search_issues",
+      "params": {
+        "q": "${context.topic} is:issue",
+        "per_page": 10
+      }
+    },
+    {
+      "id": "analyze-general-info",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing general information about ${context.topic} from web search results: ${steps.initial-web-search.snippets}",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["initial-web-search"]
+    },
+    {
+      "id": "analyze-technical-details",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing technical details and implementations of ${context.topic}: ${steps.technical-web-search.snippets}",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["technical-web-search"]
+    },
+    {
+      "id": "analyze-recent-developments",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing recent developments and news about ${context.topic}: ${steps.recent-developments-search.snippets}",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["recent-developments-search"]
+    },
+    {
+      "id": "analyze-github-repos",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing the top GitHub repositories for ${context.topic}. Found ${steps.github-repository-search.items.length} relevant repositories with the most popular being ${steps.github-repository-search.items[0].full_name} with ${steps.github-repository-search.items[0].stargazers_count} stars.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["github-repository-search"]
+    },
+    {
+      "id": "get-top-repo-details",
+      "toolId": "mcp_github_list_issues",
+      "params": {
+        "owner": "${steps.github-repository-search.items[0].owner.login}",
+        "repo": "${steps.github-repository-search.items[0].name}",
+        "state": "open",
+        "per_page": 5
+      },
+      "dependencies": ["analyze-github-repos"]
+    },
+    {
+      "id": "analyze-code-examples",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing code examples for ${context.topic} from GitHub code search. Found ${steps.github-code-search.total_count} code matches. Common patterns include...",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["github-code-search"]
+    },
+    {
+      "id": "analyze-challenges",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing challenges and issues related to ${context.topic} based on GitHub issues and open problems. Found ${steps.github-issues-search.total_count} issues. Common challenges include...",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["github-issues-search", "get-top-repo-details"]
+    },
+    {
+      "id": "conceptual-synthesis",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Synthesizing a conceptual overview of ${context.topic} based on all gathered information. Key concepts include: ${steps.analyze-general-info.thought} ${steps.analyze-technical-details.thought}",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["analyze-general-info", "analyze-technical-details"]
+    },
+    {
+      "id": "technical-synthesis",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Synthesizing technical aspects of ${context.topic} based on code examples and implementation details. ${steps.analyze-technical-details.thought} ${steps.analyze-code-examples.thought}",
+        "thoughtNumber": 1, 
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["analyze-technical-details", "analyze-code-examples"]
+    },
+    {
+      "id": "state-of-the-art",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing the current state-of-the-art for ${context.topic} based on recent developments and active projects. ${steps.analyze-recent-developments.thought} ${steps.analyze-github-repos.thought}",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["analyze-recent-developments", "analyze-github-repos"]
+    },
+    {
+      "id": "identify-trends",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Identifying emerging trends and future directions for ${context.topic} based on recent developments, ongoing work, and community interests.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["state-of-the-art", "analyze-challenges"]
+    },
+    {
+      "id": "compile-resources",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Compiling a list of the most valuable resources for learning about and working with ${context.topic}, including documentation, tutorials, libraries, and tools.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["analyze-github-repos", "analyze-general-info", "analyze-technical-details"]
+    },
+    {
+      "id": "comprehensive-report",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "# Comprehensive Research Report: ${context.topic}\n\n## 1. Conceptual Overview\n${steps.conceptual-synthesis.thought}\n\n## 2. Technical Details\n${steps.technical-synthesis.thought}\n\n## 3. State of the Art\n${steps.state-of-the-art.thought}\n\n## 4. Challenges and Open Issues\n${steps.analyze-challenges.thought}\n\n## 5. Emerging Trends\n${steps.identify-trends.thought}\n\n## 6. Key Resources\n${steps.compile-resources.thought}\n\n## 7. Popular Implementations\n- Top Repository: ${steps.github-repository-search.items[0].full_name}\n- Stars: ${steps.github-repository-search.items[0].stargazers_count}\n- Open Issues: ${steps.get-top-repo-details.length}\n- Description: ${steps.github-repository-search.items[0].description}\n\n## 8. Recent Developments\n${steps.analyze-recent-developments.thought}",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["conceptual-synthesis", "technical-synthesis", "state-of-the-art", "analyze-challenges", "identify-trends", "compile-resources"]
+    }
+  ]
+} 

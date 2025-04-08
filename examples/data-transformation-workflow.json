@@ -1,0 +1,157 @@
+{
+  "id": "data-transformation-workflow",
+  "description": "A workflow that processes and analyzes data through multiple transformation steps",
+  "concurrencyLimit": 3,
+  "steps": [
+    {
+      "id": "data-validation",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "First, I need to validate the input data format from ${context.dataSource}. I'll check for required fields, data types, and any obvious anomalies or errors that would affect processing.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      }
+    },
+    {
+      "id": "data-cleaning",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Now I'll clean the data by handling missing values, removing duplicates, and standardizing formats. The validation showed: ${steps.data-validation.thought}",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["data-validation"]
+    },
+    {
+      "id": "data-enrichment-research",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "data enrichment techniques for ${context.dataType || 'business'} data",
+        "explanation": "Researching enrichment methods appropriate for this data type"
+      }
+    },
+    {
+      "id": "feature-engineering-1",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Performing feature engineering on the first subset of data. I'll create derived features, normalize values, and transform variables to make them more suitable for analysis.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["data-cleaning"]
+    },
+    {
+      "id": "feature-engineering-2",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Performing feature engineering on the second subset of data. This includes different transformations suited to the specific characteristics of this subset.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["data-cleaning"]
+    },
+    {
+      "id": "data-enrichment",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Enriching the data with additional information based on the research results: ${steps.data-enrichment-research.snippets}",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["data-cleaning", "data-enrichment-research"]
+    },
+    {
+      "id": "descriptive-statistics",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Calculating descriptive statistics for the processed data. This includes measures of central tendency, dispersion, and distribution characteristics.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["feature-engineering-1", "feature-engineering-2", "data-enrichment"]
+    },
+    {
+      "id": "correlation-analysis",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Performing correlation analysis to identify relationships between variables in the dataset.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["feature-engineering-1", "feature-engineering-2", "data-enrichment"]
+    },
+    {
+      "id": "trend-analysis",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing trends in the data over time or across categories to identify patterns and changes.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["feature-engineering-1", "feature-engineering-2", "data-enrichment"]
+    },
+    {
+      "id": "anomaly-detection",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Identifying anomalies and outliers in the data that may represent errors, special cases, or points of interest.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["descriptive-statistics"]
+    },
+    {
+      "id": "insight-generation",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Generating insights based on the statistical analyses. The key findings from the descriptive statistics show: ${steps.descriptive-statistics.thought}\n\nCorrelation analysis revealed: ${steps.correlation-analysis.thought}\n\nTrend analysis identified: ${steps.trend-analysis.thought}\n\nAnomalies detected: ${steps.anomaly-detection.thought}",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["descriptive-statistics", "correlation-analysis", "trend-analysis", "anomaly-detection"]
+    },
+    {
+      "id": "business-recommendations",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Translating data insights into actionable business recommendations. Based on the insights: ${steps.insight-generation.thought}",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["insight-generation"]
+    },
+    {
+      "id": "visualization-planning",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Planning effective visualizations to communicate the findings. I'll determine the appropriate chart types, layouts, and design elements based on the data characteristics and key messages.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["insight-generation"]
+    },
+    {
+      "id": "final-report",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Compiling the final report with all analyses, insights, recommendations, and visualization plans. The report includes:\n\n1. Data Processing Summary: ${steps.data-cleaning.thought}\n\n2. Key Statistics: ${steps.descriptive-statistics.thought}\n\n3. Significant Correlations: ${steps.correlation-analysis.thought}\n\n4. Trend Analysis: ${steps.trend-analysis.thought}\n\n5. Anomalies & Outliers: ${steps.anomaly-detection.thought}\n\n6. Business Insights: ${steps.insight-generation.thought}\n\n7. Recommendations: ${steps.business-recommendations.thought}\n\n8. Visualization Plan: ${steps.visualization-planning.thought}",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["business-recommendations", "visualization-planning"]
+    }
+  ]
+} 

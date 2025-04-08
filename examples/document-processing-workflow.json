@@ -1,0 +1,110 @@
+{
+  "id": "document-processing-workflow",
+  "description": "A workflow that extracts, analyzes, and summarizes information from documents",
+  "concurrencyLimit": 4,
+  "steps": [
+    {
+      "id": "extract-text",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "I need to extract the key textual content from the document '${context.documentUrl}'. This will involve identifying the main sections, headings, and important paragraphs while filtering out boilerplate content.",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      }
+    },
+    {
+      "id": "extract-metadata",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Now I'll extract metadata from the document such as author, publication date, version, and other relevant attributes that provide context for the content.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      }
+    },
+    {
+      "id": "search-related-info",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${context.topic || 'information related to'} ${context.documentTitle}",
+        "explanation": "Searching for related information to provide additional context"
+      }
+    },
+    {
+      "id": "analyze-content",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing the extracted content to identify the main topics, key points, and overall structure of the document. The main content is: ${steps.extract-text.thought}",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["extract-text"]
+    },
+    {
+      "id": "analyze-sentiment",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing the sentiment and tone of the document. I'll look for emotional language, bias indicators, and overall stance on the topics covered.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["extract-text"]
+    },
+    {
+      "id": "identify-entities",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Identifying key entities mentioned in the document, such as people, organizations, locations, products, and technical terms.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["extract-text"]
+    },
+    {
+      "id": "research-entities",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "information about ${steps.identify-entities.thought}",
+        "explanation": "Researching key entities identified in the document"
+      },
+      "dependencies": ["identify-entities"]
+    },
+    {
+      "id": "create-summary",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating a comprehensive summary of the document based on the content analysis. The document covers the following key points: ${steps.analyze-content.thought}",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["analyze-content", "analyze-sentiment", "search-related-info"]
+    },
+    {
+      "id": "generate-keywords",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Generating relevant keywords and tags for the document based on its content, entities, and context.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["identify-entities", "analyze-content"]
+    },
+    {
+      "id": "create-final-report",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Compiling a final report with document metadata, summary, sentiment analysis, key entities, and related information. The report includes:\n\n1. Document Metadata: ${steps.extract-metadata.thought}\n\n2. Summary: ${steps.create-summary.thought}\n\n3. Sentiment Analysis: ${steps.analyze-sentiment.thought}\n\n4. Key Entities: ${steps.identify-entities.thought}\n\n5. Keywords/Tags: ${steps.generate-keywords.thought}\n\n6. Related Information: ${steps.research-entities.snippets}",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-summary", "generate-keywords", "extract-metadata", "research-entities"]
+    }
+  ]
+} 
