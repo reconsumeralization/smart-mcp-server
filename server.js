@@ -197,6 +197,12 @@ function filterToolsByContext(req, res, next) {
 
 // API Routes
 
+// Import the workflow API router
+import workflowRouter from './workflow-api.js';
+
+// Use workflow router
+app.use('/api/workflows', validateRequest, workflowRouter);
+
 // Get all tools (with context filtering)
 app.get('/tools', validateRequest, filterToolsByContext, (req, res) => {
   res.json({

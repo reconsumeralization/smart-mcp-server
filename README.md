@@ -53,6 +53,7 @@ The Smart MCP Server consists of the following components:
 
 1. Clone the repository
 2. Install dependencies:
+
 ```bash
 npm install
 ```
@@ -142,4 +143,4 @@ To add a new tool server:
 
 ## License
 
-MIT 
+MIT
