@@ -10,7 +10,8 @@
     "server:dev": "nodemon server.js",
     "client": "node test-client.js",
     "test": "node run-test.js",
-    "workflow:example": "node examples/register-workflow.js"
+    "workflow:example": "node examples/register-workflow.js",
+    "workflow:test-all": "node examples/test-all-workflows.js"
   },
   "keywords": [
     "mcp",
