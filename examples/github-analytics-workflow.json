@@ -1,0 +1,107 @@
+{
+  "id": "github-analytics-workflow",
+  "description": "A workflow that analyzes GitHub repositories and issues",
+  "concurrencyLimit": 5,
+  "steps": [
+    {
+      "id": "search-repos",
+      "toolId": "mcp_github_search_repositories",
+      "params": {
+        "query": "${context.searchTerm}",
+        "perPage": 5
+      }
+    },
+    {
+      "id": "search-code",
+      "toolId": "mcp_github_search_code",
+      "params": {
+        "q": "${context.codeQuery || context.searchTerm} language:javascript",
+        "per_page": 10
+      }
+    },
+    {
+      "id": "search-issues",
+      "toolId": "mcp_github_search_issues",
+      "params": {
+        "q": "${context.issueQuery || context.searchTerm} is:issue is:open",
+        "per_page": 10
+      }
+    },
+    {
+      "id": "analyze-top-repo",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing the top repository from search results: ${steps.search-repos.items[0].full_name}. This repository has ${steps.search-repos.items[0].stargazers_count} stars and ${steps.search-repos.items[0].forks_count} forks.",
+        "thoughtNumber": 1,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["search-repos"]
+    },
+    {
+      "id": "get-repo-issues",
+      "toolId": "mcp_github_list_issues",
+      "params": {
+        "owner": "${steps.search-repos.items[0].owner.login}",
+        "repo": "${steps.search-repos.items[0].name}",
+        "state": "open",
+        "per_page": 5
+      },
+      "dependencies": ["analyze-top-repo"]
+    },
+    {
+      "id": "get-repo-commits",
+      "toolId": "mcp_github_list_commits",
+      "params": {
+        "owner": "${steps.search-repos.items[0].owner.login}",
+        "repo": "${steps.search-repos.items[0].name}",
+        "perPage": 5
+      },
+      "dependencies": ["analyze-top-repo"]
+    },
+    {
+      "id": "analyze-code-findings",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing code search results for '${context.codeQuery || context.searchTerm}'. Found ${steps.search-code.total_count} code matches across different repositories. The most common patterns are...",
+        "thoughtNumber": 2,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["search-code"]
+    },
+    {
+      "id": "analyze-issues",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing open issues related to '${context.issueQuery || context.searchTerm}'. Found ${steps.search-issues.total_count} open issues. Common themes include...",
+        "thoughtNumber": 3,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["search-issues"]
+    },
+    {
+      "id": "analyze-repo-activity",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing repository activity based on commits and issues. The repository has ${steps.get-repo-issues.length} open issues and recent commits from ${steps.get-repo-commits.length} contributors. The development pace appears to be...",
+        "thoughtNumber": 4,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["get-repo-issues", "get-repo-commits"]
+    },
+    {
+      "id": "summarize-findings",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Summary of GitHub analytics for '${context.searchTerm}':\n1. Top repository: ${steps.search-repos.items[0].full_name} with ${steps.search-repos.items[0].stargazers_count} stars\n2. Code usage patterns: [insights from code search]\n3. Common issues: [insights from issues search]\n4. Development activity: [insights from commits and issues analysis]",
+        "thoughtNumber": 5,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["analyze-repo-activity", "analyze-code-findings", "analyze-issues"]
+    }
+  ]
+} 

@@ -12,6 +12,7 @@ This server acts as a gateway between LLM applications and tool servers. It dyna
 - **Tool Proxy**: Manages execution of tools on various servers
 - **Caching**: Improves performance with intelligent caching of tool information
 - **Security**: Implements authentication, rate limiting, and input validation
+- **Workflow System**: Orchestrates parallel execution of tools with dependency management
 - **Extensible**: Easy to add new tool servers and categories
 
 ## Architecture
@@ -21,8 +22,10 @@ The Smart MCP Server consists of the following components:
 1. **tool-proxy.js**: Handles execution of tools on their respective servers
 2. **context-aware-selector.js**: Analyzes user context to select the most relevant tools
 3. **server-connector.js**: Manages connections to external tool servers
-4. **server.js**: Main server implementation with API routes, security, and more
-5. **index.js**: Simple entry point to start the server
+4. **workflow-manager.js**: Handles parallel tool execution with dependency resolution
+5. **workflow-api.js**: Provides API endpoints for managing workflows
+6. **server.js**: Main server implementation with API routes, security, and more
+7. **index.js**: Simple entry point to start the server
 
 ## API Endpoints
 
@@ -32,6 +35,13 @@ The Smart MCP Server consists of the following components:
 - **GET /categories/:category/tools** - Get tools for a specific category
 - **GET /tools/:toolId** - Get detailed information about a specific tool
 - **GET /health** - Server health check endpoint
+
+### Workflow API Endpoints
+
+- **POST /api/workflows** - Register a new workflow
+- **GET /api/workflows** - List all registered workflows
+- **POST /api/workflows/:id/execute** - Execute a workflow
+- **GET /api/workflows/executions/:executionId** - Get workflow execution status
 
 ## Setup
 
@@ -69,6 +79,48 @@ The context-aware selector uses various signals to determine which tools are mos
 - Essential tools that should always be available
 
 You can customize the selection logic by modifying the `context-aware-selector.js` file.
+
+## Using the Workflow System
+
+The workflow system allows you to orchestrate the execution of multiple tools, potentially in parallel, while respecting dependencies between steps.
+
+### Workflow Structure
+
+A workflow consists of steps, where each step executes a specific tool. Steps can depend on other steps, creating a dependency graph that determines execution order.
+
+```json
+{
+  "id": "my-workflow",
+  "steps": [
+    {
+      "id": "step1",
+      "toolId": "tool1",
+      "params": { ... }
+    },
+    {
+      "id": "step2",
+      "toolId": "tool2",
+      "params": { ... },
+      "dependencies": ["step1"]
+    }
+  ],
+  "concurrencyLimit": 3
+}
+```
+
+### Parameter Interpolation
+
+The workflow system supports parameter interpolation to pass data between steps:
+
+- Access context values: `${context.value}`
+- Access previous step results: `${steps.stepId.resultProperty}`
+
+### Example Workflows
+
+For example workflows, see the `examples/` directory:
+
+- `web-search-workflow.json`: Combines web search with sequential thinking
+- `github-analytics-workflow.json`: Analyzes GitHub repositories using multiple tools
 
 ## Security Considerations
 

@@ -1,0 +1,78 @@
+{
+  "id": "web-research-workflow",
+  "description": "A workflow that performs web search and sequential thinking analysis in parallel",
+  "concurrencyLimit": 3,
+  "steps": [
+    {
+      "id": "web-search-1",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${context.query}",
+        "explanation": "Searching for information about ${context.query}"
+      }
+    },
+    {
+      "id": "web-search-2",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${context.query} latest developments",
+        "explanation": "Searching for the latest developments about ${context.query}"
+      }
+    },
+    {
+      "id": "analyze-search-results",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "I'll analyze the web search results to extract key information about ${context.query}. First, let me examine the results from the first search: ${steps.web-search-1.snippets}",
+        "thoughtNumber": 1,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["web-search-1", "web-search-2"]
+    },
+    {
+      "id": "analyze-developments",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Now I'll analyze the latest developments: ${steps.web-search-2.snippets}. I'll identify any recent trends or updates that would be relevant.",
+        "thoughtNumber": 2,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["analyze-search-results"]
+    },
+    {
+      "id": "compare-results",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Let me compare the information from both searches to identify consistencies and differences. This will help establish what information is most reliable and current.",
+        "thoughtNumber": 3,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["analyze-developments"]
+    },
+    {
+      "id": "draw-conclusions",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Based on all the information gathered and analyzed, I can now draw some conclusions about ${context.query}. The most important findings are...",
+        "thoughtNumber": 4,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["compare-results"]
+    },
+    {
+      "id": "summarize",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "To summarize the findings about ${context.query}: [summary of key points from all previous steps]",
+        "thoughtNumber": 5,
+        "totalThoughts": 5,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["draw-conclusions"]
+    }
+  ]
+} 
