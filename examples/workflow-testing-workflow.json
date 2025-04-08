@@ -1,0 +1,201 @@
+{
+  "id": "workflow-testing-workflow",
+  "description": "A workflow for testing and iterating on other workflows",
+  "concurrencyLimit": 3,
+  "steps": [
+    {
+      "id": "analyze-workflow-structure",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing the target workflow structure to identify components that need testing. Looking at step dependencies, tool usage patterns, and potential bottlenecks or failure points.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      }
+    },
+    {
+      "id": "prepare-test-environment",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Setting up a test environment with necessary mocks and fixtures. Defining which components need real implementations versus simulated responses. Identifying environment variables or configuration needed for testing.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["analyze-workflow-structure"]
+    },
+    {
+      "id": "research-testing-best-practices",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "workflow testing best practices continuous integration",
+        "explanation": "Researching current best practices for workflow testing"
+      }
+    },
+    {
+      "id": "create-test-cases",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Developing test cases for each workflow step and for the entire workflow. Including:\n1. Happy path scenarios - complete workflow execution with valid inputs\n2. Error handling - how the workflow handles failures at each step\n3. Boundary conditions - extreme inputs, timeouts, resource limitations\n4. Concurrency tests - multiple workflow instances running simultaneously\n5. Integration points - how the workflow interacts with external systems",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["analyze-workflow-structure", "research-testing-best-practices"]
+    },
+    {
+      "id": "setup-mock-servers",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Setting up mock servers for external dependencies. For each tool used in the workflow, creating a mock implementation that records interactions and provides predefined responses. This allows testing without actual external services.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["prepare-test-environment"]
+    },
+    {
+      "id": "create-test-harness",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Developing a test harness that can execute the workflow with various inputs and capture outputs at each step. The harness should support:\n1. Input parameter variation\n2. Execution step tracing\n3. Timing measurements\n4. Resource usage monitoring\n5. Logging of all tool interactions",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-test-cases", "setup-mock-servers"]
+    },
+    {
+      "id": "test-individual-steps",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Testing each workflow step in isolation with various inputs and verifying outputs. For steps with dependencies, using mocked outputs from previous steps. Verifying that each step performs its intended function correctly before testing the entire workflow.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-test-harness"]
+    },
+    {
+      "id": "test-dependencies",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Testing step dependencies to ensure correct execution order and data flow between steps. Verifying that when dependencies are modified, dependent steps receive the correct inputs and handle changes appropriately.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["test-individual-steps"]
+    },
+    {
+      "id": "test-error-handling",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Testing error handling for each step and for the overall workflow. Simulating failures at different points and verifying appropriate error responses, retry logic, and recovery mechanisms.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["test-dependencies"]
+    },
+    {
+      "id": "test-concurrency",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Testing concurrent execution of workflow steps within concurrency limits. Verifying that steps execute in parallel when possible and respect dependency constraints. Checking for race conditions or resource contention.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["test-error-handling"]
+    },
+    {
+      "id": "integration-test",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Running integration tests that execute the entire workflow with various inputs. Verifying end-to-end functionality and comparing actual results with expected outcomes. Testing with both mock servers and, when possible, actual services.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["test-concurrency"]
+    },
+    {
+      "id": "performance-analysis",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing workflow performance by measuring execution time, resource usage, and throughput. Identifying bottlenecks and opportunities for optimization. Testing with varying loads to determine scaling characteristics.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["integration-test"]
+    },
+    {
+      "id": "gather-metrics",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Collecting metrics from test executions to evaluate workflow quality. Gathering data on:\n1. Success/failure rates\n2. Step execution times\n3. Resource utilization\n4. Error frequencies and types\n5. Concurrency performance",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["performance-analysis"]
+    },
+    {
+      "id": "identify-improvements",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing test results and metrics to identify potential workflow improvements. Looking for opportunities to:\n1. Optimize step execution\n2. Improve error handling\n3. Enhance concurrency\n4. Reduce resource usage\n5. Simplify dependencies",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["gather-metrics"]
+    },
+    {
+      "id": "implement-improvements",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Implementing identified improvements to the workflow. Making iterative changes and re-testing to verify that improvements achieve desired outcomes without introducing new issues.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["identify-improvements"]
+    },
+    {
+      "id": "document-test-results",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Documenting test results, findings, and improvements. Creating a comprehensive report that includes:\n1. Test coverage and scenarios tested\n2. Performance metrics before and after optimization\n3. Identified issues and resolutions\n4. Recommendations for further improvements\n5. Best practices for similar workflows",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["implement-improvements"]
+    },
+    {
+      "id": "setup-continuous-testing",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Setting up continuous testing infrastructure for ongoing validation. Configuring automated tests to run on schedule or when workflow changes are detected. Implementing monitoring and alerting for workflow performance and reliability.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["document-test-results"]
+    },
+    {
+      "id": "finalize-workflow",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Finalizing the workflow based on all test results and improvements. Preparing the workflow for production deployment with confidence in its reliability, performance, and error handling capabilities.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["setup-continuous-testing"]
+    }
+  ]
+} 

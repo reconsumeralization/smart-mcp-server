@@ -1,0 +1,159 @@
+{
+  "id": "gemini-integration-workflow",
+  "description": "A workflow for integrating Google's Gemini API with the MCP server for content generation",
+  "concurrencyLimit": 3,
+  "steps": [
+    {
+      "id": "research-gemini-api",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "Google Gemini API documentation latest versions models",
+        "explanation": "Researching the latest Gemini API documentation to understand capabilities and integration requirements"
+      }
+    },
+    {
+      "id": "analyze-api-requirements",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing the requirements for integrating Gemini API, including authentication methods, rate limits, supported models, and response formats. Determining how these requirements align with the MCP server architecture.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-gemini-api"]
+    },
+    {
+      "id": "install-dependencies",
+      "toolId": "run_terminal_cmd",
+      "params": {
+        "command": "npm install @google/generative-ai mime-types --save",
+        "explanation": "Installing required dependencies for Gemini API integration",
+        "is_background": false
+      },
+      "dependencies": ["analyze-api-requirements"]
+    },
+    {
+      "id": "create-environment-config",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/.env.example",
+        "instructions": "Adding Gemini API environment variables to .env.example",
+        "code_edit": "// ... existing code ...\n\n# Google Gemini API Configuration\nGEMINI_API_KEY=your_gemini_api_key_here\nGEMINI_MODEL=gemini-2.5-pro-preview-03-25\nGEMINI_MAX_TOKENS=65536\nGEMINI_TEMPERATURE=1\nGEMINI_TOP_P=0.95\nGEMINI_TOP_K=64\n// ... existing code ..."
+      },
+      "dependencies": ["analyze-api-requirements"]
+    },
+    {
+      "id": "create-gemini-client",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/lib/gemini-client.js",
+        "instructions": "Creating a reusable Gemini client module",
+        "code_edit": "/**\n * Gemini API Client for MCP Server\n * Provides a reusable interface for interacting with Google's Generative AI models\n */\n\nconst { GoogleGenerativeAI } = require(\"@google/generative-ai\");\nconst fs = require(\"node:fs\");\nconst path = require(\"path\");\nconst mime = require(\"mime-types\");\n\nclass GeminiClient {\n  constructor(config = {}) {\n    this.apiKey = config.apiKey || process.env.GEMINI_API_KEY;\n    this.modelName = config.modelName || process.env.GEMINI_MODEL || \"gemini-2.5-pro-preview-03-25\";\n    this.outputDir = config.outputDir || path.join(process.cwd(), \"gemini-outputs\");\n    \n    // Ensure API key is provided\n    if (!this.apiKey) {\n      throw new Error(\"Gemini API key is required. Provide it in constructor config or set GEMINI_API_KEY environment variable.\");\n    }\n    \n    // Initialize the Gemini API client\n    this.genAI = new GoogleGenerativeAI(this.apiKey);\n    \n    // Default generation config\n    this.defaultGenerationConfig = {\n      temperature: parseFloat(process.env.GEMINI_TEMPERATURE || \"1\"),\n      topP: parseFloat(process.env.GEMINI_TOP_P || \"0.95\"),\n      topK: parseInt(process.env.GEMINI_TOP_K || \"64\", 10),\n      maxOutputTokens: parseInt(process.env.GEMINI_MAX_TOKENS || \"65536\", 10),\n      responseMimeType: \"text/plain\",\n    };\n    \n    // Create output directory if it doesn't exist\n    if (!fs.existsSync(this.outputDir)) {\n      fs.mkdirSync(this.outputDir, { recursive: true });\n    }\n    \n    console.log(`Gemini client initialized with model: ${this.modelName}`);\n  }\n  \n  /**\n   * Get a generative model instance with optional custom configuration\n   * @param {Object} config - Optional configuration overrides\n   * @returns {Object} The configured model instance\n   */\n  getModel(config = {}) {\n    const modelConfig = {\n      model: config.modelName || this.modelName,\n      systemInstruction: config.systemInstruction || \"\",\n    };\n    \n    return this.genAI.getGenerativeModel(modelConfig);\n  }\n  \n  /**\n   * Start a chat session with the model\n   * @param {Object} config - Optional configuration\n   * @returns {Object} Chat session object\n   */\n  startChat(config = {}) {\n    const model = this.getModel(config);\n    \n    return model.startChat({\n      generationConfig: { ...this.defaultGenerationConfig, ...config.generationConfig },\n      history: config.history || [],\n    });\n  }\n  \n  /**\n   * Send a single message and get a response\n   * @param {string} prompt - The user prompt\n   * @param {Object} config - Optional configuration\n   * @returns {Promise<Object>} The model response\n   */\n  async generateContent(prompt, config = {}) {\n    try {\n      const model = this.getModel(config);\n      const generationConfig = { ...this.defaultGenerationConfig, ...config.generationConfig };\n      \n      const result = await model.generateContent(prompt, generationConfig);\n      return this.processResponse(result);\n    } catch (error) {\n      console.error(\"Error generating content with Gemini:\", error);\n      throw error;\n    }\n  }\n  \n  /**\n   * Send a message in a chat session\n   * @param {Object} chatSession - The chat session created by startChat\n   * @param {string} message - The message to send\n   * @returns {Promise<Object>} The processed response\n   */\n  async sendChatMessage(chatSession, message) {\n    try {\n      const result = await chatSession.sendMessage(message);\n      return this.processResponse(result);\n    } catch (error) {\n      console.error(\"Error sending chat message:\", error);\n      throw error;\n    }\n  }\n  \n  /**\n   * Process the Gemini API response, handling both text and binary outputs\n   * @param {Object} response - The raw response from Gemini API\n   * @returns {Object} Processed response with text and file paths\n   */\n  processResponse(response) {\n    const text = response.response.text();\n    const files = [];\n    \n    // Handle binary data if present\n    const candidates = response.response.candidates;\n    if (candidates && candidates.length > 0) {\n      for (let i = 0; i < candidates.length; i++) {\n        const parts = candidates[i].content.parts;\n        \n        for (let j = 0; j < parts.length; j++) {\n          const part = parts[j];\n          \n          if (part.inlineData) {\n            try {\n              const filename = `output_${Date.now()}_${i}_${j}.${mime.extension(part.inlineData.mimeType)}`;\n              const filePath = path.join(this.outputDir, filename);\n              \n              fs.writeFileSync(filePath, Buffer.from(part.inlineData.data, 'base64'));\n              files.push({\n                path: filePath,\n                mimeType: part.inlineData.mimeType,\n                filename\n              });\n              \n              console.log(`Generated file saved to: ${filePath}`);\n            } catch (err) {\n              console.error(\"Error saving generated file:\", err);\n            }\n          }\n        }\n      }\n    }\n    \n    return {\n      text,\n      files,\n      rawResponse: response\n    };\n  }\n}\n\nmodule.exports = GeminiClient;"
+      },
+      "dependencies": ["install-dependencies"]
+    },
+    {
+      "id": "create-gemini-tool",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/tools/gemini-tool.js",
+        "instructions": "Creating a Gemini tool implementation for the MCP server",
+        "code_edit": "/**\n * MCP Gemini Tool Implementation\n * Provides an interface for using Google's Gemini API in the MCP server\n */\n\nconst GeminiClient = require('../lib/gemini-client');\nlet geminiClient = null;\n\n/**\n * Initialize the Gemini client\n * @param {Object} config - Configuration options\n * @returns {Object} The initialized client\n */\nfunction initializeClient(config = {}) {\n  if (!geminiClient) {\n    geminiClient = new GeminiClient(config);\n  }\n  return geminiClient;\n}\n\n/**\n * Handle text generation with Gemini\n * @param {Object} params - The parameters for generation\n * @param {Object} context - The execution context\n * @returns {Promise<Object>} The generation result\n */\nasync function generateText(params, context = {}) {\n  try {\n    const client = initializeClient(context.config || {});\n    \n    const {\n      prompt,\n      systemInstruction = \"You are a helpful AI assistant.\",\n      temperature,\n      maxTokens,\n      model\n    } = params;\n    \n    const config = {\n      systemInstruction,\n      modelName: model,\n      generationConfig: {\n        temperature: temperature !== undefined ? temperature : undefined,\n        maxOutputTokens: maxTokens !== undefined ? maxTokens : undefined\n      }\n    };\n    \n    const result = await client.generateContent(prompt, config);\n    \n    return {\n      text: result.text,\n      files: result.files.length > 0 ? result.files : undefined\n    };\n  } catch (error) {\n    console.error('Error in Gemini text generation:', error);\n    throw error;\n  }\n}\n\n/**\n * Handle chat session with Gemini\n * @param {Object} params - The parameters for the chat\n * @param {Object} context - The execution context\n * @returns {Promise<Object>} The chat session result\n */\nasync function handleChat(params, context = {}) {\n  try {\n    const client = initializeClient(context.config || {});\n    \n    const {\n      messages,\n      systemInstruction = \"You are a helpful AI assistant.\",\n      temperature,\n      maxTokens,\n      model\n    } = params;\n    \n    const config = {\n      systemInstruction,\n      modelName: model,\n      generationConfig: {\n        temperature: temperature !== undefined ? temperature : undefined,\n        maxOutputTokens: maxTokens !== undefined ? maxTokens : undefined\n      },\n      history: messages.slice(0, -1).map(msg => ({\n        role: msg.role,\n        parts: [{ text: msg.content }]\n      }))\n    };\n    \n    const chatSession = client.startChat(config);\n    const lastMessage = messages[messages.length - 1];\n    \n    const result = await client.sendChatMessage(chatSession, lastMessage.content);\n    \n    return {\n      text: result.text,\n      files: result.files.length > 0 ? result.files : undefined\n    };\n  } catch (error) {\n    console.error('Error in Gemini chat:', error);\n    throw error;\n  }\n}\n\nmodule.exports = {\n  initializeClient,\n  generateText,\n  handleChat\n};"
+      },
+      "dependencies": ["create-gemini-client"]
+    },
+    {
+      "id": "register-gemini-tool",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/server.js",
+        "instructions": "Updating server.js to register the Gemini tool",
+        "code_edit": "// ... existing code ...\n\n// Import Gemini tool\nconst geminiTool = require('./tools/gemini-tool');\n\n// ... existing code ...\n\n// Register tools\n// ... existing tool registrations ...\n\n// Register Gemini tool\nregisterTool('mcp_gemini_generate', {\n  serverType: 'stdio', // Or appropriate server type\n  serverCommand: 'node ./servers/gemini-server.js',\n  serverOptions: { /* options */ }\n});\n\n// ... existing code ..."
+      },
+      "dependencies": ["create-gemini-tool"]
+    },
+    {
+      "id": "create-gemini-server",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/servers/gemini-server.js",
+        "instructions": "Creating a server implementation for the Gemini tool",
+        "code_edit": "/**\n * Gemini API Server for MCP\n * Handles requests for Gemini content generation\n */\n\nconst { initializeClient, generateText, handleChat } = require('../tools/gemini-tool');\n\n// Load environment variables if needed\nrequire('dotenv').config();\n\n// Initialize the Gemini client on server startup\nconst geminiClient = initializeClient();\n\n/**\n * Process incoming requests from standard input\n */\nprocess.stdin.on('data', async (data) => {\n  try {\n    const request = JSON.parse(data.toString());\n    const { action, params, requestId } = request;\n    \n    let result;\n    \n    switch (action) {\n      case 'mcp_gemini_generate_text':\n        result = await generateText(params);\n        break;\n        \n      case 'mcp_gemini_chat':\n        result = await handleChat(params);\n        break;\n        \n      default:\n        throw new Error(`Unknown action: ${action}`);\n    }\n    \n    // Send the response back to the parent process\n    const response = {\n      requestId,\n      success: true,\n      result\n    };\n    \n    process.stdout.write(JSON.stringify(response) + '\\n');\n    \n  } catch (error) {\n    // Handle errors\n    const errorResponse = {\n      requestId: request?.requestId,\n      success: false,\n      error: {\n        message: error.message,\n        stack: error.stack\n      }\n    };\n    \n    process.stdout.write(JSON.stringify(errorResponse) + '\\n');\n  }\n});\n\n// Log server startup\nconsole.error('Gemini server started and waiting for requests...');\n\n// Handle process exit\nprocess.on('SIGINT', () => {\n  console.error('Gemini server shutting down...');\n  process.exit(0);\n});\n\nprocess.on('SIGTERM', () => {\n  console.error('Gemini server shutting down...');\n  process.exit(0);\n});"
+      },
+      "dependencies": ["create-gemini-tool"]
+    },
+    {
+      "id": "create-gemini-actions",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/schema/gemini-actions.js",
+        "instructions": "Creating schema definitions for Gemini tool actions",
+        "code_edit": "/**\n * Schema definitions for Gemini API actions\n */\n\nconst geminiActions = [\n  {\n    name: 'mcp_gemini_generate_text',\n    description: 'Generate text content using Google Gemini AI models',\n    parameters: [\n      {\n        name: 'prompt',\n        type: 'string',\n        required: true,\n        description: 'The prompt to generate content from'\n      },\n      {\n        name: 'systemInstruction',\n        type: 'string',\n        required: false,\n        description: 'System instruction to guide the AI behavior',\n        defaultValue: 'You are a helpful AI assistant.'\n      },\n      {\n        name: 'temperature',\n        type: 'number',\n        required: false,\n        description: 'The sampling temperature between 0 and 1',\n        defaultValue: 1\n      },\n      {\n        name: 'maxTokens',\n        type: 'number',\n        required: false,\n        description: 'Maximum number of tokens to generate',\n        defaultValue: 65536\n      },\n      {\n        name: 'model',\n        type: 'string',\n        required: false,\n        description: 'The Gemini model to use',\n        defaultValue: 'gemini-2.5-pro-preview-03-25'\n      }\n    ],\n    tokenCost: 10 // Example token cost\n  },\n  {\n    name: 'mcp_gemini_chat',\n    description: 'Interact with Google Gemini AI models in a chat session',\n    parameters: [\n      {\n        name: 'messages',\n        type: 'array',\n        required: true,\n        description: 'Array of chat messages with role and content properties'\n      },\n      {\n        name: 'systemInstruction',\n        type: 'string',\n        required: false,\n        description: 'System instruction to guide the AI behavior',\n        defaultValue: 'You are a helpful AI assistant.'\n      },\n      {\n        name: 'temperature',\n        type: 'number',\n        required: false,\n        description: 'The sampling temperature between 0 and 1',\n        defaultValue: 1\n      },\n      {\n        name: 'maxTokens',\n        type: 'number',\n        required: false,\n        description: 'Maximum number of tokens to generate',\n        defaultValue: 65536\n      },\n      {\n        name: 'model',\n        type: 'string',\n        required: false,\n        description: 'The Gemini model to use',\n        defaultValue: 'gemini-2.5-pro-preview-03-25'\n      }\n    ],\n    tokenCost: 15 // Example token cost\n  }\n];\n\nmodule.exports = geminiActions;"
+      },
+      "dependencies": ["create-gemini-tool"]
+    },
+    {
+      "id": "create-example-script",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/examples/gemini-example.js",
+        "instructions": "Creating an example script demonstrating Gemini API usage",
+        "code_edit": "/**\n * Example script demonstrating Gemini API usage through the MCP server\n */\n\nrequire('dotenv').config();\nconst { executeToolProxy } = require('../tool-proxy');\n\nasync function runGeminiExamples() {\n  try {\n    console.log('1. Generating text with Gemini');\n    const textResult = await executeToolProxy('mcp_gemini_generate_text', {\n      prompt: 'Explain the concept of a Metaprotocol in 3 paragraphs',\n      temperature: 0.7,\n      maxTokens: 1000\n    });\n    \n    console.log('\\nText generation result:');\n    console.log(textResult.text);\n    if (textResult.files) {\n      console.log('\\nGenerated files:', textResult.files);\n    }\n    \n    console.log('\\n2. Using Gemini in chat mode');\n    const chatResult = await executeToolProxy('mcp_gemini_chat', {\n      messages: [\n        { role: 'user', content: 'What are the key components of a good API design?' },\n        { role: 'assistant', content: 'The key components of good API design include consistent naming conventions, proper error handling, comprehensive documentation, versioning strategy, and security measures.' },\n        { role: 'user', content: 'Can you elaborate on API versioning best practices?' }\n      ],\n      temperature: 0.8\n    });\n    \n    console.log('\\nChat result:');\n    console.log(chatResult.text);\n    if (chatResult.files) {\n      console.log('\\nGenerated files:', chatResult.files);\n    }\n    \n    console.log('\\n3. Generating documentation with Gemini');\n    const docResult = await executeToolProxy('mcp_gemini_generate_text', {\n      prompt: 'Generate a comprehensive README.md for a Node.js project called \"smart-mcp-server\" that provides tools for building and managing metaprotocols. Include sections for installation, usage examples, configuration options, and API documentation.',\n      systemInstruction: 'You are a technical documentation specialist focusing on clarity, completeness, and accuracy.',\n      temperature: 0.5,\n      maxTokens: 4000\n    });\n    \n    console.log('\\nGenerated documentation:');\n    console.log(docResult.text.substring(0, 500) + '...');\n    console.log('\\nFull documentation length:', docResult.text.length, 'characters');\n    \n  } catch (error) {\n    console.error('Error running Gemini examples:', error);\n  }\n}\n\n// Run the examples\nrunGeminiExamples().catch(console.error);"
+      },
+      "dependencies": [
+        "create-gemini-server",
+        "register-gemini-tool"
+      ]
+    },
+    {
+      "id": "update-package-json",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/package.json",
+        "instructions": "Updating package.json with Gemini dependencies and scripts",
+        "code_edit": "// ... existing code ...\n\"dependencies\": {\n  // ... existing dependencies ...\n  \"@google/generative-ai\": \"^0.2.1\",\n  \"mime-types\": \"^2.1.35\"\n},\n// ... existing code ...\n\"scripts\": {\n  // ... existing scripts ...\n  \"gemini-example\": \"node examples/gemini-example.js\"\n},\n// ... existing code ..."
+      },
+      "dependencies": ["install-dependencies"]
+    },
+    {
+      "id": "create-unit-tests",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/test/gemini-tool.test.js",
+        "instructions": "Creating unit tests for the Gemini tool implementation",
+        "code_edit": "/**\n * Unit tests for Gemini tool implementation\n */\n\nconst { expect } = require('chai');\nconst sinon = require('sinon');\nconst proxyquire = require('proxyquire');\n\ndescribe('Gemini Tool', () => {\n  let geminiTool;\n  let mockGeminiClient;\n  let mockGenerateContent;\n  let mockSendChatMessage;\n  \n  beforeEach(() => {\n    // Create mock functions\n    mockGenerateContent = sinon.stub().resolves({\n      text: 'Generated text response',\n      files: [],\n      rawResponse: {}\n    });\n    \n    mockSendChatMessage = sinon.stub().resolves({\n      text: 'Chat response',\n      files: [],\n      rawResponse: {}\n    });\n    \n    // Create mock client class\n    mockGeminiClient = sinon.stub().callsFake(() => ({\n      generateContent: mockGenerateContent,\n      sendChatMessage: mockSendChatMessage,\n      startChat: () => ({})\n    }));\n    \n    // Use proxyquire to mock the dependency\n    geminiTool = proxyquire('../tools/gemini-tool', {\n      '../lib/gemini-client': mockGeminiClient\n    });\n  });\n  \n  afterEach(() => {\n    sinon.restore();\n  });\n  \n  describe('initializeClient', () => {\n    it('should create a client instance', () => {\n      const client = geminiTool.initializeClient();\n      expect(mockGeminiClient.calledOnce).to.be.true;\n      expect(client).to.exist;\n    });\n    \n    it('should reuse existing client instance', () => {\n      const client1 = geminiTool.initializeClient();\n      const client2 = geminiTool.initializeClient();\n      expect(mockGeminiClient.calledOnce).to.be.true;\n      expect(client1).to.equal(client2);\n    });\n  });\n  \n  describe('generateText', () => {\n    it('should call generateContent with correct parameters', async () => {\n      const params = {\n        prompt: 'Test prompt',\n        systemInstruction: 'Test system instruction',\n        temperature: 0.7,\n        maxTokens: 1000,\n        model: 'test-model'\n      };\n      \n      const result = await geminiTool.generateText(params);\n      \n      expect(mockGenerateContent.calledOnce).to.be.true;\n      const callArgs = mockGenerateContent.firstCall.args;\n      expect(callArgs[0]).to.equal('Test prompt');\n      expect(callArgs[1].systemInstruction).to.equal('Test system instruction');\n      expect(callArgs[1].modelName).to.equal('test-model');\n      expect(callArgs[1].generationConfig.temperature).to.equal(0.7);\n      expect(callArgs[1].generationConfig.maxOutputTokens).to.equal(1000);\n      \n      expect(result.text).to.equal('Generated text response');\n    });\n    \n    it('should handle errors properly', async () => {\n      mockGenerateContent.rejects(new Error('API error'));\n      \n      try {\n        await geminiTool.generateText({ prompt: 'Test' });\n        expect.fail('Should have thrown an error');\n      } catch (error) {\n        expect(error.message).to.equal('API error');\n      }\n    });\n  });\n  \n  describe('handleChat', () => {\n    it('should process chat messages correctly', async () => {\n      const params = {\n        messages: [\n          { role: 'user', content: 'Hello' },\n          { role: 'assistant', content: 'Hi there' },\n          { role: 'user', content: 'How are you?' }\n        ],\n        temperature: 0.8\n      };\n      \n      const result = await geminiTool.handleChat(params);\n      \n      expect(mockSendChatMessage.calledOnce).to.be.true;\n      const callArgs = mockSendChatMessage.firstCall.args;\n      expect(callArgs[1]).to.equal('How are you?');\n      \n      expect(result.text).to.equal('Chat response');\n    });\n  });\n});"
+      },
+      "dependencies": ["create-gemini-tool"]
+    },
+    {
+      "id": "add-documentation",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/docs/gemini-integration.md",
+        "instructions": "Creating documentation for the Gemini integration",
+        "code_edit": "# Gemini API Integration\n\nThis document describes how to use the Google Gemini API integration with the Smart MCP Server.\n\n## Overview\n\nThe Gemini integration allows you to leverage Google's powerful generative AI models directly from your MCP workflows. This integration supports:\n\n- Text generation with various parameters\n- Chat-based interactions\n- File generation (images, etc.) when supported by the model\n\n## Setup\n\n### Prerequisites\n\n1. Obtain a Google AI API key from the [Google AI Studio](https://makersuite.google.com/)\n2. Add your API key to the `.env` file:\n\n```\nGEMINI_API_KEY=your_api_key_here\n```\n\n### Configuration Options\n\nYou can configure the Gemini integration using the following environment variables:\n\n| Variable | Description | Default |\n|----------|-------------|--------|\n| `GEMINI_API_KEY` | Your Google AI API key | Required |\n| `GEMINI_MODEL` | The model to use | gemini-2.5-pro-preview-03-25 |\n| `GEMINI_MAX_TOKENS` | Maximum output tokens | 65536 |\n| `GEMINI_TEMPERATURE` | Sampling temperature | 1 |\n| `GEMINI_TOP_P` | Top-p sampling | 0.95 |\n| `GEMINI_TOP_K` | Top-k sampling | 64 |\n\n## Using the Gemini Tool\n\n### Generate Text\n\nTo generate text using Gemini:\n\n```javascript\nconst { executeToolProxy } = require('./tool-proxy');\n\nasync function generateText() {\n  const result = await executeToolProxy('mcp_gemini_generate_text', {\n    prompt: 'Explain the concept of metaprotocols',\n    systemInstruction: 'You are a helpful technical assistant.',\n    temperature: 0.7,\n    maxTokens: 1000,\n    model: 'gemini-2.5-pro-preview-03-25' // Optional, uses default if not specified\n  });\n  \n  console.log(result.text);\n  \n  // If the model generated any files (images, etc.)\n  if (result.files) {\n    console.log('Generated files:', result.files);\n  }\n}\n```\n\n### Chat Interaction\n\nFor multi-turn conversations:\n\n```javascript\nconst { executeToolProxy } = require('./tool-proxy');\n\nasync function chatWithGemini() {\n  const result = await executeToolProxy('mcp_gemini_chat', {\n    messages: [\n      { role: 'user', content: 'What is a metaprotocol?' },\n      { role: 'assistant', content: 'A metaprotocol is a protocol that describes other protocols...' },\n      { role: 'user', content: 'Can you give an example?' }\n    ],\n    temperature: 0.8\n  });\n  \n  console.log(result.text);\n}\n```\n\n## Integrating with Workflows\n\nYou can use the Gemini tools directly in your workflows:\n\n```json\n{\n  \"id\": \"document-generator-workflow\",\n  \"description\": \"Generates documentation using Gemini\",\n  \"steps\": [\n    {\n      \"id\": \"generate-readme\",\n      \"toolId\": \"mcp_gemini_generate_text\",\n      \"params\": {\n        \"prompt\": \"Generate a README.md for a project called 'Smart MCP Server' that...\",\n        \"systemInstruction\": \"You are a technical documentation specialist.\",\n        \"temperature\": 0.5\n      }\n    },\n    {\n      \"id\": \"save-readme\",\n      \"toolId\": \"edit_file\",\n      \"params\": {\n        \"target_file\": \"README.md\",\n        \"instructions\": \"Save the generated README\",\n        \"code_edit\": \"${steps.generate-readme.result.text}\"\n      },\n      \"dependencies\": [\"generate-readme\"]\n    }\n  ]\n}\n```\n\n## Error Handling\n\nThe Gemini integration provides detailed error messages when issues occur. Common errors include:\n\n- API key validation failures\n- Rate limiting issues\n- Invalid prompt content\n- Model availability problems\n\nAlways implement appropriate error handling in your code when using these tools.\n\n## Examples\n\nSee the `examples/gemini-example.js` file for complete examples of using the Gemini integration.\n\n## Security Considerations\n\n- Always keep your API key secure and never expose it in client-side code\n- Be aware of content filtering policies when using Gemini models\n- Consider implementing additional safeguards for user-provided prompts\n\n## Limitations\n\n- Gemini models have token limits for both input and output\n- Model availability and capabilities may change over time\n- Response quality varies based on the prompt and chosen parameters"
+      },
+      "dependencies": [
+        "create-gemini-client",
+        "create-gemini-tool",
+        "create-example-script"
+      ]
+    },
+    {
+      "id": "test-gemini-integration",
+      "toolId": "run_terminal_cmd",
+      "params": {
+        "command": "cd smart-mcp-server && npm run lint",
+        "explanation": "Linting the Gemini integration code to ensure it meets coding standards",
+        "is_background": false
+      },
+      "dependencies": [
+        "create-gemini-client", 
+        "create-gemini-tool",
+        "create-gemini-server",
+        "create-gemini-actions",
+        "update-package-json"
+      ]
+    }
+  ]
+} 

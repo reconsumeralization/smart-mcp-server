@@ -1,0 +1,223 @@
+{
+  "id": "documentation-gathering-workflow",
+  "description": "A workflow for gathering, organizing, and ingesting documentation for complex integrations",
+  "concurrencyLimit": 4,
+  "steps": [
+    {
+      "id": "identify-integration-points",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Identifying all integration points in the system that need documentation. This includes APIs, data exchange formats, authentication methods, expected behaviors, error handling patterns, and performance considerations.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      }
+    },
+    {
+      "id": "research-existing-documentation",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "integration documentation standards best practices",
+        "explanation": "Researching best practices for integration documentation"
+      }
+    },
+    {
+      "id": "scan-codebase",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Scanning the codebase to identify integration points that need documentation. Looking for API endpoints, external services connections, data transformation functions, and cross-system communication patterns.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["identify-integration-points"]
+    },
+    {
+      "id": "extract-api-specs",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Extracting API specifications from the codebase. Analyzing route definitions, controller methods, request/response schemas, and validation rules to construct a comprehensive API specification.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1, 
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["scan-codebase"]
+    },
+    {
+      "id": "analyze-data-models",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing data models used in integrations. Identifying data schemas, transformation rules, validation requirements, and relationships between different data entities across systems.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["scan-codebase"]
+    },
+    {
+      "id": "document-authentication",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Documenting authentication and authorization mechanisms. Specifying required credentials, token formats, permission models, and security considerations for integrating systems.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["scan-codebase"]
+    },
+    {
+      "id": "map-dependencies",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Mapping dependencies between different components and services. Creating a visual representation of service dependencies, data flows, and integration touchpoints to understand the overall system architecture.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["extract-api-specs", "analyze-data-models", "document-authentication"]
+    },
+    {
+      "id": "generate-openapi-spec",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Generating OpenAPI specification from the extracted API information. Creating a standardized, machine-readable description of the API that follows OpenAPI/Swagger conventions for maximum compatibility.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["extract-api-specs"]
+    },
+    {
+      "id": "document-error-handling",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Documenting error handling patterns and recovery mechanisms. Specifying error codes, message formats, retry strategies, and fallback behaviors for integration points.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["extract-api-specs"]
+    },
+    {
+      "id": "create-sequence-diagrams",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating sequence diagrams for key integration flows. Visualizing the interactions between systems, including request/response patterns, asynchronous events, and data transformations.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["map-dependencies"]
+    },
+    {
+      "id": "document-rate-limits",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Documenting rate limits and performance considerations. Specifying throughput capacities, concurrency limits, throttling mechanisms, and expected performance characteristics for integrations.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["extract-api-specs"]
+    },
+    {
+      "id": "create-integration-examples",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating working examples of integration patterns. Developing code samples that demonstrate authentication, request construction, response handling, and error management for each integration point.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["generate-openapi-spec", "document-error-handling", "document-rate-limits"]
+    },
+    {
+      "id": "develop-test-scenarios",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Developing test scenarios and validation procedures. Creating step-by-step procedures for testing integrations, including setup requirements, test data, and expected outcomes.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-integration-examples"]
+    },
+    {
+      "id": "organize-documentation-structure",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Organizing documentation into a coherent structure. Creating a hierarchical organization of documentation elements with clear navigation, search functionality, and relationship indicators.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["generate-openapi-spec", "create-sequence-diagrams", "create-integration-examples", "develop-test-scenarios"]
+    },
+    {
+      "id": "generate-markdown-docs",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Generating comprehensive Markdown documentation. Converting all documentation elements into well-formatted Markdown files with proper linking, code highlighting, and embedded diagrams.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["organize-documentation-structure"]
+    },
+    {
+      "id": "create-interactive-documentation",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating interactive API documentation. Setting up interactive documentation using tools like Swagger UI or Redoc that allow developers to explore and test APIs directly from the documentation.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["generate-openapi-spec"]
+    },
+    {
+      "id": "versioning-strategy",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Establishing a versioning strategy for the documentation. Defining how documentation will be versioned in relation to the API versions, including handling deprecated features and migration guides.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["organize-documentation-structure"]
+    },
+    {
+      "id": "publish-documentation",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Publishing documentation to accessible platforms. Deploying documentation to appropriate channels like internal knowledge bases, developer portals, GitHub Pages, or dedicated documentation platforms.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["generate-markdown-docs", "create-interactive-documentation", "versioning-strategy"]
+    },
+    {
+      "id": "create-onboarding-guides",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating onboarding guides for new integration partners. Developing step-by-step tutorials that guide new partners through the process of integrating with the system, from authentication setup to successful data exchange.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["publish-documentation"]
+    },
+    {
+      "id": "setup-feedback-mechanism",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Setting up feedback mechanisms for documentation improvement. Implementing ways for users to provide feedback, report issues, or suggest improvements to the documentation.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["publish-documentation"]
+    }
+  ]
+} 

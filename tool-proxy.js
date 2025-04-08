@@ -1,229 +1,219 @@
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
+import { URL, fileURLToPath } from 'url';
 import path from 'path';
 import fetch from 'node-fetch';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Map to track server processes
+// Map to keep track of server processes
 const serverProcesses = new Map();
-
-// Map tools to their server configurations
+// Map to store tool to server configuration
 const toolServerMap = new Map();
 
-// Register a tool with its server
+// Register a tool with its server configuration
 export function registerTool(toolId, serverConfig) {
   toolServerMap.set(toolId, serverConfig);
 }
 
-// Start a server process if not already running
-async function ensureServerRunning(serverConfig) {
-  const { id, config } = serverConfig;
+// Ensure server for the tool is running
+export async function ensureServerRunning(toolId) {
+  const serverConfig = toolServerMap.get(toolId);
   
-  if (serverProcesses.has(id) && serverProcesses.get(id).running) {
-    return true;
+  if (!serverConfig) {
+    throw new Error(`No server configuration found for tool: ${toolId}`);
   }
   
-  if (config.type === 'stdio') {
-    try {
-      console.log(`Starting server process for ${id}...`);
-      
-      // Build command and arguments
-      const command = config.command;
-      const args = config.args || [];
-      
-      // Setup environment variables
-      const env = { ...process.env, ...(config.env || {}) };
-      
-      // Spawn the process
-      const proc = spawn(command, args, {
-        env,
+  const serverKey = `${serverConfig.type}-${serverConfig.command}`;
+  
+  if (serverProcesses.has(serverKey) && serverProcesses.get(serverKey).process) {
+    return serverProcesses.get(serverKey);
+  }
+  
+  console.log(`Starting server for tool: ${toolId}`);
+  
+  try {
+    if (serverConfig.type === 'stdio') {
+      const process = spawn(serverConfig.command, serverConfig.args || [], {
         stdio: ['pipe', 'pipe', 'pipe']
       });
       
-      // Process stdout and stderr
-      proc.stdout.on('data', (data) => {
-        console.log(`[${id}] stdout: ${data}`);
+      process.on('error', (error) => {
+        console.error(`Error starting server for ${toolId}:`, error);
+        serverProcesses.delete(serverKey);
       });
       
-      proc.stderr.on('data', (data) => {
-        console.error(`[${id}] stderr: ${data}`);
+      process.stdout.on('data', (data) => {
+        console.log(`Server stdout (${toolId}): ${data}`);
       });
       
-      // Handle process exit
-      proc.on('close', (code) => {
-        console.log(`[${id}] process exited with code ${code}`);
-        if (serverProcesses.has(id)) {
-          serverProcesses.set(id, { proc: null, running: false });
+      process.stderr.on('data', (data) => {
+        console.error(`Server stderr (${toolId}): ${data}`);
+      });
+      
+      const serverInfo = { process, type: 'stdio' };
+      serverProcesses.set(serverKey, serverInfo);
+      return serverInfo;
+    } else if (serverConfig.type === 'sse') {
+      // For SSE type servers, we would start a long-running process
+      // and maintain an event source connection
+      // This is simplified for the example
+      const serverInfo = { url: serverConfig.url, type: 'sse' };
+      serverProcesses.set(serverKey, serverInfo);
+      return serverInfo;
+    } else {
+      throw new Error(`Unsupported server type: ${serverConfig.type}`);
+    }
+  } catch (error) {
+    console.error(`Failed to start server for ${toolId}:`, error);
+    throw error;
+  }
+}
+
+// Execute tool through appropriate server
+export async function executeToolProxy(toolId, parameters) {
+  try {
+    await ensureServerRunning(toolId);
+    
+    // For now, we'll simulate execution based on tool ID prefix
+    if (toolId.startsWith('mcp_github')) {
+      return simulateGithubTool(toolId, parameters);
+    } else if (toolId.startsWith('mcp_memory')) {
+      return simulateMemoryTool(toolId, parameters);
+    } else if (toolId.startsWith('mcp_win_cli')) {
+      return simulateWinCliTool(toolId, parameters);
+    } else if (['read_file', 'write_file', 'list_dir', 'delete_file', 
+                'file_search', 'codebase_search', 'grep_search',
+                'edit_file', 'reapply'].includes(toolId)) {
+      return simulateFilesystemTool(toolId, parameters);
+    } else if (toolId === 'web_search') {
+      return {
+        status: 'success',
+        data: {
+          results: [
+            { title: 'Sample search result 1', snippet: 'This is a sample search result.', url: 'https://example.com/1' },
+            { title: 'Sample search result 2', snippet: 'Another sample search result.', url: 'https://example.com/2' }
+          ]
         }
-      });
-      
-      // Store the process
-      serverProcesses.set(id, { proc, running: true });
-      
-      // Wait a bit for the server to start
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      return true;
-    } catch (error) {
-      console.error(`Error starting server ${id}:`, error);
-      return false;
+      };
+    } else if (toolId === 'sequential_thinking') {
+      return {
+        status: 'success',
+        data: {
+          thought: parameters.thought,
+          thoughtNumber: parameters.thoughtNumber,
+          totalThoughts: parameters.totalThoughts,
+          nextThoughtNeeded: parameters.nextThoughtNeeded
+        }
+      };
+    } else {
+      return {
+        status: 'success',
+        message: `Simulated execution of ${toolId} with parameters: ${JSON.stringify(parameters)}`
+      };
     }
-  } else if (config.type === 'sse') {
-    // For SSE servers, we just need to validate the URL
-    serverProcesses.set(id, { running: true });
-    return true;
+  } catch (error) {
+    console.error(`Error executing tool ${toolId}:`, error);
+    return {
+      status: 'error',
+      error: error.message
+    };
   }
+}
+
+// Simulate GitHub tool execution
+function simulateGithubTool(toolId, parameters) {
+  const action = toolId.replace('mcp_github_', '');
   
-  return false;
-}
-
-// Execute a tool on its server
-export async function executeToolProxy(toolId, params) {
-  const serverConfig = toolServerMap.get(toolId);
-  if (!serverConfig) {
-    throw new Error(`No server found for tool: ${toolId}`);
-  }
-  
-  const { id, config } = serverConfig;
-  
-  // Ensure the server is running
-  const serverRunning = await ensureServerRunning(serverConfig);
-  if (!serverRunning) {
-    throw new Error(`Failed to start server for tool: ${toolId}`);
-  }
-  
-  // For this example, we'll simulate the execution rather than actually calling the server
-  console.log(`Executing tool ${toolId} on server ${id} with params:`, params);
-  
-  // Determine tool type and customize response
-  if (toolId.includes('github')) {
-    return simulateGithubTool(toolId, params);
-  } else if (toolId.includes('memory')) {
-    return simulateMemoryTool(toolId, params);
-  } else if (toolId.includes('win_cli')) {
-    return simulateWinCliTool(toolId, params);
-  } else if (toolId.includes('file')) {
-    return simulateFilesystemTool(toolId, params);
-  } else {
-    // Generic response
-    return {
-      status: 'success',
-      message: `Tool ${toolId} executed successfully`,
-      result: `Simulated result for ${toolId}`
-    };
-  }
-}
-
-// Simulate various tool responses
-function simulateGithubTool(toolId, params) {
-  if (toolId.includes('search')) {
-    return {
-      status: 'success',
-      items: [
-        { name: 'example-repo-1', description: 'Example repository 1' },
-        { name: 'example-repo-2', description: 'Example repository 2' }
-      ],
-      total_count: 2
-    };
-  } else if (toolId.includes('list')) {
-    return {
-      status: 'success',
-      items: [
-        { number: 1, title: 'Example Issue 1', state: 'open' },
-        { number: 2, title: 'Example Issue 2', state: 'closed' }
-      ]
-    };
-  } else {
-    return {
-      status: 'success',
-      message: 'GitHub operation completed'
-    };
-  }
-}
-
-function simulateMemoryTool(toolId, params) {
-  if (toolId.includes('create')) {
-    return {
-      status: 'success',
-      created: true,
-      message: 'Items created in memory'
-    };
-  } else if (toolId.includes('read') || toolId.includes('search')) {
-    return {
-      status: 'success',
-      nodes: [
-        { id: 'node1', type: 'concept', name: 'Example Node 1' },
-        { id: 'node2', type: 'entity', name: 'Example Node 2' }
-      ],
-      edges: [
-        { from: 'node1', to: 'node2', type: 'related_to' }
-      ]
-    };
-  } else {
-    return {
-      status: 'success',
-      message: 'Memory operation completed'
-    };
-  }
-}
-
-function simulateWinCliTool(toolId, params) {
-  if (toolId.includes('execute_command')) {
-    return {
-      status: 'success',
-      output: 'Command executed successfully\nOutput line 1\nOutput line 2',
-      exitCode: 0
-    };
-  } else if (toolId.includes('get_command_history')) {
-    return {
-      status: 'success',
-      history: [
-        { command: 'dir', output: '...', timestamp: new Date().toISOString(), exitCode: 0 },
-        { command: 'echo test', output: 'test', timestamp: new Date().toISOString(), exitCode: 0 }
-      ]
-    };
-  } else {
-    return {
-      status: 'success',
-      message: 'CLI operation completed'
-    };
-  }
-}
-
-function simulateFilesystemTool(toolId, params) {
-  if (toolId.includes('read_file')) {
-    return {
-      status: 'success',
-      content: 'This is the content of the simulated file.\nLine 2\nLine 3',
-      path: params.path || '/simulated/path.txt'
-    };
-  } else if (toolId.includes('list_directory')) {
-    return {
-      status: 'success',
-      entries: [
-        { name: 'file1.txt', type: 'file', size: 1024 },
-        { name: 'file2.txt', type: 'file', size: 2048 },
-        { name: 'subfolder', type: 'directory' }
-      ],
-      path: params.path || '/simulated/directory'
-    };
-  } else {
-    return {
-      status: 'success',
-      message: 'Filesystem operation completed'
-    };
-  }
-}
-
-// Clean up processes on exit
-process.on('exit', () => {
-  for (const [id, { proc }] of serverProcesses.entries()) {
-    if (proc) {
-      console.log(`Terminating server process for ${id}...`);
-      proc.kill();
+  return {
+    status: 'success',
+    data: {
+      action,
+      simulated: true,
+      parameters,
+      result: `Simulated GitHub ${action} operation completed successfully.`
     }
+  };
+}
+
+// Simulate memory tool execution
+function simulateMemoryTool(toolId, parameters) {
+  const action = toolId.replace('mcp_memory_', '');
+  
+  return {
+    status: 'success',
+    data: {
+      action,
+      simulated: true,
+      parameters,
+      result: `Simulated memory ${action} operation completed successfully.`
+    }
+  };
+}
+
+// Simulate Windows CLI tool execution
+function simulateWinCliTool(toolId, parameters) {
+  const action = toolId.replace('mcp_win_cli_', '');
+  
+  return {
+    status: 'success',
+    data: {
+      action,
+      simulated: true,
+      parameters,
+      output: `Simulated Windows CLI ${action} command executed successfully.`
+    }
+  };
+}
+
+// Simulate filesystem tool execution
+function simulateFilesystemTool(toolId, parameters) {
+  let result;
+  
+  switch (toolId) {
+    case 'read_file':
+      result = {
+        content: 'Simulated file content for ' + (parameters.target_file || 'unknown file'),
+        lineCount: 10
+      };
+      break;
+    case 'write_file':
+      result = {
+        success: true,
+        file: parameters.target_file || 'unknown file'
+      };
+      break;
+    case 'list_dir':
+      result = {
+        items: [
+          { name: 'file1.txt', type: 'file' },
+          { name: 'file2.js', type: 'file' },
+          { name: 'dir1', type: 'directory' }
+        ]
+      };
+      break;
+    default:
+      result = {
+        success: true,
+        operation: toolId
+      };
   }
+  
+  return {
+    status: 'success',
+    data: result
+  };
+}
+
+// Clean up resources when process exits
+['SIGINT', 'SIGTERM', 'exit'].forEach(signal => {
+  process.on(signal, () => {
+    console.log('Cleaning up server processes...');
+    serverProcesses.forEach((info, key) => {
+      if (info.process && typeof info.process.kill === 'function') {
+        info.process.kill();
+      }
+    });
+  });
 });
 
 export default {

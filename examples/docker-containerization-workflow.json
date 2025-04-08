@@ -1,0 +1,121 @@
+{
+  "id": "docker-containerization-workflow",
+  "description": "A workflow that implements Docker containerization for the MCP server",
+  "concurrencyLimit": 3,
+  "steps": [
+    {
+      "id": "research-docker-node",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "best practices Docker containerization Node.js applications",
+        "explanation": "Researching best practices for containerizing Node.js applications"
+      }
+    },
+    {
+      "id": "research-docker-multi-stage",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "Docker multi-stage builds Node.js production",
+        "explanation": "Researching multi-stage builds for optimized Node.js Docker images"
+      }
+    },
+    {
+      "id": "analyze-dependencies",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing the package.json dependencies to ensure all required packages are properly handled in the Docker build. Looking at dev vs production dependencies.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      }
+    },
+    {
+      "id": "analyze-docker-best-practices",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing Docker best practices for Node.js applications based on search results: ${steps.research-docker-node.search_term}",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-docker-node"]
+    },
+    {
+      "id": "analyze-multi-stage-builds",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing multi-stage build techniques for Node.js applications to optimize the final Docker image: ${steps.research-docker-multi-stage.search_term}",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-docker-multi-stage"]
+    },
+    {
+      "id": "create-dockerfile",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating a Dockerfile for the MCP server with multi-stage builds based on analysis.\n\n```dockerfile\n# Build stage\nFROM node:18-alpine AS builder\n\nWORKDIR /app\n\n# Copy package files\nCOPY package*.json ./\n\n# Install dependencies\nRUN npm ci\n\n# Copy source code\nCOPY . .\n\n# Production stage\nFROM node:18-alpine\n\nWORKDIR /app\n\n# Set to production environment\nENV NODE_ENV=production\n\n# Copy package files\nCOPY package*.json ./\n\n# Install only production dependencies\nRUN npm ci --only=production\n\n# Copy built app from builder stage\nCOPY --from=builder /app .\n\n# Create volume for logs\nVOLUME /app/logs\n\n# Expose the port\nEXPOSE 3000\n\n# Run the server\nCMD [\"node\", \"server.js\"]\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["analyze-docker-best-practices", "analyze-multi-stage-builds", "analyze-dependencies"]
+    },
+    {
+      "id": "create-dockerignore",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating .dockerignore file to exclude unnecessary files from the Docker build.\n\n```\n# Dependency directories\nnode_modules/\nnpm-debug.log\n\n# Local development files\n.env\n.env.*\n!.env.example\n\n# Logs\nlogs/\n*.log\n\n# Git files\n.git/\n.gitignore\n\n# Docker files\nDockerfile*\ndocker-compose*\n.dockerignore\n\n# Documentation and test files\ndocs/\ntest/\n*.test.js\n\n# Editor directories and files\n.idea/\n.vscode/\n*.swp\n*.swo\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["analyze-docker-best-practices"]
+    },
+    {
+      "id": "create-docker-compose",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating docker-compose.yml for local development and testing.\n\n```yaml\nversion: '3.8'\n\nservices:\n  # Main MCP Server\n  mcp-server:\n    build:\n      context: .\n      dockerfile: Dockerfile\n    ports:\n      - \"3000:3000\"\n    environment:\n      - NODE_ENV=production\n      - PORT=3000\n    volumes:\n      - ./logs:/app/logs\n    depends_on:\n      - redis\n    restart: unless-stopped\n\n  # Redis for caching and rate limiting\n  redis:\n    image: redis:alpine\n    ports:\n      - \"6379:6379\"\n    volumes:\n      - redis-data:/data\n    restart: unless-stopped\n\n  # Development setup for hot reloading\n  mcp-server-dev:\n    build:\n      context: .\n      dockerfile: Dockerfile.dev\n    ports:\n      - \"3001:3000\"\n    environment:\n      - NODE_ENV=development\n      - PORT=3000\n    volumes:\n      - .:/app\n      - /app/node_modules\n    depends_on:\n      - redis\n    restart: unless-stopped\n\nvolumes:\n  redis-data:\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-dockerfile", "analyze-docker-best-practices"]
+    },
+    {
+      "id": "create-dev-dockerfile",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating Dockerfile.dev for development with hot reloading.\n\n```dockerfile\nFROM node:18-alpine\n\nWORKDIR /app\n\n# Set to development environment\nENV NODE_ENV=development\n\n# Copy package files\nCOPY package*.json ./\n\n# Install ALL dependencies (including dev)\nRUN npm install\n\n# Copy source code\nCOPY . .\n\n# Expose the port\nEXPOSE 3000\n\n# Run with nodemon for hot reloading\nCMD [\"npx\", \"nodemon\", \"server.js\"]\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-dockerfile"]
+    },
+    {
+      "id": "create-documentation",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating documentation for Docker setup in the README.\n\n# Docker Setup\n\nThe MCP Server can be run using Docker for easier deployment and development.\n\n## Production Deployment\n\nTo run the server in production mode:\n\n```bash\n# Build and start all services\ndocker-compose up -d\n\n# View logs\ndocker-compose logs -f\n```\n\n## Development Setup\n\nFor development with hot reloading:\n\n```bash\n# Build and start the development service\ndocker-compose up mcp-server-dev\n\n# View logs\ndocker-compose logs -f mcp-server-dev\n```\n\n## Building Custom Images\n\n```bash\n# Build the production image\ndocker build -t smart-mcp-server:latest .\n\n# Build the development image\ndocker build -t smart-mcp-server:dev -f Dockerfile.dev .\n```\n\n## Environment Variables\n\nEnvironment variables can be set in docker-compose.yml or passed at runtime:\n\n```bash\ndocker run -e PORT=4000 -e NODE_ENV=production smart-mcp-server:latest\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-dockerfile", "create-docker-compose", "create-dev-dockerfile"]
+    },
+    {
+      "id": "implementation-plan",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "# Docker Implementation Plan\n\n## Files to Create\n1. `Dockerfile` - Main production container\n2. `Dockerfile.dev` - Development container with hot reloading\n3. `.dockerignore` - Exclude unnecessary files\n4. `docker-compose.yml` - Orchestrate services\n\n## Implementation Steps\n1. Create the files above in the project root\n2. Update README.md with Docker documentation\n3. Test builds for both production and development containers\n4. Test Docker Compose setup\n5. Set up a simple health check endpoint to verify Docker deployment\n\n## Future Enhancements\n1. Add container health checks\n2. Set up Docker Swarm or Kubernetes configuration\n3. Implement container monitoring\n4. Add CI/CD pipeline for container builds\n5. Create a container registry for versioned images",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-dockerfile", "create-dockerignore", "create-docker-compose", "create-dev-dockerfile", "create-documentation"]
+    }
+  ]
+} 

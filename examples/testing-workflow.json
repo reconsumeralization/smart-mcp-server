@@ -1,0 +1,193 @@
+{
+  "id": "testing-workflow",
+  "description": "A workflow for implementing comprehensive testing for the MCP server",
+  "concurrencyLimit": 4,
+  "steps": [
+    {
+      "id": "research-testing-frameworks",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "Node.js testing frameworks Jest vs Mocha vs AVA 2023",
+        "explanation": "Researching the best testing frameworks for Node.js applications"
+      }
+    },
+    {
+      "id": "research-api-testing",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "API testing best practices Node.js Supertest",
+        "explanation": "Researching best practices for API testing in Node.js"
+      }
+    },
+    {
+      "id": "research-mocking",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "Mocking external services Node.js testing nock sinon",
+        "explanation": "Researching techniques for mocking external services in tests"
+      }
+    },
+    {
+      "id": "research-test-coverage",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "Test coverage Istanbul nyc Node.js",
+        "explanation": "Researching test coverage tools for Node.js"
+      }
+    },
+    {
+      "id": "analyze-testing-frameworks",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing testing frameworks for the MCP server. Comparing Jest, Mocha, and AVA based on research. Key criteria include: ease of setup, parallel test execution, mocking capabilities, assertion library, snapshot testing, and community support.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-testing-frameworks"]
+    },
+    {
+      "id": "analyze-api-testing",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing API testing approaches. Reviewing Supertest for HTTP assertions, considering integration with the chosen test framework. Looking at strategies for testing route handlers, middleware, error handling, and authentication/authorization flows.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-api-testing"]
+    },
+    {
+      "id": "analyze-mocking",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing mocking strategies for external dependencies. Considering how to mock database connections, external tool servers, and third-party services. Evaluating libraries like Sinon, Nock, and built-in Jest mocks for their applicability to our needs.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-mocking"]
+    },
+    {
+      "id": "testing-framework-selection",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Based on the analysis, selecting Jest as the primary testing framework due to its all-in-one approach with built-in assertion library, mocking capabilities, parallelization, and excellent reporting features. Jest also has good integration with coverage tools and wide community adoption.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["analyze-testing-frameworks"]
+    },
+    {
+      "id": "test-strategy-design",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Designing a comprehensive test strategy with multiple levels:\n\n1. **Unit Tests**: For individual functions and classes\n   - Repository methods\n   - Service methods\n   - Utility functions\n   - Middleware functions\n\n2. **Integration Tests**: For interactions between components\n   - API endpoints with database interactions\n   - Tool execution with dependencies\n   - Authentication flows\n   - Workflow execution\n\n3. **End-to-End Tests**: For full application flows\n   - Complete tool execution cycles\n   - Workflow creation and execution\n   - Error handling scenarios\n\n4. **Load Tests**: For performance validation\n   - Concurrent tool executions\n   - High request volumes\n   - Server resource utilization\n\nWill implement test suites for each major component and establish CI/CD pipeline integration.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["testing-framework-selection", "analyze-api-testing", "analyze-mocking"]
+    },
+    {
+      "id": "package-update",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Updating package.json to include testing dependencies:\n\n```json\n\"devDependencies\": {\n  ...,\n  \"jest\": \"^29.7.0\",\n  \"supertest\": \"^6.3.3\",\n  \"sinon\": \"^15.2.0\",\n  \"nock\": \"^13.4.0\",\n  \"@types/jest\": \"^29.5.8\",\n  \"jest-extended\": \"^4.0.1\",\n  \"jest-environment-node\": \"^29.7.0\",\n  \"cross-env\": \"^7.0.3\"\n}\n```\n\nAdding test scripts to package.json:\n\n```json\n\"scripts\": {\n  ...,\n  \"test\": \"jest\",\n  \"test:watch\": \"jest --watch\",\n  \"test:coverage\": \"jest --coverage\",\n  \"test:ci\": \"cross-env NODE_ENV=test jest --ci --coverage\",\n  \"test:integration\": \"cross-env NODE_ENV=test jest --config=jest.integration.config.js\",\n  \"test:e2e\": \"cross-env NODE_ENV=test jest --config=jest.e2e.config.js\"\n}\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["testing-framework-selection"]
+    },
+    {
+      "id": "jest-config",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating Jest configuration files:\n\n1. Main Jest configuration (jest.config.js):\n\n```javascript\nmodule.exports = {\n  testEnvironment: 'node',\n  coverageDirectory: 'coverage',\n  collectCoverageFrom: [\n    'server.js',\n    'middleware/**/*.js',\n    'repositories/**/*.js',\n    'services/**/*.js',\n    'utils/**/*.js',\n    '!**/node_modules/**',\n    '!**/tests/**'\n  ],\n  coverageThreshold: {\n    global: {\n      branches: 80,\n      functions: 80,\n      lines: 80,\n      statements: 80\n    }\n  },\n  moduleFileExtensions: ['js', 'json'],\n  testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],\n  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/.github/'],\n  setupFilesAfterEnv: ['./jest.setup.js'],\n  verbose: true\n};\n```\n\n2. Integration test configuration (jest.integration.config.js):\n\n```javascript\nconst config = require('./jest.config');\n\nmodule.exports = {\n  ...config,\n  testMatch: ['**/__tests__/**/*.integration.js', '**/?(*.)+(integration).test.js'],\n  setupFilesAfterEnv: ['./jest.integration.setup.js']\n};\n```\n\n3. End-to-end test configuration (jest.e2e.config.js):\n\n```javascript\nconst config = require('./jest.config');\n\nmodule.exports = {\n  ...config,\n  testMatch: ['**/__tests__/**/*.e2e.js', '**/?(*.)+(e2e).test.js'],\n  setupFilesAfterEnv: ['./jest.e2e.setup.js']\n};\n```\n\n4. Jest setup file (jest.setup.js):\n\n```javascript\n// Add Jest extended matchers\nrequire('jest-extended');\n\n// Set timeout for all tests\njest.setTimeout(10000);\n\n// Global beforeAll and afterAll hooks\nbeforeAll(() => {\n  console.log('Starting test suite');\n});\n\nafterAll(() => {\n  console.log('Test suite completed');\n});\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["package-update"]
+    },
+    {
+      "id": "create-test-helpers",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating test helper functions and mock data (tests/helpers.js):\n\n```javascript\nimport { PrismaClient } from '@prisma/client';\nimport jwt from 'jsonwebtoken';\nimport request from 'supertest';\nimport app from '../server.js';\n\n// Test database client for integration tests\nexport const testPrisma = new PrismaClient({\n  datasourceUrl: process.env.TEST_DATABASE_URL\n});\n\n// Clear test database between tests\nexport async function clearDatabase() {\n  const modelNames = ['AuditLog', 'Execution', 'Workflow', 'Tool', 'User', 'Role'];\n  \n  for (const modelName of modelNames) {\n    await testPrisma[modelName.toLowerCase()].deleteMany({});\n  }\n}\n\n// Generate test JWT token\nexport function generateTestToken(user = { id: 'test-user', roles: ['admin'] }) {\n  return jwt.sign(user, process.env.JWT_SECRET || 'test-secret', {\n    expiresIn: '1h'\n  });\n}\n\n// Test request wrapper with authentication\nexport function authenticatedRequest(user) {\n  const token = generateTestToken(user);\n  return request(app).set('Authorization', `Bearer ${token}`);\n}\n\n// Mock tool data\nexport const mockTools = [\n  {\n    id: 'test-tool-1',\n    name: 'Test Tool 1',\n    description: 'A test tool',\n    category: 'test',\n    serverConfig: {\n      id: 'test-server',\n      url: 'http://localhost:3001',\n      category: 'test'\n    },\n    tokenCost: 1.0,\n    isConnected: true\n  },\n  {\n    id: 'test-tool-2',\n    name: 'Test Tool 2',\n    description: 'Another test tool',\n    category: 'test',\n    serverConfig: {\n      id: 'test-server',\n      url: 'http://localhost:3001',\n      category: 'test'\n    },\n    tokenCost: 2.0,\n    isConnected: true\n  }\n];\n\n// Mock workflow data\nexport const mockWorkflow = {\n  id: 'test-workflow',\n  name: 'Test Workflow',\n  description: 'A test workflow',\n  concurrencyLimit: 3,\n  steps: [\n    {\n      id: 'step-1',\n      toolId: 'test-tool-1',\n      params: { test: true }\n    },\n    {\n      id: 'step-2',\n      toolId: 'test-tool-2',\n      params: { test: true },\n      dependencies: ['step-1']\n    }\n  ]\n};\n\n// Mock user data\nexport const mockUsers = {\n  admin: {\n    id: 'admin-user',\n    username: 'admin',\n    email: 'admin@example.com',\n    password: 'hashed-password',\n    roles: ['admin']\n  },\n  regular: {\n    id: 'regular-user',\n    username: 'user',\n    email: 'user@example.com',\n    password: 'hashed-password',\n    roles: ['user']\n  }\n};\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["jest-config"]
+    },
+    {
+      "id": "create-unit-tests",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating sample unit test for a repository (tests/unit/repositories/tool-repository.test.js):\n\n```javascript\nimport { ToolRepository } from '../../../repositories/tool-repository.js';\nimport prisma from '../../../database.js';\nimport { mockTools } from '../../helpers.js';\n\n// Mock the prisma client\njest.mock('../../../database.js', () => ({\n  tool: {\n    findMany: jest.fn(),\n    findUnique: jest.fn(),\n    create: jest.fn(),\n    update: jest.fn(),\n    delete: jest.fn(),\n    count: jest.fn()\n  }\n}));\n\ndescribe('ToolRepository', () => {\n  let toolRepository;\n\n  beforeEach(() => {\n    jest.clearAllMocks();\n    toolRepository = new ToolRepository();\n  });\n\n  describe('findAll', () => {\n    it('should return all tools', async () => {\n      // Arrange\n      prisma.tool.findMany.mockResolvedValue(mockTools);\n\n      // Act\n      const result = await toolRepository.findAll();\n\n      // Assert\n      expect(prisma.tool.findMany).toHaveBeenCalledTimes(1);\n      expect(result).toEqual(mockTools);\n    });\n\n    it('should handle query options', async () => {\n      // Arrange\n      const options = {\n        skip: 5,\n        take: 10,\n        where: { category: 'test' },\n        orderBy: { name: 'asc' }\n      };\n      prisma.tool.findMany.mockResolvedValue([mockTools[0]]);\n\n      // Act\n      const result = await toolRepository.findAll(options);\n\n      // Assert\n      expect(prisma.tool.findMany).toHaveBeenCalledWith(options);\n      expect(result).toEqual([mockTools[0]]);\n    });\n\n    it('should handle errors', async () => {\n      // Arrange\n      const error = new Error('Database error');\n      prisma.tool.findMany.mockRejectedValue(error);\n\n      // Act & Assert\n      await expect(toolRepository.findAll()).rejects.toThrow('Database error');\n    });\n  });\n\n  // Additional tests for other methods\n  describe('findById', () => {\n    it('should return a tool by ID', async () => {\n      // Arrange\n      prisma.tool.findUnique.mockResolvedValue(mockTools[0]);\n\n      // Act\n      const result = await toolRepository.findById('test-tool-1');\n\n      // Assert\n      expect(prisma.tool.findUnique).toHaveBeenCalledWith({\n        where: { id: 'test-tool-1' },\n        include: undefined\n      });\n      expect(result).toEqual(mockTools[0]);\n    });\n  });\n\n  // More tests for create, update, delete methods\n});\n```\n\nAnd a unit test for a middleware (tests/unit/middleware/auth.test.js):\n\n```javascript\nimport { authenticateToken } from '../../../middleware/auth.js';\nimport jwt from 'jsonwebtoken';\n\n// Mock dependencies\njest.mock('jsonwebtoken');\n\ndescribe('Authentication Middleware', () => {\n  let req, res, next;\n\n  beforeEach(() => {\n    req = {\n      headers: {},\n      cookies: {}\n    };\n    res = {\n      status: jest.fn().mockReturnThis(),\n      json: jest.fn()\n    };\n    next = jest.fn();\n  });\n\n  afterEach(() => {\n    jest.clearAllMocks();\n  });\n\n  it('should continue if valid token in Authorization header', () => {\n    // Arrange\n    const user = { id: 'user-123', roles: ['user'] };\n    req.headers.authorization = 'Bearer valid-token';\n    jwt.verify.mockReturnValue(user);\n\n    // Act\n    authenticateToken(req, res, next);\n\n    // Assert\n    expect(jwt.verify).toHaveBeenCalledWith('valid-token', expect.anything());\n    expect(req.user).toEqual(user);\n    expect(next).toHaveBeenCalled();\n    expect(res.status).not.toHaveBeenCalled();\n  });\n\n  it('should return 401 if no token provided', () => {\n    // Act\n    authenticateToken(req, res, next);\n\n    // Assert\n    expect(res.status).toHaveBeenCalledWith(401);\n    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({\n      error: 'Unauthorized'\n    }));\n    expect(next).not.toHaveBeenCalled();\n  });\n\n  it('should return 403 if token is invalid', () => {\n    // Arrange\n    req.headers.authorization = 'Bearer invalid-token';\n    jwt.verify.mockImplementation(() => {\n      throw new Error('Invalid token');\n    });\n\n    // Act\n    authenticateToken(req, res, next);\n\n    // Assert\n    expect(res.status).toHaveBeenCalledWith(403);\n    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({\n      error: 'Forbidden'\n    }));\n    expect(next).not.toHaveBeenCalled();\n  });\n});\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-test-helpers"]
+    },
+    {
+      "id": "create-integration-tests",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating sample integration test for API routes (tests/integration/api/tools.integration.test.js):\n\n```javascript\nimport request from 'supertest';\nimport app from '../../../server.js';\nimport prisma from '../../../database.js';\nimport { clearDatabase, generateTestToken, mockTools } from '../../helpers.js';\n\n// Mock the tool proxy\njest.mock('../../../tool-proxy.js', () => ({\n  registerTool: jest.fn(),\n  executeToolProxy: jest.fn()\n}));\n\ndescribe('Tools API', () => {\n  let authToken;\n\n  beforeAll(async () => {\n    // Setup test database\n    await clearDatabase();\n    \n    // Create test user\n    const testUser = await prisma.user.create({\n      data: {\n        username: 'testadmin',\n        email: 'testadmin@example.com',\n        password: 'hashedpassword',\n        roles: {\n          create: [\n            { name: 'admin', permissions: ['read:tools', 'write:tools'] }\n          ]\n        }\n      }\n    });\n    \n    // Generate auth token\n    authToken = generateTestToken({\n      id: testUser.id,\n      roles: ['admin']\n    });\n\n    // Seed test tools\n    for (const tool of mockTools) {\n      await prisma.tool.create({\n        data: tool\n      });\n    }\n  });\n\n  afterAll(async () => {\n    await clearDatabase();\n  });\n\n  describe('GET /api/tools', () => {\n    it('should return all tools', async () => {\n      // Act\n      const response = await request(app)\n        .get('/api/tools')\n        .set('Authorization', `Bearer ${authToken}`);\n\n      // Assert\n      expect(response.status).toBe(200);\n      expect(response.body).toBeArray();\n      expect(response.body).toHaveLength(mockTools.length);\n      expect(response.body[0]).toHaveProperty('id', mockTools[0].id);\n    });\n\n    it('should filter tools by category', async () => {\n      // Act\n      const response = await request(app)\n        .get('/api/tools?category=test')\n        .set('Authorization', `Bearer ${authToken}`);\n\n      // Assert\n      expect(response.status).toBe(200);\n      expect(response.body).toBeArray();\n      expect(response.body).toHaveLength(mockTools.length);\n    });\n\n    it('should return 401 without authentication', async () => {\n      // Act\n      const response = await request(app).get('/api/tools');\n\n      // Assert\n      expect(response.status).toBe(401);\n    });\n  });\n\n  describe('GET /api/tools/:id', () => {\n    it('should return a specific tool', async () => {\n      // Act\n      const response = await request(app)\n        .get(`/api/tools/${mockTools[0].id}`)\n        .set('Authorization', `Bearer ${authToken}`);\n\n      // Assert\n      expect(response.status).toBe(200);\n      expect(response.body).toHaveProperty('id', mockTools[0].id);\n      expect(response.body).toHaveProperty('name', mockTools[0].name);\n    });\n\n    it('should return 404 for non-existent tool', async () => {\n      // Act\n      const response = await request(app)\n        .get('/api/tools/non-existent-tool')\n        .set('Authorization', `Bearer ${authToken}`);\n\n      // Assert\n      expect(response.status).toBe(404);\n    });\n  });\n\n  // Tests for POST, PUT, DELETE endpoints\n});\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-unit-tests"]
+    },
+    {
+      "id": "create-e2e-tests",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating end-to-end test for tool execution (tests/e2e/tool-execution.e2e.test.js):\n\n```javascript\nimport request from 'supertest';\nimport nock from 'nock';\nimport app from '../../server.js';\nimport { clearDatabase, generateTestToken } from '../helpers.js';\nimport prisma from '../../database.js';\n\ndescribe('Tool Execution E2E', () => {\n  let authToken;\n  const mockToolServer = 'http://localhost:3001';\n  const mockTool = {\n    id: 'e2e-test-tool',\n    name: 'E2E Test Tool',\n    description: 'Tool for E2E testing',\n    category: 'test',\n    serverConfig: {\n      id: 'e2e-test-server',\n      url: mockToolServer,\n      category: 'test'\n    },\n    tokenCost: 1.0,\n    isConnected: true\n  };\n\n  beforeAll(async () => {\n    // Setup test database\n    await clearDatabase();\n    \n    // Create test user\n    const testUser = await prisma.user.create({\n      data: {\n        username: 'e2etester',\n        email: 'e2e@example.com',\n        password: 'hashedpassword',\n        roles: {\n          create: [\n            { name: 'user', permissions: ['execute:tools'] }\n          ]\n        }\n      }\n    });\n    \n    // Generate auth token\n    authToken = generateTestToken({\n      id: testUser.id,\n      roles: ['user']\n    });\n\n    // Create test tool\n    await prisma.tool.create({\n      data: mockTool\n    });\n  });\n\n  afterAll(async () => {\n    await clearDatabase();\n    nock.cleanAll();\n  });\n\n  beforeEach(() => {\n    // Clear any existing nock interceptors\n    nock.cleanAll();\n  });\n\n  it('should execute a tool and return results', async () => {\n    // Arrange - Mock the tool server response\n    const mockParams = { query: 'test query' };\n    const mockResult = { answer: 'This is a test result' };\n    \n    nock(mockToolServer)\n      .post('/execute')\n      .reply(200, mockResult);\n\n    // Act - Call the execution endpoint\n    const response = await request(app)\n      .post('/execute')\n      .set('Authorization', `Bearer ${authToken}`)\n      .send({\n        toolId: mockTool.id,\n        parameters: mockParams\n      });\n\n    // Assert\n    expect(response.status).toBe(200);\n    expect(response.body).toHaveProperty('result', mockResult);\n    expect(response.body).toHaveProperty('executionTime');\n    \n    // Verify the execution was recorded in the database\n    const executions = await prisma.execution.findMany({\n      where: {\n        toolId: mockTool.id\n      }\n    });\n    \n    expect(executions).toHaveLength(1);\n    expect(executions[0]).toHaveProperty('status', 'completed');\n    expect(executions[0]).toHaveProperty('params', mockParams);\n  });\n\n  it('should handle tool execution errors', async () => {\n    // Arrange - Mock the tool server error response\n    nock(mockToolServer)\n      .post('/execute')\n      .reply(500, { error: 'Internal server error' });\n\n    // Act - Call the execution endpoint\n    const response = await request(app)\n      .post('/execute')\n      .set('Authorization', `Bearer ${authToken}`)\n      .send({\n        toolId: mockTool.id,\n        parameters: { query: 'error test' }\n      });\n\n    // Assert\n    expect(response.status).toBe(500);\n    expect(response.body).toHaveProperty('error', 'Execution error');\n    \n    // Verify the execution error was recorded in the database\n    const executions = await prisma.execution.findMany({\n      where: {\n        toolId: mockTool.id,\n        status: 'failed'\n      }\n    });\n    \n    expect(executions).toHaveLength(1);\n    expect(executions[0]).toHaveProperty('error');\n  });\n});\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-integration-tests"]
+    },
+    {
+      "id": "create-github-workflow",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating GitHub Actions workflow for CI (.github/workflows/ci.yml):\n\n```yaml\nname: Test and Build\n\non:\n  push:\n    branches: [ main, master ]\n  pull_request:\n    branches: [ main, master ]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    \n    services:\n      postgres:\n        image: postgres:15-alpine\n        env:\n          POSTGRES_USER: postgres\n          POSTGRES_PASSWORD: postgres\n          POSTGRES_DB: test_db\n        ports:\n          - 5432:5432\n        options: >-\n          --health-cmd pg_isready\n          --health-interval 10s\n          --health-timeout 5s\n          --health-retries 5\n\n    env:\n      NODE_ENV: test\n      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db\n      JWT_SECRET: test-jwt-secret\n\n    steps:\n    - uses: actions/checkout@v3\n\n    - name: Use Node.js\n      uses: actions/setup-node@v3\n      with:\n        node-version: '18.x'\n        cache: 'npm'\n\n    - name: Install dependencies\n      run: npm ci\n\n    - name: Generate Prisma client\n      run: npx prisma generate\n\n    - name: Run database migrations\n      run: npx prisma migrate deploy\n\n    - name: Run unit tests\n      run: npm test\n\n    - name: Run integration tests\n      run: npm run test:integration\n\n    - name: Run E2E tests\n      run: npm run test:e2e\n\n    - name: Upload coverage reports\n      uses: codecov/codecov-action@v3\n      with:\n        file: ./coverage/coverage-final.json\n\n  build:\n    needs: test\n    runs-on: ubuntu-latest\n    \n    steps:\n    - uses: actions/checkout@v3\n\n    - name: Use Node.js\n      uses: actions/setup-node@v3\n      with:\n        node-version: '18.x'\n        cache: 'npm'\n\n    - name: Install dependencies\n      run: npm ci\n\n    - name: Build\n      run: npm run build --if-present\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-e2e-tests"]
+    },
+    {
+      "id": "test-docs",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating test documentation (docs/testing.md):\n\n```markdown\n# Testing Guide\n\n## Overview\n\nThe Smart MCP Server uses a comprehensive testing approach with multiple layers:\n\n- **Unit tests**: Test individual functions and components in isolation\n- **Integration tests**: Test interactions between components\n- **End-to-end tests**: Test complete application flows\n- **Load tests**: Test performance under load\n\n## Running Tests\n\n### Prerequisites\n\n- Node.js 18+\n- npm 8+\n- PostgreSQL 13+ (for integration and E2E tests)\n\n### Setup\n\n1. Install dependencies:\n   ```\n   npm install\n   ```\n\n2. Create test database:\n   ```\n   createdb mcp_server_test\n   ```\n\n3. Set environment variables for tests:\n   ```\n   export TEST_DATABASE_URL=\"postgresql://postgres:password@localhost:5432/mcp_server_test?schema=public\"\n   export JWT_SECRET=\"test-jwt-secret\"\n   ```\n\n### Running Unit Tests\n\n```\nnpm test\n```\n\n### Running Integration Tests\n\n```\nnpm run test:integration\n```\n\n### Running End-to-End Tests\n\n```\nnpm run test:e2e\n```\n\n### Running All Tests with Coverage\n\n```\nnpm run test:coverage\n```\n\n## Test Structure\n\n- `tests/unit/`: Unit tests for individual functions and classes\n- `tests/integration/`: Integration tests for API endpoints and database interactions\n- `tests/e2e/`: End-to-end tests for complete application flows\n- `tests/helpers.js`: Common test utilities and fixtures\n\n## Mocking Strategies\n\n- **Database**: Tests use a separate test database\n- **External Services**: Mocked using nock or jest.mock()\n- **Authentication**: Uses test JWT tokens\n\n## Continuous Integration\n\nGitHub Actions automatically runs all tests on:\n- Push to main/master branch\n- Pull requests against main/master\n\nSee `.github/workflows/ci.yml` for the CI configuration.\n\n## Writing New Tests\n\n### Unit Test Example\n\n```javascript\ndescribe('MyFunction', () => {\n  it('should do something specific', () => {\n    // Arrange\n    const input = { /* test input */ };\n    \n    // Act\n    const result = myFunction(input);\n    \n    // Assert\n    expect(result).toBe(expectedOutput);\n  });\n});\n```\n\n### Integration Test Example\n\n```javascript\ndescribe('API Endpoint', () => {\n  it('should return correct response', async () => {\n    // Arrange\n    // ... setup test data\n    \n    // Act\n    const response = await request(app)\n      .get('/api/endpoint')\n      .set('Authorization', `Bearer ${testToken}`);\n    \n    // Assert\n    expect(response.status).toBe(200);\n    expect(response.body).toEqual(expectedResponseBody);\n  });\n});\n```\n\n## Best Practices\n\n1. Keep tests independent and isolated\n2. Use descriptive test and describe names\n3. Follow the Arrange-Act-Assert pattern\n4. Clean up after tests (clear databases, mocks, etc.)\n5. Aim for high test coverage, especially for critical paths\n6. Write meaningful assertions\n7. Use beforeEach/afterEach for setup/teardown logic\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-github-workflow"]
+    },
+    {
+      "id": "implementation-plan",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "# Testing Implementation Plan\n\n## Files to Create/Update\n\n1. **Configuration Files**:\n   - `jest.config.js` - Main Jest configuration\n   - `jest.integration.config.js` - Integration test configuration\n   - `jest.e2e.config.js` - End-to-end test configuration\n   - `jest.setup.js` - Test setup file\n   - `.github/workflows/ci.yml` - CI workflow\n\n2. **Test Utilities**:\n   - `tests/helpers.js` - Test helper functions and mock data\n\n3. **Unit Tests**:\n   - `tests/unit/repositories/` - Repository tests\n   - `tests/unit/services/` - Service tests\n   - `tests/unit/middleware/` - Middleware tests\n   - `tests/unit/utils/` - Utility function tests\n\n4. **Integration Tests**:\n   - `tests/integration/api/` - API endpoint tests\n   - `tests/integration/workflow/` - Workflow execution tests\n\n5. **End-to-End Tests**:\n   - `tests/e2e/tool-execution.e2e.test.js` - Tool execution tests\n   - `tests/e2e/workflow-execution.e2e.test.js` - Workflow execution tests\n\n6. **Documentation**:\n   - `docs/testing.md` - Testing guide\n\n## Implementation Steps\n\n1. Install testing dependencies (Jest, Supertest, etc.)\n2. Create Jest configuration files\n3. Set up test helpers and utilities\n4. Implement unit tests for core components\n5. Develop integration tests for API endpoints\n6. Create end-to-end tests for complete flows\n7. Set up GitHub Actions for CI\n8. Document testing approach and procedures\n\n## Priority Testing Areas\n\n1. Authentication and authorization\n2. Tool execution functionality\n3. Workflow execution\n4. Error handling\n5. Database interactions\n\n## Metrics & Success Criteria\n\n- Achieve at least 80% test coverage\n- All tests pass in CI environment\n- Test suite runs in under 2 minutes\n- End-to-end workflows verify critical business functionality",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["test-docs", "create-github-workflow", "create-e2e-tests", "create-integration-tests", "create-unit-tests"]
+    }
+  ]
+} 

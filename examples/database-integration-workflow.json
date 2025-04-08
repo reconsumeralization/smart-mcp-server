@@ -1,0 +1,185 @@
+{
+  "id": "database-integration-workflow",
+  "description": "A workflow for integrating PostgreSQL database with the MCP server",
+  "concurrencyLimit": 4,
+  "steps": [
+    {
+      "id": "research-orm-options",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "Node.js ORM PostgreSQL prisma vs sequelize vs typeorm",
+        "explanation": "Researching ORM options for PostgreSQL in Node.js applications"
+      }
+    },
+    {
+      "id": "research-connection-pooling",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "PostgreSQL connection pooling Node.js best practices",
+        "explanation": "Researching connection pooling best practices for PostgreSQL in Node.js"
+      }
+    },
+    {
+      "id": "research-prisma-setup",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "Prisma ORM setup with PostgreSQL Node.js",
+        "explanation": "Researching how to set up Prisma ORM with PostgreSQL"
+      }
+    },
+    {
+      "id": "analyze-orm-options",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing ORM options for PostgreSQL integration. Comparing Prisma, Sequelize, and TypeORM based on research results. Considering factors like type safety, performance, migrations, and developer experience.",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-orm-options"]
+    },
+    {
+      "id": "analyze-connection-pooling",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing connection pooling strategies for PostgreSQL in Node.js applications. Looking at best practices for connection management, pool sizing, and handling connection failures.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-connection-pooling"]
+    },
+    {
+      "id": "orm-selection",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Based on the analysis, selecting Prisma ORM for the PostgreSQL integration due to its type safety, auto-generated migrations, and developer-friendly client. Prisma provides a good balance of features, performance, and ease of use.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["analyze-orm-options"]
+    },
+    {
+      "id": "design-data-models",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Designing data models for the MCP server. Need to model:\n\n1. Users - For authentication and authorization\n2. Tools - To store tool metadata and configurations\n3. Workflows - To persist workflow definitions\n4. Executions - To track tool and workflow executions\n5. AuditLogs - For security and troubleshooting\n\nThese models will form the core database schema.",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["orm-selection"]
+    },
+    {
+      "id": "create-prisma-schema",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating Prisma schema file (prisma/schema.prisma) with data models:\n\n```prisma\ngenerator client {\n  provider = \"prisma-client-js\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id        String   @id @default(uuid())\n  username  String   @unique\n  email     String   @unique\n  password  String\n  roles     Role[]\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  AuditLog  AuditLog[]\n}\n\nmodel Role {\n  id          String   @id @default(uuid())\n  name        String   @unique\n  permissions String[]\n  users       User[]\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n}\n\nmodel Tool {\n  id           String     @id\n  name         String\n  description  String?\n  category     String\n  serverConfig Json\n  tokenCost    Float      @default(0)\n  isConnected  Boolean    @default(false)\n  capabilities Json?\n  executions   Execution[]\n  createdAt    DateTime   @default(now())\n  updatedAt    DateTime   @updatedAt\n}\n\nmodel Workflow {\n  id              String     @id\n  name            String\n  description     String?\n  steps           Json\n  concurrencyLimit Int       @default(5)\n  executions      Execution[]\n  createdAt       DateTime   @default(now())\n  updatedAt       DateTime   @updatedAt\n}\n\nmodel Execution {\n  id         String   @id @default(uuid())\n  toolId     String?\n  tool       Tool?    @relation(fields: [toolId], references: [id])\n  workflowId String?\n  workflow   Workflow? @relation(fields: [workflowId], references: [id])\n  status     String\n  params     Json?\n  result     Json?\n  error      String?\n  startTime  DateTime @default(now())\n  endTime    DateTime?\n  duration   Int?\n  auditLogs  AuditLog[]\n}\n\nmodel AuditLog {\n  id          String    @id @default(uuid())\n  userId      String?\n  user        User?     @relation(fields: [userId], references: [id])\n  action      String\n  entityType  String\n  entityId    String?\n  details     Json?\n  executionId String?\n  execution   Execution? @relation(fields: [executionId], references: [id])\n  ipAddress   String?\n  userAgent   String?\n  timestamp   DateTime  @default(now())\n}\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["design-data-models"]
+    },
+    {
+      "id": "package-update",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Updating package.json to include Prisma and PostgreSQL dependencies:\n\n```json\n\"dependencies\": {\n  ...,\n  \"@prisma/client\": \"^5.10.0\",\n  \"pg\": \"^8.11.3\"\n},\n\"devDependencies\": {\n  ...,\n  \"prisma\": \"^5.10.0\"\n}\n```\n\nAdding Prisma scripts to package.json:\n\n```json\n\"scripts\": {\n  ...,\n  \"prisma:generate\": \"prisma generate\",\n  \"prisma:migrate\": \"prisma migrate dev\",\n  \"prisma:studio\": \"prisma studio\"\n}\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-prisma-schema"]
+    },
+    {
+      "id": "create-database-client",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating database client module (database.js):\n\n```javascript\nimport { PrismaClient } from '@prisma/client';\nimport logger from './logger.js';\n\n// Initialize Prisma Client with logging\nconst prisma = new PrismaClient({\n  log: [\n    { level: 'warn', emit: 'event' },\n    { level: 'error', emit: 'event' },\n  ],\n});\n\n// Log Prisma warnings and errors\nprisma.$on('warn', (e) => {\n  logger.warn(`Prisma warning: ${e.message}`);\n});\n\nprisma.$on('error', (e) => {\n  logger.error(`Prisma error: ${e.message}`);\n});\n\n// Handle connection errors\nprisma.$connect()\n  .then(() => {\n    logger.info('Database connected successfully');\n  })\n  .catch((error) => {\n    logger.error(`Database connection error: ${error.message}`);\n    process.exit(1); // Exit on database connection failure\n  });\n\n// Handle graceful shutdown\nprocess.on('SIGINT', async () => {\n  logger.info('Closing database connection...');\n  await prisma.$disconnect();\n  logger.info('Database connection closed');\n  process.exit(0);\n});\n\nexport default prisma;\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["package-update"]
+    },
+    {
+      "id": "create-repositories",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating repository modules for data access. Starting with a base repository:\n\n```javascript\n// repositories/base-repository.js\nimport prisma from '../database.js';\nimport logger from '../logger.js';\n\nexport class BaseRepository {\n  constructor(model) {\n    this.model = model;\n    this.prisma = prisma;\n  }\n\n  async findAll(options = {}) {\n    try {\n      const { skip, take, where, orderBy, include } = options;\n      return await this.prisma[this.model].findMany({\n        skip,\n        take,\n        where,\n        orderBy,\n        include,\n      });\n    } catch (error) {\n      logger.error(`Error in ${this.model}.findAll: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async findById(id, options = {}) {\n    try {\n      const { include } = options;\n      return await this.prisma[this.model].findUnique({\n        where: { id },\n        include,\n      });\n    } catch (error) {\n      logger.error(`Error in ${this.model}.findById: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async create(data) {\n    try {\n      return await this.prisma[this.model].create({\n        data,\n      });\n    } catch (error) {\n      logger.error(`Error in ${this.model}.create: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async update(id, data) {\n    try {\n      return await this.prisma[this.model].update({\n        where: { id },\n        data,\n      });\n    } catch (error) {\n      logger.error(`Error in ${this.model}.update: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async delete(id) {\n    try {\n      return await this.prisma[this.model].delete({\n        where: { id },\n      });\n    } catch (error) {\n      logger.error(`Error in ${this.model}.delete: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async count(where = {}) {\n    try {\n      return await this.prisma[this.model].count({ where });\n    } catch (error) {\n      logger.error(`Error in ${this.model}.count: ${error.message}`);\n      throw error;\n    }\n  }\n}\n```\n\nAnd a specific repository example:\n\n```javascript\n// repositories/tool-repository.js\nimport { BaseRepository } from './base-repository.js';\n\nexport class ToolRepository extends BaseRepository {\n  constructor() {\n    super('tool');\n  }\n\n  async findByCategory(category) {\n    try {\n      return await this.prisma.tool.findMany({\n        where: { category },\n      });\n    } catch (error) {\n      logger.error(`Error in ToolRepository.findByCategory: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async updateConnectionStatus(id, isConnected) {\n    try {\n      return await this.prisma.tool.update({\n        where: { id },\n        data: { isConnected },\n      });\n    } catch (error) {\n      logger.error(`Error in ToolRepository.updateConnectionStatus: ${error.message}`);\n      throw error;\n    }\n  }\n}\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-database-client"]
+    },
+    {
+      "id": "create-services",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating service modules for business logic. Example for tool service:\n\n```javascript\n// services/tool-service.js\nimport { ToolRepository } from '../repositories/tool-repository.js';\nimport { createError } from '../middleware/error-handler.js';\nimport logger from '../logger.js';\n\nclass ToolService {\n  constructor() {\n    this.toolRepository = new ToolRepository();\n  }\n\n  async getAllTools(options = {}) {\n    try {\n      return await this.toolRepository.findAll(options);\n    } catch (error) {\n      logger.error(`Error getting all tools: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async getToolById(id) {\n    try {\n      const tool = await this.toolRepository.findById(id);\n      if (!tool) {\n        throw createError.notFound(`Tool with ID ${id} not found`);\n      }\n      return tool;\n    } catch (error) {\n      logger.error(`Error getting tool by ID ${id}: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async getToolsByCategory(category) {\n    try {\n      return await this.toolRepository.findByCategory(category);\n    } catch (error) {\n      logger.error(`Error getting tools by category ${category}: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async createTool(toolData) {\n    try {\n      // Check if tool with same ID already exists\n      const existingTool = await this.toolRepository.findById(toolData.id);\n      if (existingTool) {\n        throw createError.conflict(`Tool with ID ${toolData.id} already exists`);\n      }\n\n      return await this.toolRepository.create(toolData);\n    } catch (error) {\n      logger.error(`Error creating tool: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async updateTool(id, toolData) {\n    try {\n      // Check if tool exists\n      await this.getToolById(id);\n\n      return await this.toolRepository.update(id, toolData);\n    } catch (error) {\n      logger.error(`Error updating tool ${id}: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async deleteTool(id) {\n    try {\n      // Check if tool exists\n      await this.getToolById(id);\n\n      return await this.toolRepository.delete(id);\n    } catch (error) {\n      logger.error(`Error deleting tool ${id}: ${error.message}`);\n      throw error;\n    }\n  }\n\n  async updateConnectionStatus(id, isConnected) {\n    try {\n      return await this.toolRepository.updateConnectionStatus(id, isConnected);\n    } catch (error) {\n      logger.error(`Error updating connection status for tool ${id}: ${error.message}`);\n      throw error;\n    }\n  }\n}\n\nexport default new ToolService();\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-repositories"]
+    },
+    {
+      "id": "update-env-example",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Updating .env.example to include database configuration:\n\n```\n# Database Configuration\nDATABASE_URL=\"postgresql://postgres:password@localhost:5432/mcp_server?schema=public\"\nDATABASE_POOL_SIZE=10\nDATABASE_CONNECTION_TIMEOUT=30000\nDATABASE_IDLE_TIMEOUT=60000\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-database-client"]
+    },
+    {
+      "id": "update-docker-compose",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Updating docker-compose.yml to include PostgreSQL:\n\n```yaml\n# Add this to the services section in docker-compose.yml\npostgres:\n  image: postgres:15-alpine\n  ports:\n    - \"5432:5432\"\n  environment:\n    - POSTGRES_USER=postgres\n    - POSTGRES_PASSWORD=password\n    - POSTGRES_DB=mcp_server\n  volumes:\n    - postgres-data:/var/lib/postgresql/data\n  restart: unless-stopped\n\n# Add this to the volumes section\npostgres-data:\n```\n\nAnd update the MCP server service to include database environment variables:\n\n```yaml\nmcp-server:\n  # existing configuration...\n  environment:\n    # existing environment variables...\n    - DATABASE_URL=postgresql://postgres:password@postgres:5432/mcp_server?schema=public\n  depends_on:\n    - redis\n    - postgres\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["update-env-example"]
+    },
+    {
+      "id": "create-migrations",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Adding script for initializing database and running migrations:\n\n```javascript\n// scripts/init-database.js\nimport { exec } from 'child_process';\nimport { promisify } from 'util';\nimport logger from '../logger.js';\n\nconst execPromise = promisify(exec);\n\nasync function initDatabase() {\n  try {\n    logger.info('Generating Prisma client...');\n    await execPromise('npx prisma generate');\n    \n    logger.info('Running database migrations...');\n    await execPromise('npx prisma migrate deploy');\n    \n    logger.info('Database initialization completed successfully');\n    process.exit(0);\n  } catch (error) {\n    logger.error(`Database initialization failed: ${error.message}`);\n    process.exit(1);\n  }\n}\n\ninitDatabase();\n```\n\nAnd adding the script to package.json:\n\n```json\n\"scripts\": {\n  ...,\n  \"db:init\": \"node scripts/init-database.js\"\n}\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["update-docker-compose", "package-update"]
+    },
+    {
+      "id": "update-server-integration",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Modifying server.js to integrate with the database by:\n\n1. Importing the database client: `import prisma from './database.js';`\n2. Updating tool initialization to store tools in database:\n\n```javascript\nasync function initializeTools() {\n  try {\n    console.log('Initializing tools from connected servers...');\n    \n    // Get server configurations\n    const serverConfigs = await getMcpServerConfigs();\n    console.log(`Found ${serverConfigs.length} server configurations`);\n    \n    // Clear existing cache\n    toolsCache.byId.clear();\n    toolsCache.byCategory.clear();\n    toolsCache.allTools = [];\n    \n    // Initialize category maps\n    for (const server of serverConfigs) {\n      if (!toolsCache.byCategory.has(server.category)) {\n        toolsCache.byCategory.set(server.category, []);\n      }\n    }\n    \n    // Fetch tools from each server\n    for (const server of serverConfigs) {\n      try {\n        console.log(`Fetching tools from ${server.id}...`);\n        const serverTools = await fetchToolsFromServer(server);\n        \n        if (serverTools && serverTools.length) {\n          console.log(`Found ${serverTools.length} tools from ${server.id}`);\n          \n          // Process each tool\n          for (const tool of serverTools) {\n            // Add server reference to tool\n            const toolWithServer = { \n              ...tool, \n              serverId: server.id,\n              serverName: server.name \n            };\n            \n            // Register with tool proxy\n            registerTool(tool.id, server);\n            \n            // Add to caches\n            toolsCache.byId.set(tool.id, toolWithServer);\n            \n            const categoryTools = toolsCache.byCategory.get(server.category) || [];\n            categoryTools.push(toolWithServer);\n            toolsCache.byCategory.set(server.category, categoryTools);\n            \n            toolsCache.allTools.push(toolWithServer);\n            \n            // Store in database (upsert - create or update)\n            try {\n              await prisma.tool.upsert({\n                where: { id: tool.id },\n                update: {\n                  name: tool.name,\n                  description: tool.description,\n                  category: tool.category,\n                  serverConfig: server,\n                  tokenCost: tool.tokenCost || 0,\n                  isConnected: true,\n                  capabilities: tool.capabilities || {}\n                },\n                create: {\n                  id: tool.id,\n                  name: tool.name,\n                  description: tool.description,\n                  category: tool.category,\n                  serverConfig: server,\n                  tokenCost: tool.tokenCost || 0,\n                  isConnected: true,\n                  capabilities: tool.capabilities || {}\n                }\n              });\n            } catch (dbError) {\n              console.error(`Error storing tool ${tool.id} in database:`, dbError);\n            }\n          }\n        }\n      } catch (error) {\n        console.error(`Error fetching tools from ${server.id}:`, error);\n      }\n    }\n    \n    // Update cache timestamp\n    toolsCache.lastUpdated = Date.now();\n    \n    console.log(`Initialization complete. Total tools: ${toolsCache.allTools.length}`);\n  } catch (error) {\n    console.error('Error initializing tools:', error);\n  }\n}\n```\n\n3. Add database logging for executions:\n\n```javascript\n// In the execute endpoint\napp.post('/execute', rateLimiters.executionLimiter, async (req, res) => {\n  // Existing code...\n  \n  // Track execution\n  rateLimiter.executions.add(toolId);\n  const startTime = Date.now();\n  \n  // Create execution record in database\n  let executionRecord;\n  try {\n    executionRecord = await prisma.execution.create({\n      data: {\n        toolId,\n        status: 'running',\n        params: parameters,\n        startTime: new Date()\n      }\n    });\n  } catch (dbError) {\n    logger.error(`Error creating execution record: ${dbError.message}`);\n  }\n  \n  try {\n    // Record tool usage for context improvement\n    recordToolUsage(toolId, context, parameters);\n    \n    // Execute the tool\n    const result = await executeToolProxy(toolId, parameters);\n    \n    // Update execution record\n    const endTime = new Date();\n    if (executionRecord) {\n      try {\n        await prisma.execution.update({\n          where: { id: executionRecord.id },\n          data: {\n            status: 'completed',\n            result,\n            endTime,\n            duration: Date.now() - startTime\n          }\n        });\n      } catch (dbError) {\n        logger.error(`Error updating execution record: ${dbError.message}`);\n      }\n    }\n    \n    // Return result\n    res.json({\n      result,\n      executionTime: Date.now() - startTime\n    });\n  } catch (error) {\n    // Update execution record with error\n    if (executionRecord) {\n      try {\n        await prisma.execution.update({\n          where: { id: executionRecord.id },\n          data: {\n            status: 'failed',\n            error: error.message,\n            endTime: new Date(),\n            duration: Date.now() - startTime\n          }\n        });\n      } catch (dbError) {\n        logger.error(`Error updating execution record: ${dbError.message}`);\n      }\n    }\n    \n    logger.error(`Tool execution error for ${toolId}:`, error);\n    \n    res.status(500).json({\n      error: 'Execution error',\n      code: 'EXECUTION_FAILED',\n      message: error.message || 'Failed to execute tool'\n    });\n  } finally {\n    // Remove from tracking\n    rateLimiter.executions.delete(toolId);\n  }\n});\n```",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-database-client", "create-services"]
+    },
+    {
+      "id": "implementation-plan",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "# Database Integration Implementation Plan\n\n## Files to Create/Update\n1. `prisma/schema.prisma` - Define database schema\n2. `database.js` - Database client and connection handling\n3. `repositories/` - Data access layer\n4. `services/` - Business logic layer\n5. `.env.example` - Update with database configuration\n6. `docker-compose.yml` - Add PostgreSQL service\n7. `scripts/init-database.js` - Database initialization script\n8. `server.js` - Update to use database services\n\n## Implementation Steps\n1. Install dependencies: Prisma, pg\n2. Create Prisma schema with data models\n3. Create database client module\n4. Implement repository pattern for data access\n5. Create service modules for business logic\n6. Update server code to use database services\n7. Update Docker Compose to include PostgreSQL\n8. Create database initialization scripts\n9. Update documentation with database setup instructions\n\n## Future Enhancements\n1. Add database migrations system\n2. Implement data validation with Zod\n3. Add database connection pooling optimization\n4. Create database backup and restore procedures\n5. Implement data archiving for old records",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "dependencies": ["create-prisma-schema", "create-database-client", "create-repositories", "create-services", "update-env-example", "update-docker-compose", "create-migrations", "update-server-integration"]
+    }
+  ]
+} 

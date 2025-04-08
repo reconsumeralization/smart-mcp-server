@@ -1,0 +1,403 @@
+{
+  "id": "documentation-ingestion-workflow",
+  "description": "A workflow for gathering, processing, and integrating documentation from multiple sources for complex system integrations",
+  "concurrencyLimit": 5,
+  "steps": [
+    {
+      "id": "identify-documentation-sources",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Identifying all potential documentation sources for the integration, including official documentation, API references, GitHub repositories, Stack Overflow discussions, tutorials, and community resources",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      }
+    },
+    {
+      "id": "create-source-list",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating a structured list of documentation sources with metadata about each source including relevance, reliability, format, and accessibility",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["identify-documentation-sources"]
+    },
+    {
+      "id": "research-official-docs",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${integration_name} official documentation latest version",
+        "explanation": "Retrieving the most recent official documentation is essential for accurate integration"
+      },
+      "dependencies": ["create-source-list"]
+    },
+    {
+      "id": "research-api-references",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${integration_name} API reference endpoints parameters",
+        "explanation": "Gathering comprehensive API reference information for the integration"
+      },
+      "dependencies": ["create-source-list"]
+    },
+    {
+      "id": "find-code-examples",
+      "toolId": "mcp_github_search_code",
+      "params": {
+        "q": "language:${language} ${integration_name} ${integration_feature}",
+        "per_page": 30
+      },
+      "dependencies": ["create-source-list"]
+    },
+    {
+      "id": "analyze-examples",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing collected code examples for patterns, best practices, common pitfalls, and implementation strategies",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["find-code-examples"]
+    },
+    {
+      "id": "extract-key-concepts",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Extracting key concepts and terminology from the official documentation, creating a glossary of terms specific to this integration",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-official-docs"]
+    },
+    {
+      "id": "map-api-endpoints",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Mapping all API endpoints, their parameters, return values, authentication requirements, and rate limiting considerations",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-api-references"]
+    },
+    {
+      "id": "find-community-resources",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${integration_name} tutorial best practices stackoverflow issues",
+        "explanation": "Finding community-contributed resources to supplement official documentation"
+      },
+      "dependencies": ["create-source-list"]
+    },
+    {
+      "id": "analyze-community-insights",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing community insights to identify common pitfalls, workarounds for known issues, and unofficial best practices",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["find-community-resources"]
+    },
+    {
+      "id": "identify-version-differences",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Identifying differences between versions of the integration, focusing on breaking changes, deprecated features, and new capabilities",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-official-docs", "research-api-references"]
+    },
+    {
+      "id": "retrieve-dependency-information",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "${integration_name} dependencies required libraries packages",
+        "explanation": "Gathering information about required dependencies and their compatibility"
+      },
+      "dependencies": ["research-official-docs"]
+    },
+    {
+      "id": "analyze-dependencies",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing dependency requirements, compatibility issues, and potential conflicts with existing system components",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["retrieve-dependency-information"]
+    },
+    {
+      "id": "document-authentication-flows",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Documenting all authentication flows, including OAuth processes, API key management, token refreshing, and security best practices",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-api-references", "analyze-examples"]
+    },
+    {
+      "id": "identify-rate-limitations",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Identifying rate limits, throttling policies, and best practices for handling rate-limited requests efficiently",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-api-references", "analyze-community-insights"]
+    },
+    {
+      "id": "document-error-responses",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Documenting all possible error responses, their meanings, and appropriate handling strategies for each error scenario",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["research-api-references", "analyze-community-insights"]
+    },
+    {
+      "id": "create-integration-schema",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating a comprehensive data schema representing the integration's inputs, outputs, configuration options, and internal state",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "map-api-endpoints",
+        "extract-key-concepts",
+        "analyze-examples"
+      ]
+    },
+    {
+      "id": "create-configuration-guide",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating a configuration guide detailing all required settings, environment variables, configuration files, and their proper values",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "research-official-docs",
+        "analyze-examples",
+        "analyze-community-insights"
+      ]
+    },
+    {
+      "id": "document-performance-considerations",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Documenting performance considerations, optimization techniques, caching strategies, and benchmarks for the integration",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "analyze-examples",
+        "analyze-community-insights",
+        "identify-rate-limitations"
+      ]
+    },
+    {
+      "id": "create-troubleshooting-guide",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating a troubleshooting guide with common issues, diagnostic procedures, and resolution steps",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "document-error-responses",
+        "analyze-community-insights",
+        "document-authentication-flows"
+      ]
+    },
+    {
+      "id": "identify-security-implications",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Identifying security implications, potential vulnerabilities, and security best practices for the integration",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "document-authentication-flows",
+        "analyze-community-insights",
+        "research-official-docs"
+      ]
+    },
+    {
+      "id": "create-integration-architecture",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating an architectural diagram and explanation of how the integration components fit together and interact with the existing system",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "create-integration-schema",
+        "map-api-endpoints",
+        "analyze-dependencies",
+        "document-authentication-flows"
+      ]
+    },
+    {
+      "id": "create-implementation-checklist",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating a comprehensive implementation checklist with all required steps, prerequisites, and verification tasks",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "create-integration-architecture",
+        "create-configuration-guide",
+        "document-authentication-flows",
+        "identify-security-implications"
+      ]
+    },
+    {
+      "id": "generate-sample-code",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Generating sample code snippets for key integration points, demonstrating proper usage of the API and handling of common scenarios",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "analyze-examples",
+        "map-api-endpoints",
+        "document-authentication-flows",
+        "document-error-responses"
+      ]
+    },
+    {
+      "id": "create-test-strategy",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating a testing strategy with test cases, mock data, and validation procedures for verifying the integration",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "map-api-endpoints",
+        "document-error-responses",
+        "create-integration-schema"
+      ]
+    },
+    {
+      "id": "document-maintenance-procedures",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Documenting ongoing maintenance procedures, monitoring strategies, and update processes for the integration",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "identify-version-differences",
+        "document-performance-considerations",
+        "create-troubleshooting-guide"
+      ]
+    },
+    {
+      "id": "compile-comprehensive-documentation",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Compiling all gathered information into a comprehensive, structured documentation set with proper indexing, cross-referencing, and formatting",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "extract-key-concepts",
+        "map-api-endpoints",
+        "document-authentication-flows",
+        "create-integration-schema",
+        "create-integration-architecture",
+        "create-configuration-guide",
+        "document-performance-considerations",
+        "create-troubleshooting-guide",
+        "identify-security-implications",
+        "create-implementation-checklist",
+        "generate-sample-code",
+        "create-test-strategy",
+        "document-maintenance-procedures"
+      ]
+    },
+    {
+      "id": "create-quickstart-guide",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating a quickstart guide that provides a streamlined path to basic integration functionality for developers who need rapid implementation",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "compile-comprehensive-documentation",
+        "create-implementation-checklist",
+        "generate-sample-code"
+      ]
+    },
+    {
+      "id": "structure-documentation-format",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Organizing the documentation into appropriate formats including Markdown files, diagrams, sample code repositories, and API reference documentation",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["compile-comprehensive-documentation"]
+    },
+    {
+      "id": "publish-documentation",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Publishing the documentation to appropriate channels including internal knowledge bases, GitHub repositories, developer portals, and documentation sites",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "compile-comprehensive-documentation",
+        "structure-documentation-format"
+      ]
+    },
+    {
+      "id": "create-summary-report",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/examples/documentation-ingestion-summary.md",
+        "instructions": "Creating a summary report of the documentation ingestion process",
+        "code_edit": "# Documentation Ingestion Summary Report\n\n## Integration Overview\n\nThis report summarizes the documentation gathered for the ${integration_name} integration. The documentation has been processed, analyzed, and structured to support the implementation and maintenance of this integration.\n\n## Documentation Sources\n\nInformation has been gathered from the following sources:\n\n- Official documentation: ${official_doc_count} resources\n- API references: ${api_reference_count} endpoints documented\n- Code examples: ${code_example_count} examples analyzed\n- Community resources: ${community_resource_count} resources incorporated\n\n## Key Documentation Components\n\n1. **Conceptual Overview**\n   - Glossary of ${glossary_term_count} key terms\n   - System architecture diagrams\n   - Integration workflows\n\n2. **API Reference**\n   - ${endpoint_count} endpoints documented\n   - Authentication flows\n   - Request/response formats\n   - Error handling\n\n3. **Implementation Guides**\n   - Quickstart guide\n   - Detailed implementation steps\n   - Configuration requirements\n   - ${code_snippet_count} code snippets\n\n4. **Operational Guidance**\n   - Performance optimization\n   - Troubleshooting procedures\n   - Maintenance requirements\n   - Security considerations\n\n## Documentation Structure\n\nThe documentation has been organized into the following structure:\n\n```\ndocs/\n├── overview/\n│   ├── introduction.md\n│   ├── architecture.md\n│   ├── glossary.md\n│   └── version-history.md\n├── api-reference/\n│   ├── authentication.md\n│   ├── endpoints.md\n│   ├── data-models.md\n│   └── error-handling.md\n├── implementation/\n│   ├── quickstart.md\n│   ├── configuration.md\n│   ├── code-examples/\n│   └── testing.md\n└── operations/\n    ├── performance.md\n    ├── troubleshooting.md\n    ├── security.md\n    └── maintenance.md\n```\n\n## Integration Highlights\n\n- **Key Dependencies**: ${dependency_count} external dependencies identified\n- **Security Considerations**: ${security_consideration_count} security considerations documented\n- **Common Issues**: ${common_issue_count} common issues with resolutions\n- **Performance Optimizations**: ${optimization_count} performance optimization techniques\n\n## Next Steps\n\n1. Review the documentation for completeness and accuracy\n2. Distribute to the implementation team\n3. Schedule a documentation walkthrough session\n4. Establish a process for documentation updates\n5. Gather feedback from initial implementation efforts\n\n## Documentation Metrics\n\n- Total documentation pages: ${total_page_count}\n- Total diagrams: ${diagram_count}\n- Total code examples: ${code_example_count}\n- Estimated reading time: ${reading_time} hours\n- Estimated implementation time based on documentation: ${implementation_time} days\n\n---\n\nGenerated by the Documentation Ingestion Workflow on ${current_date}"
+      },
+      "dependencies": [
+        "publish-documentation",
+        "compile-comprehensive-documentation"
+      ]
+    }
+  ]
+} 

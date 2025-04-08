@@ -12,6 +12,11 @@
     "test": "node run-test.js",
     "workflow:example": "node examples/register-workflow.js",
     "workflow:test-all": "node examples/test-all-workflows.js",
+    "workflow:test": "node examples/test-workflow.js",
+    "workflow:monitor": "node examples/monitor-workflows.js",
+    "gemini:server": "node servers/gemini-server.js",
+    "gemini:example": "node examples/gemini-example.js",
+    "gemini:test": "node --test test/gemini-tool.test.js",
     "docs": "jsdoc -c jsdoc.json"
   },
   "keywords": [
@@ -23,6 +28,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@google/generative-ai": "^0.2.1",
     "@modelcontextprotocol/sdk": "^0.4.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -31,6 +37,7 @@
     "express-session": "^1.18.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mime-types": "^2.1.35",
     "morgan": "^1.10.0",
     "natural": "^6.10.2",
     "node-fetch": "^3.3.2",

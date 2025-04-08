@@ -1,0 +1,235 @@
+{
+  "id": "variable-interjection-workflow",
+  "description": "Workflow for enhancing existing workflows with dynamic variable substitution and conditional execution",
+  "concurrencyLimit": 3,
+  "steps": [
+    {
+      "id": "analyze-workflow-structure",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "analyzing JSON workflow structure to identify variable injection points",
+        "explanation": "Understanding workflow structure is essential for identifying appropriate points for variable injection"
+      }
+    },
+    {
+      "id": "define-variable-schema",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Defining a schema for variables that will be injected into workflows, including types, default values, and validation rules",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["analyze-workflow-structure"]
+    },
+    {
+      "id": "identify-injection-points",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Identifying specific points in the workflow where variables can be introduced, such as in parameters, conditional logic, or dynamic step creation",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["analyze-workflow-structure"]
+    },
+    {
+      "id": "create-variable-store",
+      "toolId": "codebase_search",
+      "params": {
+        "query": "implementing a variable store for workflow execution",
+        "explanation": "Researching patterns for maintaining variable state during workflow execution"
+      },
+      "dependencies": ["define-variable-schema"]
+    },
+    {
+      "id": "implement-parameter-substitution",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Implementing parameter substitution to replace placeholder variables in workflow steps with their runtime values",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["create-variable-store", "identify-injection-points"]
+    },
+    {
+      "id": "develop-expression-evaluator",
+      "toolId": "codebase_search",
+      "params": {
+        "query": "safe JavaScript expression evaluation for conditions and dynamic values",
+        "explanation": "Finding secure ways to evaluate expressions without using eval()"
+      },
+      "dependencies": ["implement-parameter-substitution"]
+    },
+    {
+      "id": "implement-conditional-execution",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Adding support for conditional execution of steps based on runtime variables and evaluated expressions",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["develop-expression-evaluator"]
+    },
+    {
+      "id": "add-variable-output-capture",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Implementing functionality to capture outputs from previous workflow steps as variables for use in subsequent steps",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["create-variable-store"]
+    },
+    {
+      "id": "implement-dynamic-dependencies",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Enabling workflows to alter their execution paths based on runtime conditions by dynamically evaluating step dependencies",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["implement-conditional-execution"]
+    },
+    {
+      "id": "add-external-variable-sources",
+      "toolId": "web_search",
+      "params": {
+        "search_term": "integrating external data sources into workflow variables such as environment variables and APIs",
+        "explanation": "Researching methods to incorporate external data into workflow execution"
+      },
+      "dependencies": ["create-variable-store"]
+    },
+    {
+      "id": "implement-variable-transformations",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Adding support for common transformations on variables, such as string formatting, type conversion, and data manipulation",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["create-variable-store"]
+    },
+    {
+      "id": "handle-variables-persistence",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Implementing mechanisms to persist variable states across workflow runs or between separate workflow executions",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["create-variable-store"]
+    },
+    {
+      "id": "implement-loop-constructs",
+      "toolId": "codebase_search",
+      "params": {
+        "query": "implementing loops and iterators in workflow execution engines",
+        "explanation": "Researching patterns for handling repetitive tasks in workflows"
+      },
+      "dependencies": ["implement-dynamic-dependencies"]
+    },
+    {
+      "id": "add-variable-validation",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Implementing validation rules for variables to ensure data integrity and prevent errors during workflow execution",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["define-variable-schema"]
+    },
+    {
+      "id": "implement-error-handling",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Adding robust error handling for cases where variable resolution fails or expressions cannot be evaluated",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["implement-parameter-substitution", "develop-expression-evaluator"]
+    },
+    {
+      "id": "add-runtime-configuration",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Implementing capabilities for runtime configuration, allowing workflows to adjust their behavior based on input parameters",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["add-external-variable-sources"]
+    },
+    {
+      "id": "integrate-with-workflow-engine",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Modifying the workflow execution engine to process variable references and evaluate conditions at runtime",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": [
+        "implement-parameter-substitution",
+        "implement-conditional-execution",
+        "implement-dynamic-dependencies"
+      ]
+    },
+    {
+      "id": "create-templating-syntax",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Defining a consistent syntax for variable references and expressions in workflow definitions, such as ${variable} or {{expression}}",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["define-variable-schema"]
+    },
+    {
+      "id": "implement-context-inheritance",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Ensuring that variables can be passed to sub-workflows, maintaining context across workflow boundaries",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["create-variable-store", "handle-variables-persistence"]
+    },
+    {
+      "id": "develop-variable-inspector",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Creating tools to inspect and debug variable states during workflow execution, aiding in troubleshooting and development",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "dependencies": ["create-variable-store", "integrate-with-workflow-engine"]
+    },
+    {
+      "id": "create-documentation-example",
+      "toolId": "edit_file",
+      "params": {
+        "target_file": "smart-mcp-server/examples/variable-workflow-example.md",
+        "instructions": "Creating documentation with examples of variable usage in workflows",
+        "code_edit": "# Variable Interjection in Workflows\n\nThis document provides examples of how to use variable interjection to make workflows more dynamic.\n\n## Basic Variable Substitution\n\nVariables can be referenced in workflow step parameters using the `${variableName}` syntax:\n\n```json\n{\n  \"id\": \"example-step\",\n  \"toolId\": \"some_tool\",\n  \"params\": {\n    \"query\": \"Information about ${topic}\",\n    \"limit\": ${resultLimit}\n  }\n}\n```\n\n## Conditional Execution\n\nSteps can be conditionally executed based on variable values:\n\n```json\n{\n  \"id\": \"conditional-step\",\n  \"toolId\": \"some_tool\",\n  \"condition\": \"${environment} === 'production'\",\n  \"params\": {\n    \"mode\": \"strict\"\n  }\n}\n```\n\n## Variable Output Capture\n\nOutputs from workflow steps can be captured as variables:\n\n```javascript\n// In JavaScript code that sets up the workflow\nworkflowEngine.captureOutput('search-step', 'searchResults');\n\n// Then in later steps, you can reference ${searchResults}\n```\n\n## Dynamic Dependencies\n\nWorkflow step dependencies can be determined at runtime:\n\n```javascript\n// Evaluate dependencies dynamically\nconst stepDependencies = [];\nif (variableStore.get('requiresPreprocessing')) {\n  stepDependencies.push('preprocess-step');\n}\nstep.dependencies = stepDependencies;\n```\n\n## Looping and Iteration\n\nHandling repetitive tasks using loop constructs:\n\n```javascript\n// Create multiple steps for each item in an array\nconst items = variableStore.get('items', []);\nitems.forEach((item, index) => {\n  workflow.steps.push({\n    id: `process-item-${index}`,\n    toolId: 'processing_tool',\n    params: {\n      input: item\n    },\n    dependencies: index > 0 ? [`process-item-${index-1}`] : []\n  });\n});\n```\n\n## Error Handling with Variables\n\nHandling variable resolution errors gracefully:\n\n```javascript\ntry {\n  const value = variableStore.get('requiredVariable');\n  if (value === null) {\n    throw new Error('Required variable not found');\n  }\n  // Proceed with execution\n} catch (error) {\n  console.error(`Variable error: ${error.message}`);\n  // Execute fallback step or use default value\n  variableStore.set('requiredVariable', 'default-value');\n}\n```\n\n## External Variable Sources\n\nIncorporating variables from external sources:\n\n```javascript\n// Load environment variables\nObject.entries(process.env).forEach(([key, value]) => {\n  if (key.startsWith('WORKFLOW_')) {\n    const varName = key.replace('WORKFLOW_', '').toLowerCase();\n    variableStore.set(varName, value);\n  }\n});\n\n// Load from configuration file\nconst config = require('./config.json');\nvariableStore.set('config', config);\n\n// Load from API\nasync function loadExternalVariables() {\n  const response = await fetch('https://api.example.com/config');\n  const data = await response.json();\n  Object.entries(data).forEach(([key, value]) => {\n    variableStore.set(key, value);\n  });\n}\n```\n\n## Variable Transformations\n\nApplying transformations to variables:\n\n```javascript\n// String formatting\nconst formattedString = `User ${username} logged in at ${loginTime}`;\n\n// Type conversion\nconst numericValue = parseInt(variableStore.get('stringNumber'), 10);\n\n// JSON manipulation\nconst parsedData = JSON.parse(variableStore.get('jsonString'));\nvariableStore.set('processedData', parsedData.items.map(item => item.name));\n```\n\n## Advanced Expression Evaluation\n\nSafely evaluating complex expressions:\n\n```javascript\n// Using a dedicated expression parser instead of eval()\nconst { parse } = require('expression-eval');\n\nfunction safeEvaluate(expression, context) {\n  try {\n    const ast = parse(expression);\n    return evaluate(ast, context);\n  } catch (error) {\n    console.error(`Expression evaluation error: ${error.message}`);\n    return false;\n  }\n}\n\n// Usage\nconst result = safeEvaluate(\n  '(count > 10) && (status === \"completed\")', \n  { count: variableStore.get('count'), status: variableStore.get('status') }\n);\n```\n\n## Best Practices\n\n1. **Validation**: Always validate variables before using them in critical operations\n2. **Defaults**: Provide sensible default values for optional variables\n3. **Isolation**: Keep variable scopes well-defined to prevent unintended interactions\n4. **Documentation**: Document all variables used by workflows and their expected types\n5. **Security**: Never use `eval()` directly on user-provided expressions; use a secure parser\n6. **Performance**: Be mindful of performance when using complex variable transformations"
+      },
+      "dependencies": [
+        "create-templating-syntax",
+        "implement-conditional-execution",
+        "add-variable-output-capture",
+        "implement-loop-constructs"
+      ]
+    }
+  ]
+} 

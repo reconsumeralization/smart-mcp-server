@@ -188,6 +188,35 @@ async function initializeTools() {
     toolsCache.lastUpdated = Date.now();
     
     console.log(`Initialization complete. Total tools: ${toolsCache.allTools.length}`);
+
+    // GEMINI SERVER CONFIG
+    // Add the Gemini server configuration to the MCP server
+    console.log('Setting up Gemini API integration...');
+    
+    // Add Gemini server configuration
+    const GEMINI_SERVER_CONFIG = {
+      id: "gemini-server",
+      name: "Gemini AI Service",
+      url: `http://localhost:${process.env.GEMINI_SERVER_PORT || 3006}`,
+      type: "http",
+      category: "ai"
+    };
+
+    // Add Gemini server to serverConfigs if GEMINI_API_KEY is defined
+    if (process.env.GEMINI_API_KEY) {
+      console.log('Registering Gemini server with valid API key');
+      serverConfigs.push(GEMINI_SERVER_CONFIG);
+      
+      // Register Gemini tools with the tool proxy
+      registerTool('gemini_generate_text', GEMINI_SERVER_CONFIG);
+      registerTool('gemini_create_chat', GEMINI_SERVER_CONFIG);
+      registerTool('gemini_chat_message', GEMINI_SERVER_CONFIG);
+      registerTool('gemini_get_chat_history', GEMINI_SERVER_CONFIG);
+      registerTool('gemini_generate_with_images', GEMINI_SERVER_CONFIG);
+      registerTool('gemini_generate_embedding', GEMINI_SERVER_CONFIG);
+    } else {
+      console.log('Skipping Gemini server registration: No API key provided');
+    }
   } catch (error) {
     console.error('Error initializing tools:', error);
   }
