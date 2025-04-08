@@ -10,7 +10,7 @@ Before running the Gemini API examples, you need to:
 
 1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
 2. Create a `.env` file in the project root with your API key:
-   ```
+   ```env
    GEMINI_API_KEY=your-api-key-here
    ```
    
@@ -27,7 +27,7 @@ Before running the Gemini API examples, you need to:
    export GEMINI_API_KEY=your-api-key-here
    ```
 
-### Running Examples
+### Example Scripts
 
 #### Response Types Example
 
@@ -53,7 +53,7 @@ npm run gemini:example
 
 ## Workflow Examples
 
-### Test Workflow
+### Testing Individual Workflows
 
 Test a specific workflow:
 
@@ -61,7 +61,7 @@ Test a specific workflow:
 npm run workflow:test -- --id=your-workflow-id
 ```
 
-### Monitor Workflows
+### Workflow Monitoring
 
 Monitor the status of all workflows:
 
@@ -69,7 +69,7 @@ Monitor the status of all workflows:
 npm run workflow:monitor
 ```
 
-### Register Workflow
+### Workflow Registration
 
 Register a new workflow:
 
@@ -79,15 +79,15 @@ npm run workflow:example
 
 ## Context-Aware Selector Examples
 
-### Test Context-Aware Selector
+### Testing Selector Logic
 
 ```bash
 node test-context-aware-selector.js
 ```
 
-## Database Examples
+## Database Integration Examples
 
-### Test Database Integration
+### Testing Database Connectivity
 
 ```bash
 node examples/test-database-integration.js

@@ -24,7 +24,7 @@ Smart MCP Server is a powerful middleware that serves as a context-aware bridge 
   - Error handling
 
 - **Gemini API Integration**: Full integration with Google's Gemini models:
-  - Text generation 
+  - Text generation
   - JSON response formatting
   - Streaming capabilities
   - Advanced model configuration
@@ -69,7 +69,7 @@ Smart MCP Server is a powerful middleware that serves as a context-aware bridge 
 
 ## 🏗️ Project Structure
 
-```
+```plaintext
 smart-mcp-server/
 ├── context-aware-selector.js  # Tool selection based on context
 ├── docs/                      # Documentation files
@@ -118,16 +118,19 @@ node examples/test-workflow.js
 ## 🔌 Available Tool Integrations
 
 ### AI Tools
+
 - **Gemini API**: Google's generative AI models for text generation, chat, and more
 - **Sequential Thinking**: Step-by-step reasoning tool
 - **Web Research**: Internet search capabilities
 
 ### Development Tools
+
 - **GitHub**: Repository management, issue tracking, PR creation
 - **Filesystem**: File manipulation, code editing
 - **Database**: PostgreSQL integration (planned)
 
 ### Memory Tools
+
 - **Knowledge Graph**: For storing and retrieving structured information
 - **Vector Store**: For semantic search and retrieval
 

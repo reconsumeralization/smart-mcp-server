@@ -42,7 +42,7 @@ nano .env
 
 Update the following values:
 
-```
+```env
 GEMINI_API_KEY=your-actual-api-key
 GEMINI_MODEL=gemini-2.0-flash  # or another Gemini model
 GEMINI_MAX_TOKENS=2048  # adjust based on your needs
