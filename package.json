@@ -41,7 +41,7 @@
     "morgan": "^1.10.0",
     "natural": "^6.10.2",
     "node-fetch": "^3.3.2",
-    "pino": "^8.19.0",
+    "pino": "^9.7.0",
     "pino-http": "^9.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
