@@ -39,7 +39,7 @@
     "jsonwebtoken": "^9.0.2",
     "mime-types": "^2.1.35",
     "morgan": "^1.10.0",
-    "natural": "^6.10.2",
+    "natural": "^8.1.0",
     "node-fetch": "^3.3.2",
     "pino": "^8.19.0",
     "pino-http": "^9.0.0",
