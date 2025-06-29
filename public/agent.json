@@ -1,0 +1,43 @@
+{
+  "id": "smart-mcp-agent",
+  "name": "Smart MCP Agent",
+  "description": "A context-aware agent that manages and executes workflows using the Model Context Protocol (MCP) and interacts with other agents via the Agent2Agent (A2A) protocol.",
+  "version": "1.0.0",
+  "endpoints": {
+    "tasks": "/a2a/tasks",
+    "workflows": "/api/workflows"
+  },
+  "capabilities": [
+    {
+      "name": "workflow_execution",
+      "description": "Executes predefined workflows based on task descriptions.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_description": {
+            "type": "string",
+            "description": "A natural language description of the task to be performed."
+          }
+        },
+        "required": ["task_description"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "workflowId": {
+            "type": "string",
+            "description": "The ID of the workflow that will be executed."
+          },
+          "context": {
+            "type": "object",
+            "description": "Initial context for the workflow execution."
+          }
+        }
+      }
+    }
+  ],
+  "contact": {
+    "email": "support@example.com"
+  },
+  "license": "MIT"
+}

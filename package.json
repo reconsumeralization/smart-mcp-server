@@ -2,10 +2,10 @@
   "name": "smart-mcp-server",
   "version": "1.0.0",
   "description": "Context-aware MCP server that intelligently manages tool presentation",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "server": "node server.js",
     "server:dev": "nodemon server.js",
     "client": "node test-client.js",

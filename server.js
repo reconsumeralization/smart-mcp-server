@@ -8,6 +8,11 @@ import dotenv from 'dotenv';
 import fs from 'fs/promises';
 import morgan from 'morgan';
 import pinoHttp from 'pino-http';
+import { WorkflowManager } from './workflow-manager.js'; // Import WorkflowManager
+import natural from 'natural';
+
+// Import config
+import config from './config.js';
 
 // Import our custom modules
 import { registerTool, executeToolProxy } from './tool-proxy.js';
@@ -26,14 +31,20 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Initialize WorkflowManager
+const workflowManager = new WorkflowManager();
+
 // Initialize Express app
 const app = express();
 
 // Basic middleware
-app.use(cors());
-app.use(helmet());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cors(config.security.cors));
+app.use(helmet(config.security.helmet));
+app.use(express.json({ limit: config.security.maxRequestSize }));
+app.use(express.urlencoded({ extended: true, limit: config.security.maxRequestSize }));
+
+// Serve static files for A2A protocol
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Request logging - use Morgan for dev and Pino for production
 if (process.env.NODE_ENV === 'development') {
@@ -42,11 +53,110 @@ if (process.env.NODE_ENV === 'development') {
   app.use(pinoHttp({ logger }));
 }
 
-// Apply rate limiting to all routes
-app.use(rateLimiters.standardLimiter);
-
 // Set up Swagger UI
 setupSwagger(app);
+
+// A2A Protocol Endpoints
+/**
+ * @swagger
+ * /.well-known/agent.json:
+ *   get:
+ *     summary: A2A Agent Discovery
+ *     description: Returns the agent's configuration card, allowing other agents to discover its capabilities.
+ *     tags: [A2A Protocol]
+ *     responses:
+ *       200:
+ *         description: The agent.json file.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Agent'
+ */
+app.get('/.well-known/agent.json', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'agent.json'));
+});
+
+/**
+ * @swagger
+ * /a2a/tasks:
+ *   post:
+ *     summary: Submit a Task via A2A
+ *     description: Submits a task to the agent. The agent will find a suitable workflow and return a pending task with a workflow execution request.
+ *     tags: [A2A Protocol]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/A2ATaskRequest'
+ *     responses:
+ *       200:
+ *         description: The workflow execution request.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/A2AWorkflowResponse'
+ *       400:
+ *         description: Invalid request, missing task_description.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: No suitable workflow found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+app.post('/a2a/tasks', rateLimiters.standardLimiter, async (req, res, next) => {
+  try {
+    const { task_description, task_id } = req.body;
+    if (!task_description) {
+      return res.status(400).json({ error: 'task_description is required' });
+    }
+
+    // Use Jaro-Winkler distance to find the best matching workflow.
+    const allWorkflows = workflowManager.listWorkflows();
+    let bestMatch = { workflow: null, score: config.a2a.matchThreshold }; // Minimum confidence threshold
+
+    for (const workflow of allWorkflows) {
+      const description = workflow.description || '';
+      const score = natural.JaroWinklerDistance(task_description, description);
+      if (score > bestMatch.score) {
+        bestMatch = { workflow, score };
+      }
+    }
+
+    const workflowToExecute = bestMatch.workflow;
+
+    if (!workflowToExecute) {
+      return res.status(404).json({ error: 'No suitable workflow found for the given task description.' });
+    }
+
+    // Return an A2A compliant response that requests workflow execution
+    const response = {
+      task_id: task_id || `task-${Date.now()}`,
+      status: 'pending', // Status is pending as the workflow needs to be executed by the requesting agent
+      artifacts: [
+        {
+          type: 'workflow_execution_request',
+          content: {
+            workflowId: workflowToExecute.id,
+            // Pass relevant context from the task_description to the workflow
+            context: {
+              original_task_description: task_description
+            }
+          }
+        }
+      ]
+    };
+
+    res.json(response);
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Initialize MCP server
 const server = new McpServer({
@@ -62,70 +172,6 @@ const toolsCache = {
   allTools: [],           // Full list
   lastUpdated: 0
 };
-
-// Security settings
-const SECURITY_SETTINGS = {
-  maxRequestsPerMinute: 100,
-  maxConcurrentExecutions: 10,
-  requiredAuthLevel: process.env.NODE_ENV === 'production' ? 'token' : 'none',
-  tokenValidityMinutes: 60,
-  maxRequestSize: '10mb'
-};
-
-// Rate limiting state
-const rateLimiter = {
-  requests: new Map(), // IP -> [timestamps]
-  executions: new Set(), // Currently running executions
-};
-
-// Security middleware
-function validateRequest(req, res, next) {
-  // Rate limiting
-  const clientIp = req.ip;
-  const now = Date.now();
-  
-  if (!rateLimiter.requests.has(clientIp)) {
-    rateLimiter.requests.set(clientIp, []);
-  }
-  
-  // Clean old requests
-  const clientRequests = rateLimiter.requests.get(clientIp);
-  const oneMinuteAgo = now - 60000;
-  const recentRequests = clientRequests.filter(time => time > oneMinuteAgo);
-  
-  // Update recent requests
-  rateLimiter.requests.set(clientIp, [...recentRequests, now]);
-  
-  // Check rate limit
-  if (recentRequests.length >= SECURITY_SETTINGS.maxRequestsPerMinute) {
-    return res.status(429).json({
-      error: 'Too many requests',
-      retryAfter: 60
-    });
-  }
-  
-  // Check concurrent executions limit (only for /execute endpoints)
-  if (req.path.startsWith('/execute') && 
-      rateLimiter.executions.size >= SECURITY_SETTINGS.maxConcurrentExecutions) {
-    return res.status(429).json({
-      error: 'Too many concurrent executions',
-      retryAfter: 5
-    });
-  }
-  
-  // Authentication (simplified - would be more robust in production)
-  if (SECURITY_SETTINGS.requiredAuthLevel === 'token') {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-    
-    // Token validation would go here
-    // ...
-  }
-  
-  next();
-}
 
 // Initialize tools from connected servers
 async function initializeTools() {
@@ -163,7 +209,8 @@ async function initializeTools() {
             const toolWithServer = { 
               ...tool, 
               serverId: server.id,
-              serverName: server.name 
+              serverName: server.name,
+              url: server.url // Add the server URL to the tool configuration
             };
             
             // Register with tool proxy
@@ -197,13 +244,13 @@ async function initializeTools() {
     const GEMINI_SERVER_CONFIG = {
       id: "gemini-server",
       name: "Gemini AI Service",
-      url: `http://localhost:${process.env.GEMINI_SERVER_PORT || 3006}`,
+      url: `http://localhost:${config.gemini.serverPort}`,
       type: "http",
       category: "ai"
     };
 
     // Add Gemini server to serverConfigs if GEMINI_API_KEY is defined
-    if (process.env.GEMINI_API_KEY) {
+    if (config.gemini.apiKey) {
       console.log('Registering Gemini server with valid API key');
       serverConfigs.push(GEMINI_SERVER_CONFIG);
       
@@ -235,9 +282,9 @@ async function initializeTools() {
               functions: [{
                 name: tool.id,
                 description: tool.description || `${tool.name} functionality`,
-                parameters: {
+                parameters: tool.mcpActions && tool.mcpActions.length > 0 ? tool.mcpActions[0].parameters : {
                   type: "object",
-                  properties: {} // Schema would be extracted from the tool's actual parameters
+                  properties: {}
                 }
               }]
             };
@@ -565,10 +612,10 @@ app.use('/admin', adminRouter);
 import workflowRouter from './workflow-api.js';
 
 // Use workflow router
-app.use('/api/workflows', validateRequest, workflowRouter);
+app.use('/api/workflows', auth.authenticate, workflowRouter);
 
 // Get tools by category
-app.get('/categories/:category/tools', validateRequest, (req, res) => {
+app.get('/categories/:category/tools', rateLimiters.standardLimiter, (req, res) => {
   const { category } = req.params;
   const categoryTools = toolsCache.byCategory.get(category) || [];
   
@@ -580,7 +627,7 @@ app.get('/categories/:category/tools', validateRequest, (req, res) => {
 });
 
 // List categories
-app.get('/categories', validateRequest, (req, res) => {
+app.get('/categories', rateLimiters.standardLimiter, (req, res) => {
   const categories = Array.from(toolsCache.byCategory.keys()).map(category => ({
     id: category,
     count: toolsCache.byCategory.get(category).length
@@ -596,14 +643,15 @@ app.use(errorHandler.errorHandler);
 // Start the server
 async function startServer() {
   try {
-    // Initialize tools
+    // Initialize tools and workflows
     await initializeTools();
+    await workflowManager.init();
     
     // Start refreshing tools periodically (every 5 minutes)
     setInterval(initializeTools, 5 * 60 * 1000);
     
     // Start the server
-    const port = process.env.PORT || 3000;
+    const port = config.server.port;
     app.listen(port, () => {
       logger.info(`Server running on port ${port}`);
       logger.info(`API documentation available at http://localhost:${port}/api-docs`);

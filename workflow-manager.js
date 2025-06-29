@@ -1,5 +1,12 @@
 import { executeToolProxy } from './tool-proxy.js';
 import { EventEmitter } from 'events';
+import fs from 'fs/promises';
+import path from 'path';
+import logger from './logger.js';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Track workflow execution status and results
 class WorkflowExecution extends EventEmitter {
@@ -54,6 +61,31 @@ class WorkflowManager {
   }
 
   /**
+   * Initializes the WorkflowManager by loading all workflows from the examples directory.
+   */
+  async init() {
+    const examplesDir = path.join(__dirname, 'examples');
+    try {
+      const files = await fs.readdir(examplesDir);
+      const workflowFiles = files.filter(file => file.endsWith('.json'));
+
+      for (const file of workflowFiles) {
+        try {
+          const filePath = path.join(examplesDir, file);
+          const fileContent = await fs.readFile(filePath, 'utf-8');
+          const workflow = JSON.parse(fileContent);
+          this.registerWorkflow(workflow);
+          logger.info(`Successfully registered workflow: ${workflow.id}`);
+        } catch (error) {
+          logger.error(`Failed to load or register workflow from ${file}:`, error);
+        }
+      }
+    } catch (error) {
+      logger.error('Could not read workflow directory:', error);
+    }
+  }
+
+  /**
    * Register a workflow definition
    * @param {Object} workflow - Workflow definition
    * @param {string} workflow.id - Unique workflow identifier
@@ -64,6 +96,10 @@ class WorkflowManager {
    * @param {string[]} [workflow.steps[].dependencies] - IDs of steps this step depends on
    * @param {number} [workflow.concurrencyLimit] - Maximum number of steps to run in parallel
    */
+  listWorkflows() {
+    return Array.from(this.workflows.values());
+  }
+
   registerWorkflow(workflow) {
     if (!workflow.id) {
       throw new Error('Workflow must have an ID');

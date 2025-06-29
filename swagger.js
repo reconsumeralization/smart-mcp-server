@@ -126,10 +126,53 @@ const swaggerDefinition = {
           message: { type: 'string' },
           details: { type: 'object' }
         }
+      },
+      A2ATaskRequest: {
+        type: 'object',
+        required: ['task_description'],
+        properties: {
+          task_id: { 
+            type: 'string',
+            description: 'Optional ID for the task, one will be generated if not provided.',
+            example: 'task-12345'
+          },
+          task_description: {
+            type: 'string',
+            description: 'A natural language description of the task to be performed.',
+            example: 'Find out the current weather in New York and then search for top news headlines.'
+          }
+        }
+      },
+      A2AWorkflowResponse: {
+        type: 'object',
+        properties: {
+          task_id: { type: 'string' },
+          status: { type: 'string', enum: ['pending', 'completed', 'failed'] },
+          artifacts: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                type: { type: 'string', example: 'workflow_execution_request' },
+                content: {
+                  type: 'object',
+                  properties: {
+                    workflowId: { type: 'string' },
+                    context: { type: 'object' }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
   tags: [
+    {
+      name: 'A2A Protocol',
+      description: 'Endpoints for Agent-to-Agent (A2A) communication',
+    },
     {
       name: 'Tools',
       description: 'API endpoints for managing tools',

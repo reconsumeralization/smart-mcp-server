@@ -72,45 +72,42 @@ export async function ensureServerRunning(toolId) {
 // Execute tool through appropriate server
 export async function executeToolProxy(toolId, parameters) {
   try {
-    await ensureServerRunning(toolId);
-    
-    // For now, we'll simulate execution based on tool ID prefix
-    if (toolId.startsWith('mcp_github')) {
-      return simulateGithubTool(toolId, parameters);
-    } else if (toolId.startsWith('mcp_memory')) {
-      return simulateMemoryTool(toolId, parameters);
-    } else if (toolId.startsWith('mcp_win_cli')) {
-      return simulateWinCliTool(toolId, parameters);
-    } else if (['read_file', 'write_file', 'list_dir', 'delete_file', 
-                'file_search', 'codebase_search', 'grep_search',
-                'edit_file', 'reapply'].includes(toolId)) {
-      return simulateFilesystemTool(toolId, parameters);
-    } else if (toolId === 'web_search') {
-      return {
-        status: 'success',
-        data: {
-          results: [
-            { title: 'Sample search result 1', snippet: 'This is a sample search result.', url: 'https://example.com/1' },
-            { title: 'Sample search result 2', snippet: 'Another sample search result.', url: 'https://example.com/2' }
-          ]
-        }
-      };
-    } else if (toolId === 'sequential_thinking') {
-      return {
-        status: 'success',
-        data: {
-          thought: parameters.thought,
-          thoughtNumber: parameters.thoughtNumber,
-          totalThoughts: parameters.totalThoughts,
-          nextThoughtNeeded: parameters.nextThoughtNeeded
-        }
-      };
-    } else {
-      return {
-        status: 'success',
-        message: `Simulated execution of ${toolId} with parameters: ${JSON.stringify(parameters)}`
-      };
+    const serverConfig = toolServerMap.get(toolId);
+    if (!serverConfig) {
+      throw new Error(`No server configuration found for tool: ${toolId}`);
     }
+
+    // Ensure the server is running if it's a managed process (e.g., stdio type)
+    if (serverConfig.type === 'stdio') {
+      await ensureServerRunning(toolId);
+    }
+
+    // Construct the URL for tool execution. Assuming tools expose an /execute endpoint.
+    // This might need to be more dynamic based on how tools are exposed by their servers.
+    const toolExecutionUrl = `${serverConfig.url}/execute`; 
+
+    console.log(`Executing tool ${toolId} on ${toolExecutionUrl} with parameters:`, parameters);
+
+    const response = await fetch(toolExecutionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        toolId: toolId, // Pass the toolId to the server if it needs it
+        parameters: parameters,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Tool execution failed with status ${response.status}: ${errorData.message || JSON.stringify(errorData)}`);
+    }
+
+    const result = await response.json();
+    console.log(`Tool ${toolId} execution successful:`, result);
+    return result;
+
   } catch (error) {
     console.error(`Error executing tool ${toolId}:`, error);
     return {

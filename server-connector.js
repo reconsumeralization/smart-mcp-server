@@ -126,8 +126,21 @@ function simulateToolsForServer(server) {
   switch (server.category) {
     case 'filesystem':
       tools.push(
-        createTool('read_file', 'Read File', 'Read the contents of a file', server.category),
-        createTool('write_file', 'Write File', 'Write content to a file', server.category),
+        createTool('read_file', 'Read File', 'Read the contents of a file', server.category, {
+          type: 'object',
+          properties: {
+            filePath: { type: 'string', description: 'The path to the file to read.' }
+          },
+          required: ['filePath']
+        }),
+        createTool('write_file', 'Write File', 'Write content to a file', server.category, {
+          type: 'object',
+          properties: {
+            filePath: { type: 'string', description: 'The path to the file to write.' },
+            content: { type: 'string', description: 'The content to write to the file.' }
+          },
+          required: ['filePath', 'content']
+        }),
         createTool('list_dir', 'List Directory', 'List contents of a directory', server.category),
         createTool('file_search', 'Search Files', 'Search for files by name or content', server.category),
         createTool('delete_file', 'Delete File', 'Delete a file from the filesystem', server.category)
@@ -136,7 +149,13 @@ function simulateToolsForServer(server) {
       
     case 'github':
       tools.push(
-        createTool('github_search_repositories', 'Search GitHub Repositories', 'Search GitHub repositories by query', server.category),
+        createTool('github_search_repositories', 'Search GitHub Repositories', 'Search GitHub repositories by query', server.category, {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'The search query for repositories.' }
+          },
+          required: ['query']
+        }),
         createTool('github_get_file_contents', 'Get File Contents', 'Retrieve file contents from a GitHub repository', server.category),
         createTool('github_create_issue', 'Create Issue', 'Create a new issue in a GitHub repository', server.category),
         createTool('github_list_commits', 'List Commits', 'List commits in a GitHub repository', server.category),
@@ -189,7 +208,7 @@ function simulateToolsForServer(server) {
  * @param {string} category Tool category
  * @returns {Object} Tool object
  */
-function createTool(id, name, description, category) {
+function createTool(id, name, description, category, parameters = {}) {
   return {
     id,
     name,
@@ -217,7 +236,7 @@ function createTool(id, name, description, category) {
       {
         name: id,
         description,
-        parameters: []
+        parameters: parameters
       }
     ]
   };
