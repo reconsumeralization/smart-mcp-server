@@ -1,0 +1,9 @@
+feat: Enhance MCP and A2A compliance
+
+This commit introduces several changes to improve compliance with the Model Context Protocol (MCP) and Agent2Agent (A2A) Protocol:
+
+- **A2A /a2a/tasks endpoint refined:** The endpoint now returns a workflow execution request instead of a list of tools, aligning with A2A's task-oriented approach.
+- **MCP integration with workflows:** `tool-proxy.js` now makes actual HTTP requests to tool servers, replacing simulated execution.
+- **Enhanced tool definitions for MCP:** `server-connector.js` now includes more realistic parameter schemas for simulated tools, providing richer MCP definitions.
+- **`workflow-manager.js` updated:** Added `listWorkflows()` method to support workflow discovery for A2A.
+- **`public/agent.json` created:** A basic `agent.json` file is now available to describe the agent's A2A capabilities.

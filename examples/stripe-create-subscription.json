@@ -1,0 +1,49 @@
+{
+  "id": "stripe-create-subscription",
+  "name": "Create a New Subscription",
+  "description": "A complete workflow to create a customer, create a subscription product with a price, and subscribe the customer to it.",
+  "steps": [
+    {
+      "id": "create_customer",
+      "toolId": "mcp_stripe_create_customer",
+      "params": {
+        "name": "${context.customerName}",
+        "email": "${context.customerEmail}"
+      }
+    },
+    {
+      "id": "create_product",
+      "toolId": "mcp_stripe_create_product",
+      "params": {
+        "name": "${context.productName}"
+      }
+    },
+    {
+      "id": "create_price",
+      "toolId": "mcp_stripe_create_price",
+      "params": {
+        "product_id": "${steps.create_product.id}",
+        "unit_amount": "${context.amount}",
+        "currency": "${context.currency}",
+        "recurring": {
+          "interval": "${context.interval}"
+        }
+      },
+      "dependencies": [
+        "create_product"
+      ]
+    },
+    {
+      "id": "create_subscription",
+      "toolId": "mcp_stripe_create_subscription",
+      "params": {
+        "customer_id": "${steps.create_customer.id}",
+        "price_id": "${steps.create_price.id}"
+      },
+      "dependencies": [
+        "create_customer",
+        "create_price"
+      ]
+    }
+  ]
+} 

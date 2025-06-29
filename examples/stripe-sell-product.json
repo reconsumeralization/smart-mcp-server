@@ -1,0 +1,36 @@
+{
+  "id": "stripe-sell-product",
+  "name": "Sell a Product with Stripe",
+  "description": "A complete workflow to create a new product, assign a price, and generate a shareable payment link.",
+  "steps": [
+    {
+      "id": "create_product",
+      "toolId": "mcp_stripe_create_product",
+      "params": {
+        "name": "${context.productName}"
+      }
+    },
+    {
+      "id": "create_price",
+      "toolId": "mcp_stripe_create_price",
+      "params": {
+        "product_id": "${steps.create_product.id}",
+        "unit_amount": "${context.amount}",
+        "currency": "${context.currency}"
+      },
+      "dependencies": [
+        "create_product"
+      ]
+    },
+    {
+      "id": "create_payment_link",
+      "toolId": "mcp_stripe_create_payment_link",
+      "params": {
+        "price_id": "${steps.create_price.id}"
+      },
+      "dependencies": [
+        "create_price"
+      ]
+    }
+  ]
+} 

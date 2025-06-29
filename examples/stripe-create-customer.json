@@ -1,0 +1,15 @@
+{
+  "id": "stripe-create-customer",
+  "name": "Create Stripe Customer",
+  "description": "Creates a new customer in Stripe using their name and email address.",
+  "steps": [
+    {
+      "id": "create_customer",
+      "toolId": "mcp_stripe_create_customer",
+      "params": {
+        "name": "${context.name}",
+        "email": "${context.email}"
+      }
+    }
+  ]
+} 
