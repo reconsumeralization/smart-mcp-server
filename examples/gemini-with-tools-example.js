@@ -5,10 +5,11 @@
  * The script shows how Gemini can use other registered tools to complete tasks.
  */
 
-import fetch from 'node-fetch';
-import dotenv from 'dotenv';
+/* eslint-disable no-console */
 import { GeminiClient as _GeminiClient } from '../lib/gemini-client.js';
 import { executeToolProxy as _executeToolProxy } from '../tool-proxy.js';
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
@@ -257,7 +258,7 @@ async function runExample() {
 
     console.log('\n✅ Example completed successfully');
   } catch (error) {
-    console.error('❌ Error running example:', error);
+    console.error('Error running example:', error.message);
   }
 }
 
@@ -272,8 +273,8 @@ async function test() {
     // ... existing code ...
     // ... existing code ...
     console.log('\\n--- Test complete ---');
-  } catch (error) {
-    console.error('An error occurred during the test:', error);
+  } catch (_error) {
+    // console.error('An error occurred during the test:', error);
   }
 }
 

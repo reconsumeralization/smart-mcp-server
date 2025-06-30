@@ -253,7 +253,7 @@ async function runToolCallingExample() {
         };
       } catch (error) {
         functionResponse = {
-          error: 'Invalid expression',
+          error: `Invalid expression: ${error.message}`,
         };
       }
     }

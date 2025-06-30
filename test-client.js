@@ -217,13 +217,13 @@ async function main() {
     // Start interactive menu
     await showMenu();
   } catch (error) {
-    console.error('An error occurred:', error);
+    console.error('An error occurred:', error.message);
     rl.close();
   }
 }
 
 // Run the main function
 main().catch((error) => {
-  console.error('Unhandled error:', error);
+  console.error('Unhandled error:', error.message);
   process.exit(1);
 });
