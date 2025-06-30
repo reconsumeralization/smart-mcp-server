@@ -18,9 +18,7 @@
         "unit_amount": "${context.amount}",
         "currency": "${context.currency}"
       },
-      "dependencies": [
-        "create_product"
-      ]
+      "dependencies": ["create_product"]
     },
     {
       "id": "create_payment_link",
@@ -28,9 +26,7 @@
       "params": {
         "price_id": "${steps.create_price.id}"
       },
-      "dependencies": [
-        "create_price"
-      ]
+      "dependencies": ["create_price"]
     }
   ]
-} 
+}

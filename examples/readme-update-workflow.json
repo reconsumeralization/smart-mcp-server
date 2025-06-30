@@ -38,7 +38,7 @@
         "nextThoughtNeeded": true
       },
       "dependencies": [
-        "analyze-current-readme", 
+        "analyze-current-readme",
         "gather-project-changes",
         "research-documentation-standards"
       ]
@@ -167,10 +167,7 @@
         "instructions": "Updating the README.md with the generated content",
         "code_edit": "# Smart MCP Server\n\n${steps.add-badges-and-links.result}\n\n## Introduction\n\n${steps.generate-introduction-section.result.text}\n\n## Installation\n\n${steps.generate-installation-section.result.text}\n\n## Usage Examples\n\n${steps.generate-usage-examples.result.text}\n\n## API Documentation\n\n${steps.generate-api-documentation.result.text}\n\n## Configuration\n\n${steps.generate-configuration-options.result.text}\n\n## Contributing\n\n${steps.generate-contributing-guidelines.result.text}\n\n## License\n\nThis project is licensed under the MIT License - see the LICENSE file for details."
       },
-      "dependencies": [
-        "add-badges-and-links",
-        "consolidate-generated-content"
-      ]
+      "dependencies": ["add-badges-and-links", "consolidate-generated-content"]
     },
     {
       "id": "review-documentation",
@@ -224,4 +221,4 @@
       "dependencies": ["create-commit"]
     }
   ]
-} 
+}

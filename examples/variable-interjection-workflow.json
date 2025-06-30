@@ -155,7 +155,10 @@
         "totalThoughts": 2,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["implement-parameter-substitution", "develop-expression-evaluator"]
+      "dependencies": [
+        "implement-parameter-substitution",
+        "develop-expression-evaluator"
+      ]
     },
     {
       "id": "add-runtime-configuration",
@@ -214,7 +217,10 @@
         "totalThoughts": 2,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["create-variable-store", "integrate-with-workflow-engine"]
+      "dependencies": [
+        "create-variable-store",
+        "integrate-with-workflow-engine"
+      ]
     },
     {
       "id": "create-documentation-example",
@@ -232,4 +238,4 @@
       ]
     }
   ]
-} 
+}

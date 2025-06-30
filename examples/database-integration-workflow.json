@@ -179,7 +179,16 @@
         "totalThoughts": 1,
         "nextThoughtNeeded": false
       },
-      "dependencies": ["create-prisma-schema", "create-database-client", "create-repositories", "create-services", "update-env-example", "update-docker-compose", "create-migrations", "update-server-integration"]
+      "dependencies": [
+        "create-prisma-schema",
+        "create-database-client",
+        "create-repositories",
+        "create-services",
+        "update-env-example",
+        "update-docker-compose",
+        "create-migrations",
+        "update-server-integration"
+      ]
     }
   ]
-} 
+}

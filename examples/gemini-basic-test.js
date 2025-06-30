@@ -1,10 +1,13 @@
+/* eslint-disable no-console */
 /**
  * Basic Gemini API Test
- * 
+ *
  * This example tests which Gemini models are available with the current API key.
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GeminiClient as _GeminiClient } from '../lib/gemini-client.js';
+import _dotenv from 'dotenv';
 
 // API key from environment variable
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -25,29 +28,33 @@ const models = [
   'gemini-1.5-flash',
   'embedding-001',
   'gemini-2.0-flash',
-  'gemini-2.5-pro-preview-03-25'
+  'gemini-2.5-pro-preview-03-25',
 ];
 
 async function testModels() {
   console.log('Testing Gemini API Models:');
   console.log('==========================');
-  
+
   for (const modelName of models) {
     try {
       console.log(`\nTesting model: ${modelName}`);
       const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent('Hello, this is a test message. Please respond with one short sentence.');
-      console.log(`✅ Success! Response: "${result.response.text().substring(0, 60)}..."`);
+      const result = await model.generateContent(
+        'Hello, this is a test message. Please respond with one short sentence.'
+      );
+      console.log(
+        `✅ Success! Response: "${result.response.text().substring(0, 60)}..."`
+      );
     } catch (error) {
       console.error(`❌ Error with model ${modelName}: ${error.message}`);
     }
   }
-  
+
   console.log('\n==========================');
   console.log('Model testing complete.');
 }
 
 // Run the test
-testModels().catch(error => {
+testModels().catch((error) => {
   console.error('Unexpected error:', error);
-}); 
+});

@@ -1,7 +1,6 @@
 import Stripe from 'stripe';
 import config from '../config.js';
 import logger from '../logger.js';
-// The official Stripe Node.js library will be initialized here later.
 
 if (!config.stripe.secretKey) {
   logger.warn('STRIPE_SECRET_KEY is not set. Stripe tools will not function.');
@@ -85,10 +84,12 @@ export async function mcp_stripe_create_payment_link(params) {
   logger.info('Executing mcp_stripe_create_payment_link', { params });
   try {
     const paymentLink = await stripe.paymentLinks.create({
-      line_items: [{
-        price: params.price_id,
-        quantity: 1,
-      }],
+      line_items: [
+        {
+          price: params.price_id,
+          quantity: 1,
+        },
+      ],
     });
     return paymentLink;
   } catch (error) {
@@ -168,9 +169,11 @@ export async function mcp_stripe_create_subscription(params) {
   try {
     const subscription = await stripe.subscriptions.create({
       customer: params.customer_id,
-      items: [{
-        price: params.price_id,
-      }],
+      items: [
+        {
+          price: params.price_id,
+        },
+      ],
     });
     return subscription;
   } catch (error) {
@@ -180,41 +183,120 @@ export async function mcp_stripe_create_subscription(params) {
 }
 
 /**
- * Lists payment intents, optionally filtered by customer.
- * @param {object} params - The parameters for listing payment intents.
- * @param {string} [params.customer_id] - The ID of the customer to filter by.
- * @returns {Promise<Array>} A list of Stripe payment intent objects.
- */
-export async function mcp_stripe_list_payment_intents(params) {
-  logger.info('Executing mcp_stripe_list_payment_intents', { params });
-  try {
-    const paymentIntents = await stripe.paymentIntents.list({
-      customer: params.customer_id,
-    });
-    return paymentIntents.data;
-  } catch (error) {
-    logger.error('Stripe list_payment_intents failed', { error: error.message });
-    throw new Error(`Stripe API Error: ${error.message}`);
-  }
-}
-
-/**
- * Creates a refund for a specific charge.
+ * Creates a new refund in Stripe.
  * @param {object} params - The parameters for creating a refund.
- * @param {string} params.payment_intent_id - The ID of the PaymentIntent to refund.
- * @param {number} [params.amount] - The amount to refund, in the smallest currency unit. If not provided, a full refund is issued.
+ * @param {string} params.charge_id - The ID of the charge to refund.
+ * @param {number} [params.amount] - The amount to refund in the smallest currency unit (e.g., cents). If not provided, the entire charge will be refunded.
  * @returns {Promise<object>} The created Stripe refund object.
  */
 export async function mcp_stripe_create_refund(params) {
   logger.info('Executing mcp_stripe_create_refund', { params });
   try {
     const refund = await stripe.refunds.create({
-      payment_intent: params.payment_intent_id,
-      amount: params.amount, // Optional: for partial refunds
+      charge: params.charge_id,
+      amount: params.amount,
     });
     return refund;
   } catch (error) {
     logger.error('Stripe create_refund failed', { error: error.message });
     throw new Error(`Stripe API Error: ${error.message}`);
   }
-} 
+}
+
+/**
+ * Manages a dispute in Stripe.
+ * @param {object} params - The parameters for managing a dispute.
+ * @param {string} params.dispute_id - The ID of the dispute to manage.
+ * @param {object} params.evidence - The evidence to submit for the dispute.
+ * @returns {Promise<object>} The updated Stripe dispute object.
+ */
+export async function mcp_stripe_manage_dispute(params) {
+  logger.info('Executing mcp_stripe_manage_dispute', { params });
+  try {
+    const dispute = await stripe.disputes.update(params.dispute_id, {
+      evidence: params.evidence,
+    });
+    return dispute;
+  } catch (error) {
+    logger.error('Stripe manage_dispute failed', { error: error.message });
+    throw new Error(`Stripe API Error: ${error.message}`);
+  }
+}
+
+/**
+ * Retrieves a financial report run from Stripe.
+ * @param {object} params - The parameters for retrieving a financial report.
+ * @param {string} params.report_run_id - The ID of the report run to retrieve.
+ * @returns {Promise<object>} The Stripe financial report run object.
+ */
+export async function mcp_stripe_retrieve_financial_report(params) {
+  logger.info('Executing mcp_stripe_retrieve_financial_report', { params });
+  try {
+    const reportRun = await stripe.reporting.reportRuns.retrieve(
+      params.report_run_id
+    );
+    return reportRun;
+  } catch (error) {
+    logger.error('Stripe retrieve_financial_report failed', {
+      error: error.message,
+    });
+    throw new Error(`Stripe API Error: ${error.message}`);
+  }
+}
+
+/**
+ * Updates a subscription in Stripe.
+ * @param {object} params - The parameters for updating a subscription.
+ * @param {string} params.subscription_id - The ID of the subscription to update.
+ * @param {Array<object>} params.items - The new list of items for the subscription.
+ * @returns {Promise<object>} The updated Stripe subscription object.
+ */
+export async function mcp_stripe_update_subscription(params) {
+  logger.info('Executing mcp_stripe_update_subscription', { params });
+  try {
+    // To update a subscription, you typically need to retrieve it first
+    // to get the IDs of the existing subscription items.
+    const subscription = await stripe.subscriptions.retrieve(
+      params.subscription_id
+    );
+
+    const updatedSubscription = await stripe.subscriptions.update(
+      params.subscription_id,
+      {
+        items: params.items.map((item) => {
+          // Find the existing item to replace, if necessary
+          const existingItem = subscription.items.data.find(
+            (i) => i.price.id === item.old_price_id
+          );
+          if (existingItem) {
+            return { id: existingItem.id, deleted: true };
+          }
+          return { price: item.new_price_id };
+        }),
+      }
+    );
+    return updatedSubscription;
+  } catch (error) {
+    logger.error('Stripe update_subscription failed', { error: error.message });
+    throw new Error(`Stripe API Error: ${error.message}`);
+  }
+}
+
+/**
+ * Cancels a subscription in Stripe.
+ * @param {object} params - The parameters for canceling a subscription.
+ * @param {string} params.subscription_id - The ID of the subscription to cancel.
+ * @returns {Promise<object>} The canceled Stripe subscription object.
+ */
+export async function mcp_stripe_cancel_subscription(params) {
+  logger.info('Executing mcp_stripe_cancel_subscription', { params });
+  try {
+    const subscription = await stripe.subscriptions.cancel(
+      params.subscription_id
+    );
+    return subscription;
+  } catch (error) {
+    logger.error('Stripe cancel_subscription failed', { error: error.message });
+    throw new Error(`Stripe API Error: ${error.message}`);
+  }
+}

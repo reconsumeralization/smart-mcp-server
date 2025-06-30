@@ -144,7 +144,7 @@
       "toolId": "mcp_sequential_thinking_sequentialthinking",
       "params": {
         "thought": "Synthesizing technical aspects of ${context.topic} based on code examples and implementation details. ${steps.analyze-technical-details.thought} ${steps.analyze-code-examples.thought}",
-        "thoughtNumber": 1, 
+        "thoughtNumber": 1,
         "totalThoughts": 3,
         "nextThoughtNeeded": true
       },
@@ -181,7 +181,11 @@
         "totalThoughts": 2,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["analyze-github-repos", "analyze-general-info", "analyze-technical-details"]
+      "dependencies": [
+        "analyze-github-repos",
+        "analyze-general-info",
+        "analyze-technical-details"
+      ]
     },
     {
       "id": "comprehensive-report",
@@ -192,7 +196,14 @@
         "totalThoughts": 1,
         "nextThoughtNeeded": false
       },
-      "dependencies": ["conceptual-synthesis", "technical-synthesis", "state-of-the-art", "analyze-challenges", "identify-trends", "compile-resources"]
+      "dependencies": [
+        "conceptual-synthesis",
+        "technical-synthesis",
+        "state-of-the-art",
+        "analyze-challenges",
+        "identify-trends",
+        "compile-resources"
+      ]
     }
   ]
-} 
+}

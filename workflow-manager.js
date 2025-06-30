@@ -1,335 +1,317 @@
-import { executeToolProxy } from './tool-proxy.js';
-import { EventEmitter } from 'events';
+import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs/promises';
 import path from 'path';
-import logger from './logger.js';
-import { fileURLToPath } from 'url';
+import redisClient from './redis-client.js';
+import logger from '../logger.js';
+import db from './db-client.js';
+import { executeToolProxy } from '../tool-proxy.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const WORKFLOW_PREFIX = 'workflow:';
+const EXECUTION_PREFIX = 'execution:';
 
-// Track workflow execution status and results
-class WorkflowExecution extends EventEmitter {
-  constructor(workflowId, steps) {
-    super();
-    this.workflowId = workflowId;
-    this.steps = steps;
-    this.results = {};
-    this.status = 'pending';
-    this.errors = [];
-    this.pendingSteps = new Set();
-    this.completedSteps = new Set();
+async function registerWorkflow(workflow) {
+  const workflowKey = `${WORKFLOW_PREFIX}${workflow.name}`;
+  await redisClient.set(workflowKey, JSON.stringify(workflow));
+  logger.info(`Workflow '${workflow.name}' registered successfully.`);
+}
+
+async function getWorkflow(workflowName) {
+  const workflowKey = `${WORKFLOW_PREFIX}${workflowName}`;
+  const workflowJSON = await redisClient.get(workflowKey);
+  if (!workflowJSON) {
+    return null;
   }
+  return JSON.parse(workflowJSON);
+}
 
-  setStepResult(stepId, result) {
-    this.results[stepId] = result;
-    this.completedSteps.add(stepId);
-    this.pendingSteps.delete(stepId);
-    this.emit('stepCompleted', { stepId, result });
-
-    if (this.pendingSteps.size === 0) {
-      this.status = this.errors.length > 0 ? 'failed' : 'completed';
-      this.emit('completed', {
-        status: this.status,
-        results: this.results,
-        errors: this.errors,
-      });
-    }
+async function getAllWorkflows() {
+  const keys = await redisClient.keys(`${WORKFLOW_PREFIX}*`);
+  if (keys.length === 0) {
+    return [];
   }
+  const workflowsJSON = await redisClient.mGet(keys);
+  return workflowsJSON.map((wf) => JSON.parse(wf));
+}
 
-  setStepError(stepId, error) {
-    this.errors.push({ stepId, error });
-    this.pendingSteps.delete(stepId);
-    this.emit('stepError', { stepId, error });
-
-    // Continue execution unless configured to stop on error
-    if (this.pendingSteps.size === 0) {
-      this.status = 'failed';
-      this.emit('completed', {
-        status: this.status,
-        results: this.results,
-        errors: this.errors,
-      });
+async function registerWorkflowsFromDirectory(directory) {
+  logger.info(`Loading workflows from directory: ${directory}`);
+  const files = await fs.readdir(directory);
+  for (const file of files) {
+    if (path.extname(file) === '.json') {
+      const filePath = path.join(directory, file);
+      try {
+        const workflowJson = await fs.readFile(filePath, 'utf8');
+        const workflow = JSON.parse(workflowJson);
+        await registerWorkflow(workflow);
+      } catch (error) {
+        logger.error(`Failed to load workflow from ${file}:`, { error });
+      }
     }
   }
 }
 
-class WorkflowManager {
-  constructor() {
-    this.workflows = new Map();
-    this.executions = new Map();
+async function executeWorkflow(workflowName, parameters) {
+  const executionId = uuidv4();
+  logger.info('Attempting to execute workflow', {
+    workflowName,
+    executionId,
+    parameters,
+  });
+
+  const workflow = await getWorkflow(workflowName);
+  if (!workflow) {
+    logger.error('Workflow not found', { workflowName });
+    throw new Error(`Workflow '${workflowName}' not found.`);
   }
 
-  /**
-   * Initializes the WorkflowManager by loading all workflows from the examples directory.
-   */
-  async init() {
-    const examplesDir = path.join(__dirname, 'examples');
-    try {
-      const files = await fs.readdir(examplesDir);
-      const workflowFiles = files.filter(file => file.endsWith('.json'));
+  const executionKey = `${EXECUTION_PREFIX}${executionId}`;
 
-      for (const file of workflowFiles) {
-        try {
-          const filePath = path.join(examplesDir, file);
-          const fileContent = await fs.readFile(filePath, 'utf-8');
-          const workflow = JSON.parse(fileContent);
-          this.registerWorkflow(workflow);
-          logger.info(`Successfully registered workflow: ${workflow.id}`);
-        } catch (error) {
-          logger.error(`Failed to load or register workflow from ${file}:`, error);
-        }
-      }
-    } catch (error) {
-      logger.error('Could not read workflow directory:', error);
-    }
-  }
-
-  /**
-   * Register a workflow definition
-   * @param {Object} workflow - Workflow definition
-   * @param {string} workflow.id - Unique workflow identifier
-   * @param {Object[]} workflow.steps - Workflow steps
-   * @param {string} workflow.steps[].id - Step identifier
-   * @param {string} workflow.steps[].toolId - Tool identifier to execute
-   * @param {Object} workflow.steps[].params - Parameters for the tool
-   * @param {string[]} [workflow.steps[].dependencies] - IDs of steps this step depends on
-   * @param {number} [workflow.concurrencyLimit] - Maximum number of steps to run in parallel
-   */
-  listWorkflows() {
-    return Array.from(this.workflows.values());
-  }
-
-  registerWorkflow(workflow) {
-    if (!workflow.id) {
-      throw new Error('Workflow must have an ID');
-    }
-    
-    if (!Array.isArray(workflow.steps)) {
-      throw new Error('Workflow must have steps array');
-    }
-    
-    // Validate that all dependencies exist
-    for (const step of workflow.steps) {
-      if (step.dependencies) {
-        for (const depId of step.dependencies) {
-          const depExists = workflow.steps.some(s => s.id === depId);
-          if (!depExists) {
-            throw new Error(`Step ${step.id} has dependency ${depId} which does not exist`);
-          }
-        }
-      }
-    }
-    
-    this.workflows.set(workflow.id, {
-      ...workflow,
-      concurrencyLimit: workflow.concurrencyLimit || 5 // Default concurrency limit
+  try {
+    logger.info('Inserting initial execution record into database', {
+      executionId,
+      workflowName,
     });
-    
-    return workflow.id;
-  }
+    await db.query(
+      `INSERT INTO workflow_executions (execution_id, workflow_name, status, parameters)
+       VALUES ($1, $2, $3, $4)`,
+      [executionId, workflowName, 'running', parameters]
+    );
 
-  /**
-   * Execute a registered workflow
-   * @param {string} workflowId - ID of the workflow to execute
-   * @param {Object} context - Context data to pass to the workflow
-   * @returns {Promise<Object>} - Results of the workflow execution
-   */
-  async executeWorkflow(workflowId, context = {}) {
-    const workflow = this.workflows.get(workflowId);
-    if (!workflow) {
-      throw new Error(`Workflow ${workflowId} not found`);
-    }
+    const executionState = {
+      id: executionId,
+      workflowName,
+      status: 'running',
+      startTime: Date.now(),
+      steps: {},
+    };
+    await redisClient.set(executionKey, JSON.stringify(executionState));
+    logger.info('Initial execution state saved to Redis', { executionKey });
 
-    const executionId = `${workflowId}-${Date.now()}`;
-    const execution = new WorkflowExecution(executionId, workflow.steps);
-    this.executions.set(executionId, execution);
+    const result = await _runWorkflow(workflow, parameters, executionId);
 
-    // Create a promise that resolves when the workflow completes
-    const executionPromise = new Promise((resolve, reject) => {
-      execution.once('completed', (result) => {
-        if (result.status === 'failed') {
-          reject(new Error(`Workflow execution failed: ${JSON.stringify(result.errors)}`));
-        } else {
-          resolve(result);
-        }
-      });
+    executionState.status = 'completed';
+    executionState.endTime = Date.now();
+    executionState.result = result;
+    await redisClient.set(executionKey, JSON.stringify(executionState));
+    logger.info('Workflow completed, final state saved to Redis', {
+      executionKey,
     });
 
-    // Start workflow execution
-    this._executeWorkflowSteps(workflow, execution, context);
+    logger.info('Updating execution record in database to completed', {
+      executionId,
+    });
+    await db.query(
+      `UPDATE workflow_executions SET status = 'completed', result = $1 WHERE execution_id = $2`,
+      [JSON.stringify(result), executionId]
+    );
 
-    return executionPromise;
+    return { executionId, result };
+  } catch (error) {
+    logger.error('Workflow execution failed', {
+      executionId,
+      workflowName,
+      error: error.message,
+    });
+    const finalState = {
+      id: executionId,
+      workflowName,
+      status: 'failed',
+      error: { message: error.message, stack: error.stack },
+      endTime: Date.now(),
+    };
+    await redisClient.set(executionKey, JSON.stringify(finalState));
+    logger.info('Failure state saved to Redis', { executionKey });
+
+    logger.info('Updating execution record in database to failed', {
+      executionId,
+    });
+    await db.query(
+      `UPDATE workflow_executions SET status = 'failed', error = $1 WHERE execution_id = $2`,
+      [
+        JSON.stringify({ message: error.message, stack: error.stack }),
+        executionId,
+      ]
+    );
+    throw error;
   }
+}
 
-  /**
-   * Internal method to execute workflow steps with dependency resolution
-   */
-  _executeWorkflowSteps(workflow, execution, context) {
-    // Build dependency graph
-    const dependencyGraph = new Map();
-    const readySteps = [];
-    
-    for (const step of workflow.steps) {
-      const dependencies = step.dependencies || [];
-      dependencyGraph.set(step.id, {
-        step,
-        dependencies: new Set(dependencies),
-        dependents: new Set(),
-      });
-      
-      if (dependencies.length === 0) {
-        readySteps.push(step);
-      }
+async function getWorkflowExecution(executionId) {
+  const executionKey = `${EXECUTION_PREFIX}${executionId}`;
+  const executionJSON = await redisClient.get(executionKey);
+  if (!executionJSON) {
+    // If not in Redis, check the database as a source of truth for completed/failed items
+    logger.warn('Execution not found in Redis, checking database...', {
+      executionId,
+    });
+    const { rows } = await db.query(
+      'SELECT * FROM workflow_executions WHERE execution_id = $1',
+      [executionId]
+    );
+    if (rows.length > 0) {
+      logger.info('Execution found in database', { executionId });
+      const row = rows[0];
+      return {
+        id: row.execution_id,
+        workflowName: row.workflow_name,
+        status: row.status,
+        parameters: row.parameters,
+        result: row.result,
+        error: row.error,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      };
     }
-    
-    // Build reverse dependency graph (dependents)
-    for (const [stepId, node] of dependencyGraph) {
-      for (const depId of node.dependencies) {
-        const depNode = dependencyGraph.get(depId);
-        depNode.dependents.add(stepId);
-      }
-    }
-    
-    // Set initial pending steps
-    for (const step of workflow.steps) {
-      execution.pendingSteps.add(step.id);
-    }
-    
-    // Execute steps with no dependencies first
-    const activePromises = new Set();
-    this._executeReadySteps(workflow, execution, readySteps, dependencyGraph, activePromises, context);
+    return null;
   }
+  return JSON.parse(executionJSON);
+}
 
-  /**
-   * Execute steps that are ready (all dependencies met)
-   */
-  async _executeReadySteps(workflow, execution, readySteps, dependencyGraph, activePromises, context) {
-    // Process all ready steps within concurrency limit
-    while (readySteps.length > 0 && activePromises.size < workflow.concurrencyLimit) {
-      const step = readySteps.shift();
-      
-      // Skip steps that may have been added multiple times
-      if (execution.completedSteps.has(step.id)) {
-        continue;
-      }
-      
-      // Execute step
-      const stepPromise = this._executeStep(step, execution, context)
-        .then(() => {
-          activePromises.delete(stepPromise);
-          
-          // Mark dependencies as satisfied for dependent steps
-          const node = dependencyGraph.get(step.id);
-          for (const dependentId of node.dependents) {
-            const dependentNode = dependencyGraph.get(dependentId);
-            dependentNode.dependencies.delete(step.id);
-            
-            // If all dependencies are satisfied, add to ready steps
-            if (dependentNode.dependencies.size === 0 && 
-                !execution.completedSteps.has(dependentId) &&
-                !readySteps.some(s => s.id === dependentId)) {
-              readySteps.push(dependentNode.step);
+async function _runWorkflow(workflow, parameters, executionId) {
+  const context = { ...parameters };
+  const stepResults = {};
+
+  const stepDependencies = new Map(
+    workflow.steps.map((step) => [step.id, new Set(step.dependencies || [])])
+  );
+  const stepStatus = new Map(
+    workflow.steps.map((step) => [step.id, 'pending'])
+  );
+
+  let stepsToRun = new Set(
+    workflow.steps
+      .filter((step) => !step.dependencies || step.dependencies.length === 0)
+      .map((step) => step.id)
+  );
+
+  while (
+    stepStatus.size > 0 &&
+    (stepsToRun.size > 0 ||
+      Array.from(stepStatus.values()).some((s) => s === 'running'))
+  ) {
+    const readySteps = Array.from(stepsToRun);
+    stepsToRun.clear();
+
+    const promises = readySteps.map(async (stepId) => {
+      const step = workflow.steps.find((s) => s.id === stepId);
+      stepStatus.set(stepId, 'running');
+
+      try {
+        const processedParams = _processStepParams(
+          step.params,
+          stepResults,
+          context
+        );
+        logger.info('Executing step', {
+          executionId,
+          stepId: step.id,
+          tool: step.tool,
+        });
+        const result = await executeToolProxy(step.tool, processedParams);
+        stepResults[step.id] = result;
+        stepStatus.set(stepId, 'completed');
+        logger.info('Step completed successfully', {
+          executionId,
+          stepId: step.id,
+        });
+
+        // Update dependencies and find next steps
+        for (const [sId, deps] of stepDependencies.entries()) {
+          if (deps.has(step.id)) {
+            deps.delete(step.id);
+            if (deps.size === 0 && stepStatus.get(sId) === 'pending') {
+              stepsToRun.add(sId);
             }
           }
-          
-          // Process more steps if available
-          if (readySteps.length > 0) {
-            this._executeReadySteps(workflow, execution, readySteps, dependencyGraph, activePromises, context);
-          }
+        }
+      } catch (error) {
+        logger.error('Step execution failed', {
+          executionId,
+          stepId: step.id,
+          error: error.message,
         });
-      
-      activePromises.add(stepPromise);
-    }
-    
-    // If we hit concurrency limit, wait for some promises to resolve
-    if (readySteps.length > 0 && activePromises.size >= workflow.concurrencyLimit) {
-      Promise.race(activePromises).then(() => {
-        this._executeReadySteps(workflow, execution, readySteps, dependencyGraph, activePromises, context);
-      });
-    }
-  }
-
-  /**
-   * Execute a single workflow step
-   */
-  async _executeStep(step, execution, context) {
-    try {
-      // Prepare parameters by interpolating with context and previous results
-      const processedParams = this._processStepParams(step.params, execution.results, context);
-      
-      console.log(`Executing step ${step.id} with tool ${step.toolId}`);
-      const result = await executeToolProxy(step.toolId, processedParams);
-      
-      execution.setStepResult(step.id, result);
-      return result;
-    } catch (error) {
-      console.error(`Error executing step ${step.id}:`, error);
-      execution.setStepError(step.id, error.message || String(error));
-      throw error;
-    }
-  }
-
-  /**
-   * Process step parameters, interpolating with context values and previous step results
-   * Supports syntax like ${context.value} or ${steps.stepId.resultProperty}
-   */
-  _processStepParams(params, stepResults, context) {
-    if (!params) return {};
-    
-    // Helper to handle interpolation
-    const interpolate = (str) => {
-      if (typeof str !== 'string') return str;
-      
-      return str.replace(/\${([^}]+)}/g, (match, path) => {
-        const parts = path.trim().split('.');
-        if (parts[0] === 'context') {
-          // Access context values
-          let value = context;
-          for (let i = 1; i < parts.length; i++) {
-            if (value === undefined) return match;
-            value = value[parts[i]];
-          }
-          return value !== undefined ? value : match;
-        } else if (parts[0] === 'steps') {
-          // Access previous step results
-          if (parts.length < 2) return match;
-          const stepId = parts[1];
-          const result = stepResults[stepId];
-          if (result === undefined) return match;
-          
-          let value = result;
-          for (let i = 2; i < parts.length; i++) {
-            if (value === undefined) return match;
-            value = value[parts[i]];
-          }
-          return value !== undefined ? value : match;
-        }
-        return match;
-      });
-    };
-    
-    // Recursively process all parameter values
-    const processValue = (value) => {
-      if (typeof value === 'string') {
-        return interpolate(value);
-      } else if (Array.isArray(value)) {
-        return value.map(processValue);
-      } else if (value !== null && typeof value === 'object') {
-        const result = {};
-        for (const [k, v] of Object.entries(value)) {
-          result[k] = processValue(v);
-        }
-        return result;
+        stepStatus.set(stepId, 'failed');
+        throw new Error(`Step '${step.id}' failed: ${error.message}`);
       }
-      return value;
-    };
-    
-    return processValue(params);
+    });
+
+    await Promise.all(promises);
+
+    // If no new steps are ready to run but some are still pending, there's a dependency issue
+    if (
+      stepsToRun.size === 0 &&
+      Array.from(stepStatus.values()).some((s) => s === 'pending')
+    ) {
+      const pendingSteps = Array.from(stepStatus.entries())
+        .filter(([, s]) => s === 'pending')
+        .map(([id]) => id);
+      throw new Error(
+        `Workflow stuck. Circular or unresolved dependencies for steps: ${pendingSteps.join(', ')}`
+      );
+    }
   }
+
+  const failedSteps = Array.from(stepStatus.entries()).filter(
+    ([, s]) => s === 'failed'
+  );
+  if (failedSteps.length > 0) {
+    throw new Error(
+      `Workflow failed. The following steps did not complete: ${failedSteps.map(([id]) => id).join(', ')}`
+    );
+  }
+
+  // Determine the final result of the workflow
+  if (workflow.output) {
+    return _processStepParams(workflow.output, stepResults, context);
+  }
+
+  return stepResults;
+}
+
+function _processStepParams(params, stepResults, context) {
+  if (typeof params !== 'object' || params === null) {
+    return params;
+  }
+
+  const interpolate = (str) => {
+    if (typeof str !== 'string') return str;
+    return str.replace(/\${(.*?)}/g, (match, key) => {
+      const parts = key.trim().split('.');
+      let value;
+      if (parts[0] === 'context') {
+        value = context;
+        parts.slice(1).forEach((p) => (value = value ? value[p] : undefined));
+      } else if (parts[0] === 'steps') {
+        value = stepResults;
+        parts.slice(1).forEach((p) => (value = value ? value[p] : undefined));
+      }
+      return value !== undefined ? value : match;
+    });
+  };
+
+  const processValue = (value) => {
+    if (typeof value === 'string') {
+      return interpolate(value);
+    }
+    if (Array.isArray(value)) {
+      return value.map(processValue);
+    }
+    if (typeof value === 'object' && value !== null) {
+      return Object.fromEntries(
+        Object.entries(value).map(([k, v]) => [k, processValue(v)])
+      );
+    }
+    return value;
+  };
+
+  return processValue(params);
 }
 
 export {
-  WorkflowManager,
-  WorkflowExecution
-}; 
+  registerWorkflow,
+  getWorkflow,
+  getAllWorkflows,
+  executeWorkflow,
+  registerWorkflowsFromDirectory,
+  getWorkflowExecution,
+};

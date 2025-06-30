@@ -12,12 +12,12 @@ const TOKEN_EXPIRY = process.env.TOKEN_EXPIRY || '1h';
  */
 export const generateToken = (user) => {
   return jwt.sign(
-    { 
-      id: user.id, 
+    {
+      id: user.id,
       username: user.username,
-      roles: user.roles || ['user']
-    }, 
-    JWT_SECRET, 
+      roles: user.roles || ['user'],
+    },
+    JWT_SECRET,
     { expiresIn: TOKEN_EXPIRY }
   );
 };
@@ -44,7 +44,10 @@ export const verifyToken = (token) => {
  */
 export const authenticate = (req, res, next) => {
   // Skip authentication in development mode if configured
-  if (process.env.NODE_ENV === 'development' && process.env.SKIP_AUTH === 'true') {
+  if (
+    process.env.NODE_ENV === 'development' &&
+    process.env.SKIP_AUTH === 'true'
+  ) {
     req.user = { id: 'dev-user', username: 'developer', roles: ['admin'] };
     return next();
   }
@@ -52,30 +55,30 @@ export const authenticate = (req, res, next) => {
   // Get the token from the authorization header
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       error: 'Authentication required',
-      message: 'No valid authentication token provided'
+      message: 'No valid authentication token provided',
     });
   }
 
   // Extract the token
   const token = authHeader.split(' ')[1];
-  
+
   // Verify the token
   const decoded = verifyToken(token);
   if (!decoded) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       error: 'Authentication failed',
-      message: 'Invalid or expired token'
+      message: 'Invalid or expired token',
     });
   }
 
   // Add the user to the request object
   req.user = decoded;
-  
+
   // Log authentication
   logger.debug(`User authenticated: ${decoded.username}`);
-  
+
   // Continue to the next middleware or route handler
   next();
 };
@@ -92,24 +95,32 @@ export const authorize = (roles = []) => {
 
   return (req, res, next) => {
     // Skip authorization in development mode if configured
-    if (process.env.NODE_ENV === 'development' && process.env.SKIP_AUTH === 'true') {
+    if (
+      process.env.NODE_ENV === 'development' &&
+      process.env.SKIP_AUTH === 'true'
+    ) {
       return next();
     }
 
     // Check if user is authenticated
     if (!req.user) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Authentication required',
-        message: 'You must be logged in to access this resource'
+        message: 'You must be logged in to access this resource',
       });
     }
 
     // Check if the user has the required role
-    if (roles.length > 0 && !req.user.roles.some(role => roles.includes(role))) {
-      logger.warn(`Authorization failed for user ${req.user.username}: Required roles ${roles.join(', ')}`);
-      return res.status(403).json({ 
+    if (
+      roles.length > 0 &&
+      !req.user.roles.some((role) => roles.includes(role))
+    ) {
+      logger.warn(
+        `Authorization failed for user ${req.user.username}: Required roles ${roles.join(', ')}`
+      );
+      return res.status(403).json({
         error: 'Authorization failed',
-        message: 'You do not have permission to access this resource'
+        message: 'You do not have permission to access this resource',
       });
     }
 
@@ -122,5 +133,5 @@ export default {
   authenticate,
   authorize,
   generateToken,
-  verifyToken
-}; 
+  verifyToken,
+};

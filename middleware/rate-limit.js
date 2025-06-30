@@ -4,7 +4,7 @@ import logger from '../logger.js';
 // Create a custom handler for rate limit exceeded
 const rateLimitExceededHandler = (req, res, options) => {
   logger.warn(`Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
-  
+
   // Create a clean error response
   return res.status(options.statusCode).json({
     error: 'Too Many Requests',
@@ -20,7 +20,7 @@ export const standardLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the headers
   legacyHeaders: false, // Disable the X-RateLimit-* headers
   message: 'Too many requests, please try again after a minute.',
-  handler: rateLimitExceededHandler
+  handler: rateLimitExceededHandler,
 });
 
 // Stricter rate limiter for authentication endpoints
@@ -29,8 +29,9 @@ export const authLimiter = rateLimit({
   max: 10, // Max 10 login attempts per 15 minutes
   standardHeaders: true,
   legacyHeaders: false,
-  message: 'Too many authentication attempts, please try again after 15 minutes.',
-  handler: rateLimitExceededHandler
+  message:
+    'Too many authentication attempts, please try again after 15 minutes.',
+  handler: rateLimitExceededHandler,
 });
 
 // Tool execution rate limiter
@@ -40,7 +41,7 @@ export const executionLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many tool executions, please try again after a minute.',
-  handler: rateLimitExceededHandler
+  handler: rateLimitExceededHandler,
 });
 
 // Admin endpoints rate limiter
@@ -50,21 +51,27 @@ export const adminLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many administrative requests, please try again after a minute.',
-  handler: rateLimitExceededHandler
+  handler: rateLimitExceededHandler,
 });
 
 // Rate limiter factory function to create custom limiters
-export const createRateLimiter = (requestsPerMinute, windowMinutes = 1, customMessage = null) => {
+export const createRateLimiter = (
+  requestsPerMinute,
+  windowMinutes = 1,
+  customMessage = null
+) => {
   const windowMs = windowMinutes * 60 * 1000;
-  const message = customMessage || `Too many requests, please try again after ${windowMinutes} minute(s).`;
-  
+  const message =
+    customMessage ||
+    `Too many requests, please try again after ${windowMinutes} minute(s).`;
+
   return rateLimit({
     windowMs,
-    max: requestsPerMinute, 
+    max: requestsPerMinute,
     standardHeaders: true,
     legacyHeaders: false,
     message,
-    handler: rateLimitExceededHandler
+    handler: rateLimitExceededHandler,
   });
 };
 
@@ -73,5 +80,5 @@ export default {
   authLimiter,
   executionLimiter,
   adminLimiter,
-  createRateLimiter
-}; 
+  createRateLimiter,
+};

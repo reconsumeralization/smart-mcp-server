@@ -1,9 +1,79 @@
-# Smart MCP Server
+# Smart MCP Server (Gemini Edition)
 
-A context-aware Model Context Protocol (MCP) server that intelligently manages tool presentation and execution based on user context and requirements.
+This project is a sophisticated, context-aware agent that leverages Google's Gemini models for intelligent workflow execution. It is compliant with both the Model Context Protocol (MCP) and the Agent-to-Agent (A2A) protocol, allowing it to serve as a powerful tool in a multi-agent system.
 
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2016.0.0-brightgreen)](https://nodejs.org/)
+The server dynamically loads and manages workflows, using Gemini's native function calling capabilities to intelligently select and execute the correct workflow based on natural language task descriptions.
+
+## Key Features
+
+- **Gemini-Powered Intelligence**: Uses Gemini (configurable model, e.g., `gemini-pro`) for state-of-the-art function calling to drive workflow selection.
+- **A2A Compliant**: Implements the Agent-to-Agent protocol, allowing it to communicate and collaborate with other AI agents. Includes `/.well-known/agent.json` for discovery and a `/a2a/tasks` endpoint for execution.
+- **Dynamic Workflow System**: Automatically loads workflow definitions from JSON files, making it easy to add or modify complex processes without changing the core code.
+- **Centralized Configuration**: A single `config.js` file manages all essential settings, from server ports to API keys.
+- **Extensible and Modular**: The architecture is designed to be easily extended with new workflows and capabilities.
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- A Google Gemini API Key
+
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/reconsumeralization/smart-mcp-server.git
+    cd smart-mcp-server
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Set up your environment:**
+    - Copy the `.env.example` file to a new file named `.env`:
+      ```bash
+      cp .env.example .env
+      ```
+    - Open the `.env` file and add your Google Gemini API key:
+      ```
+      GEMINI_API_KEY=your_gemini_api_key_here
+      ```
+
+### Running the Server
+
+-   **To start the server in production mode:**
+    ```bash
+    npm start
+    ```
+-   **To start the server in development mode (with hot reloading):**
+    ```bash
+    npm run dev
+    ```
+
+The server will start on the port defined in your configuration (default is `3000`).
+
+## API Documentation
+
+API documentation is available via Swagger UI. Once the server is running, you can access it at:
+
+`http://localhost:3000/api-docs`
+
+This interface allows you to explore and interact with all the available endpoints, including the A2A task endpoint.
+
+## How It Works
+
+1.  **A2A Task Received**: An external agent sends a POST request to the `/a2a/tasks` endpoint with a `task_description`.
+2.  **Workflow Selection**: The server prepares a list of all available workflows and sends them along with the task description to the Gemini API.
+3.  **Gemini Function Calling**: Gemini analyzes the task and selects the most appropriate workflow to execute, returning it as a "function call".
+4.  **Workflow Execution**: The `WorkflowManager` executes the selected workflow, processing each step and interpolating the necessary arguments.
+5.  **A2A Response**: The server returns the result of the workflow execution in a standard A2A format.
+
+## Adding New Workflows
+
+To add a new workflow, simply create a new `.json` file in the `/examples` directory. The server will automatically load it on startup. Ensure the workflow JSON is valid and includes the required `id`, `name`, `description`, and `steps` fields.
 
 ## 🚀 Overview
 

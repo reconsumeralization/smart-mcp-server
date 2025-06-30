@@ -101,7 +101,11 @@
         "totalThoughts": 5,
         "nextThoughtNeeded": false
       },
-      "dependencies": ["analyze-repo-activity", "analyze-code-findings", "analyze-issues"]
+      "dependencies": [
+        "analyze-repo-activity",
+        "analyze-code-findings",
+        "analyze-issues"
+      ]
     }
   ]
-} 
+}

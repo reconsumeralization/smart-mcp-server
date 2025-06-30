@@ -1,6 +1,9 @@
 import dotenv from 'dotenv';
+import logger from './logger.js';
 
 dotenv.config();
+
+logger.debug('POSTGRES_URL from .env: %s', process.env.POSTGRES_URL);
 
 export default {
   server: {
@@ -28,7 +31,7 @@ export default {
       execution: {
         windowMs: 15 * 60 * 1000,
         max: 50,
-      }
+      },
     },
     maxRequestSize: '10mb',
   },
@@ -44,6 +47,9 @@ export default {
     apiKey: process.env.STRIPE_API_KEY,
     toolName: 'stripe-tool',
   },
+  github: {
+    token: process.env.GITHUB_TOKEN,
+  },
   database: {
     url: process.env.POSTGRES_URL,
   },
@@ -52,5 +58,5 @@ export default {
   },
   a2a: {
     matchThreshold: 0.7,
-  }
-}; 
+  },
+};

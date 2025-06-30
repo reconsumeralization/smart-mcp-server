@@ -1,14 +1,15 @@
 /**
  * Workflow Monitor and Testing Tool
- * 
+ *
  * This script helps with executing and monitoring workflow tests,
  * capturing metrics, and generating reports on workflow performance.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { performance } = require('perf_hooks');
-const { executeToolProxy } = require('./tool-proxy');
+import fs from 'fs';
+import path from 'path';
+import { performance } from 'perf_hooks';
+import { executeToolProxy } from './tool-proxy.js';
+import logger from './logger.js';
 
 // Configuration
 const DEFAULT_CONFIG = {
@@ -16,13 +17,13 @@ const DEFAULT_CONFIG = {
   metricsDirectory: './metrics',
   reportsDirectory: './reports',
   mockMode: false,
-  timeoutMs: 30000 // 30 seconds default timeout
+  timeoutMs: 30000, // 30 seconds default timeout
 };
 
 /**
  * Workflow Test Runner
  */
-class WorkflowTester {
+export class WorkflowTester {
   constructor(config = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.ensureDirectories();
@@ -36,9 +37,9 @@ class WorkflowTester {
   ensureDirectories() {
     [
       this.config.logDirectory,
-      this.config.metricsDirectory, 
-      this.config.reportsDirectory
-    ].forEach(dir => {
+      this.config.metricsDirectory,
+      this.config.reportsDirectory,
+    ].forEach((dir) => {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
@@ -58,11 +59,11 @@ class WorkflowTester {
   loadWorkflow(workflowPath) {
     try {
       const fullPath = path.resolve(workflowPath);
-      console.log(`Loading workflow from ${fullPath}`);
+      logger.info(`Loading workflow from ${fullPath}`);
       const workflowData = fs.readFileSync(fullPath, 'utf8');
       return JSON.parse(workflowData);
     } catch (error) {
-      console.error(`Error loading workflow: ${error.message}`);
+      logger.error(`Error loading workflow:`, { error: error.message });
       throw error;
     }
   }
@@ -81,12 +82,12 @@ class WorkflowTester {
       status: 'pending',
       inputs: step.params || {},
       outputs: null,
-      error: null
+      error: null,
     };
 
     try {
-      console.log(`Executing step: ${step.id} with tool: ${step.toolId}`);
-      
+      logger.info(`Executing step: ${step.id} with tool: ${step.toolId}`);
+
       // Check dependencies
       if (step.dependencies) {
         for (const depId of step.dependencies) {
@@ -110,20 +111,20 @@ class WorkflowTester {
       stepLog.outputs = result;
       stepLog.endTime = new Date().toISOString();
       stepLog.duration = endTime - startTime;
-      
+
       // Update workflow state
       workflowState.stepResults.set(step.id, {
         status: 'completed',
         result,
-        timeTaken: stepLog.duration
+        timeTaken: stepLog.duration,
       });
-      
+
       // Log step execution
       this.logStepExecution(testRunId, stepLog);
-      
+
       return {
         success: true,
-        result
+        result,
       };
     } catch (error) {
       const endTime = performance.now();
@@ -131,20 +132,20 @@ class WorkflowTester {
       stepLog.error = error.message;
       stepLog.endTime = new Date().toISOString();
       stepLog.duration = endTime - startTime;
-      
+
       // Update workflow state
       workflowState.stepResults.set(step.id, {
         status: 'failed',
         error: error.message,
-        timeTaken: stepLog.duration
+        timeTaken: stepLog.duration,
       });
-      
+
       // Log step execution
       this.logStepExecution(testRunId, stepLog);
-      
+
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -153,7 +154,10 @@ class WorkflowTester {
    * Log step execution details
    */
   logStepExecution(testRunId, stepLog) {
-    const logFile = path.join(this.config.logDirectory, `${testRunId}_steps.jsonl`);
+    const logFile = path.join(
+      this.config.logDirectory,
+      `${testRunId}_steps.jsonl`
+    );
     fs.appendFileSync(logFile, JSON.stringify(stepLog) + '\n');
   }
 
@@ -161,18 +165,18 @@ class WorkflowTester {
    * Determine which steps are ready to execute based on dependencies
    */
   getReadySteps(workflow, workflowState) {
-    return workflow.steps.filter(step => {
+    return workflow.steps.filter((step) => {
       // Skip steps that have already been executed or are in progress
       if (workflowState.stepResults.has(step.id)) {
         return false;
       }
-      
+
       // Check if all dependencies are satisfied
       if (!step.dependencies || step.dependencies.length === 0) {
         return true;
       }
-      
-      return step.dependencies.every(depId => {
+
+      return step.dependencies.every((depId) => {
         const depResult = workflowState.stepResults.get(depId);
         return depResult && depResult.status === 'completed';
       });
@@ -184,8 +188,10 @@ class WorkflowTester {
    */
   async executeWorkflow(workflow, inputs = {}) {
     const testRunId = `run_${Date.now()}`;
-    console.log(`Starting workflow execution: ${workflow.id} (Run ID: ${testRunId})`);
-    
+    logger.info(
+      `Starting workflow execution: ${workflow.id} (Run ID: ${testRunId})`
+    );
+
     const startTime = performance.now();
     const workflowState = {
       id: workflow.id,
@@ -195,28 +201,30 @@ class WorkflowTester {
       status: 'running',
       startTime: new Date().toISOString(),
       endTime: null,
-      error: null
+      error: null,
     };
-    
+
     this.testRuns.set(testRunId, workflowState);
-    
+
     try {
       // Execute steps respecting concurrency limits and dependencies
       while (true) {
         const readySteps = this.getReadySteps(workflow, workflowState);
-        
+
         if (readySteps.length === 0) {
           // Check if all steps have been executed
           if (workflowState.stepResults.size === workflow.steps.length) {
             break; // Workflow completed
           } else {
             // Check for stuck workflow (circular dependencies or failures)
-            const pendingSteps = workflow.steps.filter(s => !workflowState.stepResults.has(s.id));
+            const pendingSteps = workflow.steps.filter(
+              (s) => !workflowState.stepResults.has(s.id)
+            );
             const failedDeps = new Set();
-            
-            pendingSteps.forEach(step => {
+
+            pendingSteps.forEach((step) => {
               if (step.dependencies) {
-                step.dependencies.forEach(depId => {
+                step.dependencies.forEach((depId) => {
                   const depResult = workflowState.stepResults.get(depId);
                   if (depResult && depResult.status === 'failed') {
                     failedDeps.add(depId);
@@ -224,99 +232,96 @@ class WorkflowTester {
                 });
               }
             });
-            
+
             if (failedDeps.size > 0) {
-              throw new Error(`Workflow stuck due to failed dependencies: ${Array.from(failedDeps).join(', ')}`);
+              throw new Error(
+                `Workflow stuck due to failed dependencies: ${Array.from(failedDeps).join(', ')}`
+              );
             } else {
-              throw new Error('Workflow stuck due to circular dependencies or other configuration issues');
+              throw new Error(
+                'Workflow stuck due to circular dependencies or other configuration issues'
+              );
             }
           }
         }
-        
+
         // Execute steps in parallel respecting concurrency limit
         const concurrentLimit = workflow.concurrencyLimit || 1;
         const stepsToExecute = readySteps.slice(0, concurrentLimit);
-        
-        await Promise.all(stepsToExecute.map(step => 
-          this.executeStep(step, workflowState, testRunId)
-        ));
+
+        await Promise.all(
+          stepsToExecute.map((step) =>
+            this.executeStep(step, workflowState, testRunId)
+          )
+        );
       }
-      
+
       // Workflow completed successfully
       const endTime = performance.now();
       workflowState.status = 'completed';
       workflowState.endTime = new Date().toISOString();
-      
+
       // Generate metrics
-      this.generateMetrics(testRunId, workflowState, endTime - startTime);
-      
-      console.log(`Workflow execution completed: ${workflow.id} (Run ID: ${testRunId})`);
+      const totalDuration = endTime - startTime;
+      const metrics = this.generateMetrics(
+        testRunId,
+        workflowState,
+        totalDuration
+      );
+
+      // Write metrics to file
+      const metricsFile = path.join(
+        this.config.metricsDirectory,
+        `${testRunId}_metrics.json`
+      );
+      fs.writeFileSync(metricsFile, JSON.stringify(metrics, null, 2));
+
       return {
         success: true,
         testRunId,
-        timeTaken: endTime - startTime
+        timeTaken: totalDuration,
+        metrics,
       };
     } catch (error) {
-      // Workflow failed
       const endTime = performance.now();
       workflowState.status = 'failed';
       workflowState.error = error.message;
       workflowState.endTime = new Date().toISOString();
-      
-      // Generate metrics even for failed workflows
-      this.generateMetrics(testRunId, workflowState, endTime - startTime);
-      
-      console.error(`Workflow execution failed: ${workflow.id} (Run ID: ${testRunId}) - ${error.message}`);
+
+      logger.error(`Workflow failed:`, { error: error.message });
+
       return {
         success: false,
         testRunId,
         error: error.message,
-        timeTaken: endTime - startTime
+        timeTaken: endTime - startTime,
       };
     }
   }
 
   /**
-   * Generate metrics for a completed workflow run
+   * Generate metrics for a workflow run
    */
   generateMetrics(testRunId, workflowState, totalDuration) {
     const metrics = {
+      testRunId: testRunId,
       workflowId: workflowState.id,
-      testRunId,
-      totalDuration,
       status: workflowState.status,
-      startTime: workflowState.startTime,
-      endTime: workflowState.endTime,
-      stepMetrics: [],
-      errorRate: 0,
-      averageStepDuration: 0,
-      criticalPath: []
+      totalDuration: totalDuration,
+      stepDurations: {},
+      successfulSteps: 0,
+      failedSteps: 0,
     };
-    
-    // Process step metrics
-    const steps = [];
-    workflowState.stepResults.forEach((result, stepId) => {
-      steps.push({
-        stepId,
-        status: result.status,
-        duration: result.timeTaken || 0
-      });
-    });
-    
-    metrics.stepMetrics = steps;
-    
-    // Calculate error rate
-    const failedSteps = steps.filter(s => s.status === 'failed');
-    metrics.errorRate = (failedSteps.length / steps.length) * 100;
-    
-    // Calculate average step duration
-    const totalStepDuration = steps.reduce((sum, step) => sum + step.duration, 0);
-    metrics.averageStepDuration = totalStepDuration / steps.length;
-    
-    // Save metrics to file
-    const metricsFile = path.join(this.config.metricsDirectory, `${testRunId}_metrics.json`);
-    fs.writeFileSync(metricsFile, JSON.stringify(metrics, null, 2));
-    
+
+    for (const [stepId, result] of workflowState.stepResults.entries()) {
+      metrics.stepDurations[stepId] = result.timeTaken;
+      if (result.status === 'completed') {
+        metrics.successfulSteps++;
+      } else {
+        metrics.failedSteps++;
+      }
+    }
+
     return metrics;
   }
 
@@ -325,86 +330,63 @@ class WorkflowTester {
    */
   generateComparisonReport(testRunIds, reportName = 'comparison_report') {
     const report = {
+      reportName,
       generatedAt: new Date().toISOString(),
-      testRuns: [],
+      testRunIds,
       comparison: {
-        duration: {
-          min: Infinity,
-          max: 0,
-          avg: 0
-        },
-        errorRate: {
-          min: Infinity,
-          max: 0,
-          avg: 0
-        },
-        stepPerformance: {}
-      }
+        duration: { min: Infinity, max: -Infinity, avg: 0, total: 0 },
+        successRate: { total: 0, successful: 0, percentage: 0 },
+      },
+      runs: [],
     };
-    
-    // Collect metrics for each test run
-    testRunIds.forEach(runId => {
-      try {
-        const metricsFile = path.join(this.config.metricsDirectory, `${runId}_metrics.json`);
+
+    const allDurations = [];
+
+    for (const testRunId of testRunIds) {
+      const metricsFile = path.join(
+        this.config.metricsDirectory,
+        `${testRunId}_metrics.json`
+      );
+      if (fs.existsSync(metricsFile)) {
         const metrics = JSON.parse(fs.readFileSync(metricsFile, 'utf8'));
-        report.testRuns.push(metrics);
-        
-        // Update comparison data
-        report.comparison.duration.min = Math.min(report.comparison.duration.min, metrics.totalDuration);
-        report.comparison.duration.max = Math.max(report.comparison.duration.max, metrics.totalDuration);
-        report.comparison.errorRate.min = Math.min(report.comparison.errorRate.min, metrics.errorRate);
-        report.comparison.errorRate.max = Math.max(report.comparison.errorRate.max, metrics.errorRate);
-        
-        // Step performance
-        metrics.stepMetrics.forEach(step => {
-          if (!report.comparison.stepPerformance[step.stepId]) {
-            report.comparison.stepPerformance[step.stepId] = {
-              durations: [],
-              errorCount: 0
-            };
-          }
-          
-          report.comparison.stepPerformance[step.stepId].durations.push(step.duration);
-          if (step.status === 'failed') {
-            report.comparison.stepPerformance[step.stepId].errorCount++;
-          }
-        });
-      } catch (error) {
-        console.error(`Error loading metrics for run ${runId}: ${error.message}`);
+        report.runs.push(metrics);
+
+        // Update stats
+        allDurations.push(metrics.totalDuration);
+        report.comparison.duration.min = Math.min(
+          report.comparison.duration.min,
+          metrics.totalDuration
+        );
+        report.comparison.duration.max = Math.max(
+          report.comparison.duration.max,
+          metrics.totalDuration
+        );
+        report.comparison.successRate.total++;
+        if (metrics.status === 'completed') {
+          report.comparison.successRate.successful++;
+        }
       }
-    });
-    
-    // Calculate averages
-    const totalRuns = report.testRuns.length;
-    if (totalRuns > 0) {
-      const totalDuration = report.testRuns.reduce((sum, run) => sum + run.totalDuration, 0);
-      const totalErrorRate = report.testRuns.reduce((sum, run) => sum + run.errorRate, 0);
-      
-      report.comparison.duration.avg = totalDuration / totalRuns;
-      report.comparison.errorRate.avg = totalErrorRate / totalRuns;
-      
-      // Calculate step averages
-      Object.keys(report.comparison.stepPerformance).forEach(stepId => {
-        const stepData = report.comparison.stepPerformance[stepId];
-        const totalStepDuration = stepData.durations.reduce((sum, d) => sum + d, 0);
-        stepData.avgDuration = totalStepDuration / stepData.durations.length;
-        stepData.errorRate = (stepData.errorCount / stepData.durations.length) * 100;
-        
-        // Identify slowest and fastest steps
-        stepData.min = Math.min(...stepData.durations);
-        stepData.max = Math.max(...stepData.durations);
-      });
     }
-    
-    // Save report
-    const reportFile = path.join(this.config.reportsDirectory, `${reportName}.json`);
+
+    if (allDurations.length > 0) {
+      report.comparison.duration.total = allDurations.reduce(
+        (acc, val) => acc + val,
+        0
+      );
+      report.comparison.duration.avg =
+        report.comparison.duration.total / allDurations.length;
+      report.comparison.successRate.percentage =
+        (report.comparison.successRate.successful /
+          report.comparison.successRate.total) *
+        100;
+    }
+
+    const reportFile = path.join(
+      this.config.reportsDirectory,
+      `${reportName}.json`
+    );
     fs.writeFileSync(reportFile, JSON.stringify(report, null, 2));
-    
-    console.log(`Comparison report generated: ${reportFile}`);
+
     return report;
   }
 }
-
-module.exports = {
-  WorkflowTester
-}; 

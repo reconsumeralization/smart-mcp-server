@@ -1,0 +1,16 @@
+# Ignore artifacts:
+build
+coverage
+dist
+node_modules
+
+# Ignore certain file types:
+*.log
+*.lock
+
+# Ignore specific config files
+.env.example
+.env
+
+# Ignore markdown files as they are often manually formatted
+*.md 

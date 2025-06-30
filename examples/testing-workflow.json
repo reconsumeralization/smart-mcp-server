@@ -88,7 +88,11 @@
         "totalThoughts": 2,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["testing-framework-selection", "analyze-api-testing", "analyze-mocking"]
+      "dependencies": [
+        "testing-framework-selection",
+        "analyze-api-testing",
+        "analyze-mocking"
+      ]
     },
     {
       "id": "package-update",
@@ -187,7 +191,13 @@
         "totalThoughts": 1,
         "nextThoughtNeeded": false
       },
-      "dependencies": ["test-docs", "create-github-workflow", "create-e2e-tests", "create-integration-tests", "create-unit-tests"]
+      "dependencies": [
+        "test-docs",
+        "create-github-workflow",
+        "create-e2e-tests",
+        "create-integration-tests",
+        "create-unit-tests"
+      ]
     }
   ]
-} 
+}

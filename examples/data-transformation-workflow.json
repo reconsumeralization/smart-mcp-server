@@ -74,7 +74,11 @@
         "totalThoughts": 2,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["feature-engineering-1", "feature-engineering-2", "data-enrichment"]
+      "dependencies": [
+        "feature-engineering-1",
+        "feature-engineering-2",
+        "data-enrichment"
+      ]
     },
     {
       "id": "correlation-analysis",
@@ -85,7 +89,11 @@
         "totalThoughts": 2,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["feature-engineering-1", "feature-engineering-2", "data-enrichment"]
+      "dependencies": [
+        "feature-engineering-1",
+        "feature-engineering-2",
+        "data-enrichment"
+      ]
     },
     {
       "id": "trend-analysis",
@@ -96,7 +104,11 @@
         "totalThoughts": 2,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["feature-engineering-1", "feature-engineering-2", "data-enrichment"]
+      "dependencies": [
+        "feature-engineering-1",
+        "feature-engineering-2",
+        "data-enrichment"
+      ]
     },
     {
       "id": "anomaly-detection",
@@ -118,7 +130,12 @@
         "totalThoughts": 3,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["descriptive-statistics", "correlation-analysis", "trend-analysis", "anomaly-detection"]
+      "dependencies": [
+        "descriptive-statistics",
+        "correlation-analysis",
+        "trend-analysis",
+        "anomaly-detection"
+      ]
     },
     {
       "id": "business-recommendations",
@@ -154,4 +171,4 @@
       "dependencies": ["business-recommendations", "visualization-planning"]
     }
   ]
-} 
+}

@@ -1,12 +1,13 @@
 /**
  * Gemini Tool Implementation
- * 
+ *
  * This module implements the Gemini API as a tool for the MCP server.
  */
 
 import fetch from 'node-fetch';
 import GEMINI_ACTIONS from '../schema/gemini-actions.js';
 import dotenv from 'dotenv';
+import logger from '../logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -15,7 +16,7 @@ dotenv.config();
 const DEFAULT_CONFIG = {
   apiKey: process.env.GEMINI_API_KEY,
   serverUrl: `http://localhost:${process.env.GEMINI_SERVER_PORT || 3006}`,
-  model: process.env.GEMINI_MODEL || 'gemini-1.5-pro-preview-0425'
+  model: process.env.GEMINI_MODEL || 'gemini-1.5-pro-preview-0425',
 };
 
 // Chat sessions storage (in-memory for simplicity)
@@ -32,25 +33,31 @@ async function initializeTool() {
   try {
     // Check server health
     const healthResponse = await fetch(`${DEFAULT_CONFIG.serverUrl}/health`);
-    
+
     if (!healthResponse.ok) {
-      console.error('Gemini server health check failed');
+      logger.error('Gemini server health check failed');
       return false;
     }
-    
+
     // Initialize API
-    const initResponse = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/initialize`);
+    const initResponse = await fetch(
+      `${DEFAULT_CONFIG.serverUrl}/api/initialize`
+    );
     const initData = await initResponse.json();
-    
+
     if (initData.status !== 'success') {
-      console.error('Gemini API initialization failed:', initData.message);
+      logger.error('Gemini API initialization failed:', {
+        message: initData.message,
+      });
       return false;
     }
-    
-    console.log('Gemini tool initialized successfully with model:', initData.model);
+
+    logger.info('Gemini tool initialized successfully with model:', {
+      model: initData.model,
+    });
     return true;
   } catch (error) {
-    console.error('Failed to initialize Gemini tool:', error);
+    logger.error('Failed to initialize Gemini tool:', { error });
     return false;
   }
 }
@@ -62,7 +69,7 @@ async function initializeTool() {
  */
 async function generateText(params) {
   validateParams(params, ['prompt']);
-  
+
   try {
     const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/generate`, {
       method: 'POST',
@@ -73,24 +80,24 @@ async function generateText(params) {
           temperature: params.temperature,
           maxTokens: params.maxTokens,
           topP: params.topP,
-          topK: params.topK
-        }
-      })
+          topK: params.topK,
+        },
+      }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Generation failed with status: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return {
       success: true,
-      result: data.result
+      result: data.result,
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -102,33 +109,36 @@ async function generateText(params) {
  */
 async function createChatSession(params = {}) {
   try {
-    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/chat/session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ options: params })
-    });
-    
+    const response = await fetch(
+      `${DEFAULT_CONFIG.serverUrl}/api/chat/session`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ options: params }),
+      }
+    );
+
     if (!response.ok) {
       throw new Error(`Failed to create chat session: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     // Store session ID
     const sessionId = data.sessionId;
-    chatSessions.set(sessionId, { 
+    chatSessions.set(sessionId, {
       createdAt: new Date(),
-      history: [] 
+      history: [],
     });
-    
+
     return {
       success: true,
-      sessionId
+      sessionId,
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -140,46 +150,49 @@ async function createChatSession(params = {}) {
  */
 async function sendChatMessage(params) {
   validateParams(params, ['sessionId', 'message']);
-  
+
   try {
     const { sessionId, message, options = {} } = params;
-    
+
     // Check if session exists
     if (!chatSessions.has(sessionId)) {
       throw new Error(`Chat session ${sessionId} not found`);
     }
-    
-    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/chat/message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId, message, options })
-    });
-    
+
+    const response = await fetch(
+      `${DEFAULT_CONFIG.serverUrl}/api/chat/message`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, message, options }),
+      }
+    );
+
     if (!response.ok) {
       throw new Error(`Failed to send message: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     // Update session history
     const session = chatSessions.get(sessionId);
     session.history.push({
       role: 'user',
-      content: message
+      content: message,
     });
     session.history.push({
       role: 'model',
-      content: data.result.text
+      content: data.result.text,
     });
-    
+
     return {
       success: true,
-      result: data.result
+      result: data.result,
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -191,26 +204,26 @@ async function sendChatMessage(params) {
  */
 async function getChatHistory(params) {
   validateParams(params, ['sessionId']);
-  
+
   try {
     const { sessionId } = params;
-    
+
     // Check if session exists
     if (!chatSessions.has(sessionId)) {
       throw new Error(`Chat session ${sessionId} not found`);
     }
-    
+
     const session = chatSessions.get(sessionId);
-    
+
     return {
       success: true,
       history: session.history,
-      createdAt: session.createdAt
+      createdAt: session.createdAt,
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -222,27 +235,30 @@ async function getChatHistory(params) {
  */
 async function generateWithImages(params) {
   validateParams(params, ['prompt', 'imagePaths']);
-  
+
   try {
-    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/generate-with-images`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params)
-    });
-    
+    const response = await fetch(
+      `${DEFAULT_CONFIG.serverUrl}/api/generate-with-images`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      }
+    );
+
     if (!response.ok) {
       throw new Error(`Generation with images failed: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return {
       success: true,
-      result: data.result
+      result: data.result,
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -254,27 +270,27 @@ async function generateWithImages(params) {
  */
 async function generateEmbedding(params) {
   validateParams(params, ['text']);
-  
+
   try {
     const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/embed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params)
+      body: JSON.stringify(params),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Embedding generation failed: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return {
       success: true,
-      embedding: data.embedding
+      embedding: data.embedding,
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -286,33 +302,36 @@ async function generateEmbedding(params) {
  */
 async function registerTool(params) {
   validateParams(params, ['toolId', 'toolInfo']);
-  
+
   try {
     const { toolId, toolInfo } = params;
-    
+
     // Register tool with Gemini server
-    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/register-tool`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ toolId, toolInfo })
-    });
-    
+    const response = await fetch(
+      `${DEFAULT_CONFIG.serverUrl}/api/register-tool`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toolId, toolInfo }),
+      }
+    );
+
     if (!response.ok) {
       throw new Error(`Tool registration failed: ${response.status}`);
     }
-    
+
     // Store locally as well
     registeredTools.set(toolId, toolInfo);
-    
+
     const data = await response.json();
     return {
       success: true,
-      message: data.message
+      message: data.message,
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -324,36 +343,39 @@ async function registerTool(params) {
  */
 async function generateWithTools(params) {
   validateParams(params, ['prompt']);
-  
+
   try {
     const { prompt, tools = [], options = {} } = params;
-    
+
     // Verify all tools are registered
     for (const toolId of tools) {
       if (!registeredTools.has(toolId)) {
         throw new Error(`Tool ${toolId} is not registered`);
       }
     }
-    
-    const response = await fetch(`${DEFAULT_CONFIG.serverUrl}/api/generate-with-tools`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, tools, options })
-    });
-    
+
+    const response = await fetch(
+      `${DEFAULT_CONFIG.serverUrl}/api/generate-with-tools`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, tools, options }),
+      }
+    );
+
     if (!response.ok) {
       throw new Error(`Generation with tools failed: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return {
       success: true,
-      result: data.result
+      result: data.result,
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -376,7 +398,8 @@ function validateParams(params, required) {
 const geminiTool = {
   id: 'gemini',
   name: 'Gemini AI',
-  description: 'Google\'s Gemini AI model for text generation, chat, and embeddings',
+  description:
+    "Google's Gemini AI model for text generation, chat, and embeddings",
   category: 'ai',
   capabilities: {
     textGeneration: true,
@@ -384,16 +407,16 @@ const geminiTool = {
     multimodal: true,
     embeddings: true,
     toolCalling: true,
-    version: '1.0.0'
+    version: '1.0.0',
   },
   securityPolicy: {
     allowedContextTypes: ['text', 'image'],
     maxTokensPerRequest: 8192,
     rateLimits: {
       requests: 100,
-      timeWindow: 60 * 1000 // 1 minute
+      timeWindow: 60 * 1000, // 1 minute
     },
-    auditLogging: true
+    auditLogging: true,
   },
   actions: GEMINI_ACTIONS,
   handlers: {
@@ -405,8 +428,8 @@ const geminiTool = {
     generateWithImages,
     generateEmbedding,
     registerTool,
-    generateWithTools
-  }
+    generateWithTools,
+  },
 };
 
-export default geminiTool; 
+export default geminiTool;

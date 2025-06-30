@@ -38,7 +38,7 @@
       "params": {
         "thought": "Extracting API specifications from the codebase. Analyzing route definitions, controller methods, request/response schemas, and validation rules to construct a comprehensive API specification.",
         "thoughtNumber": 1,
-        "totalThoughts": 1, 
+        "totalThoughts": 1,
         "nextThoughtNeeded": false
       },
       "dependencies": ["scan-codebase"]
@@ -74,7 +74,11 @@
         "totalThoughts": 1,
         "nextThoughtNeeded": false
       },
-      "dependencies": ["extract-api-specs", "analyze-data-models", "document-authentication"]
+      "dependencies": [
+        "extract-api-specs",
+        "analyze-data-models",
+        "document-authentication"
+      ]
     },
     {
       "id": "generate-openapi-spec",
@@ -129,7 +133,11 @@
         "totalThoughts": 2,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["generate-openapi-spec", "document-error-handling", "document-rate-limits"]
+      "dependencies": [
+        "generate-openapi-spec",
+        "document-error-handling",
+        "document-rate-limits"
+      ]
     },
     {
       "id": "develop-test-scenarios",
@@ -151,7 +159,12 @@
         "totalThoughts": 1,
         "nextThoughtNeeded": false
       },
-      "dependencies": ["generate-openapi-spec", "create-sequence-diagrams", "create-integration-examples", "develop-test-scenarios"]
+      "dependencies": [
+        "generate-openapi-spec",
+        "create-sequence-diagrams",
+        "create-integration-examples",
+        "develop-test-scenarios"
+      ]
     },
     {
       "id": "generate-markdown-docs",
@@ -195,7 +208,11 @@
         "totalThoughts": 1,
         "nextThoughtNeeded": false
       },
-      "dependencies": ["generate-markdown-docs", "create-interactive-documentation", "versioning-strategy"]
+      "dependencies": [
+        "generate-markdown-docs",
+        "create-interactive-documentation",
+        "versioning-strategy"
+      ]
     },
     {
       "id": "create-onboarding-guides",
@@ -220,4 +237,4 @@
       "dependencies": ["publish-documentation"]
     }
   ]
-} 
+}

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import fetch from 'node-fetch';
 import fs from 'fs/promises';
 import path from 'path';
@@ -20,9 +21,9 @@ async function registerWorkflow(filename) {
     const filePath = path.join(__dirname, filename);
     const workflowData = await fs.readFile(filePath, 'utf8');
     const workflow = JSON.parse(workflowData);
-    
+
     console.log(`Registering workflow ${workflow.id}...`);
-    
+
     // Register workflow
     const response = await fetch(`${SERVER_URL}/api/workflows`, {
       method: 'POST',
@@ -31,9 +32,9 @@ async function registerWorkflow(filename) {
       },
       body: JSON.stringify(workflow),
     });
-    
+
     const result = await response.json();
-    
+
     if (response.ok) {
       console.log(`Workflow registered successfully: ${result.id}`);
       return result;
@@ -55,18 +56,21 @@ async function registerWorkflow(filename) {
 async function executeWorkflow(workflowId, context) {
   try {
     console.log(`Executing workflow ${workflowId}...`);
-    
+
     // Execute workflow
-    const response = await fetch(`${SERVER_URL}/api/workflows/${workflowId}/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ context }),
-    });
-    
+    const response = await fetch(
+      `${SERVER_URL}/api/workflows/${workflowId}/execute`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ context }),
+      }
+    );
+
     const result = await response.json();
-    
+
     if (response.ok) {
       console.log(`Workflow execution started: ${result.executionId}`);
       return result;
@@ -87,24 +91,28 @@ async function executeWorkflow(workflowId, context) {
 async function checkExecutionStatus(executionId) {
   try {
     console.log(`Checking execution status for ${executionId}...`);
-    
+
     // Get execution status
-    const response = await fetch(`${SERVER_URL}/api/workflows/executions/${executionId}`);
-    
+    const response = await fetch(
+      `${SERVER_URL}/api/workflows/executions/${executionId}`
+    );
+
     const result = await response.json();
-    
+
     if (response.ok) {
       console.log(`Execution status: ${result.status}`);
-      console.log(`Completed steps: ${result.completedSteps.join(', ') || 'none'}`);
+      console.log(
+        `Completed steps: ${result.completedSteps.join(', ') || 'none'}`
+      );
       console.log(`Pending steps: ${result.pendingSteps.join(', ') || 'none'}`);
-      
+
       if (result.errors.length > 0) {
         console.log('Errors:');
         for (const error of result.errors) {
           console.log(`  ${error.stepId}: ${error.error}`);
         }
       }
-      
+
       return result;
     } else {
       console.error(`Failed to get execution status: ${result.error}`);
@@ -122,26 +130,30 @@ async function checkExecutionStatus(executionId) {
  * @param {number} interval - Polling interval in ms
  * @param {number} timeout - Max time to poll in ms
  */
-async function pollExecutionUntilComplete(executionId, interval = 1000, timeout = 60000) {
+async function pollExecutionUntilComplete(
+  executionId,
+  interval = 1000,
+  timeout = 60000
+) {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeout) {
     const status = await checkExecutionStatus(executionId);
-    
+
     if (!status) {
       console.log('Failed to get status, stopping polling');
       return null;
     }
-    
+
     if (status.status === 'completed' || status.status === 'failed') {
       console.log(`Execution ${status.status}`);
       return status;
     }
-    
+
     console.log(`Execution in progress, waiting ${interval}ms...`);
-    await new Promise(resolve => setTimeout(resolve, interval));
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
-  
+
   console.log('Polling timed out');
   return null;
 }
@@ -150,13 +162,13 @@ async function pollExecutionUntilComplete(executionId, interval = 1000, timeout 
 async function runExample() {
   // Register web search workflow
   const workflow = await registerWorkflow('web-search-workflow.json');
-  
+
   if (workflow) {
     // Execute workflow with context
     const execution = await executeWorkflow(workflow.id, {
-      query: 'climate change solutions'
+      query: 'climate change solutions',
     });
-    
+
     if (execution) {
       // Poll until complete
       await pollExecutionUntilComplete(execution.executionId, 2000, 120000);
@@ -165,4 +177,4 @@ async function runExample() {
 }
 
 // Run the example
-runExample().catch(console.error); 
+runExample().catch(console.error);

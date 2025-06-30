@@ -1,0 +1,105 @@
+{
+  "id": "subscription-management-workflow",
+  "name": "Subscription Management Workflow",
+  "description": "Manages the lifecycle of a subscription, including trial periods, status changes, and invoicing.",
+  "version": "1.0.0",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "subscriptionId": {
+        "type": "string",
+        "description": "The ID of the subscription to manage."
+      },
+      "customerId": {
+        "type": "string",
+        "description": "The ID of the customer associated with the subscription."
+      },
+      "status": {
+        "type": "string",
+        "description": "The current status of the subscription (e.g., trial, active, cancelled)."
+      },
+      "trialEndDate": {
+        "type": "string",
+        "format": "date-time",
+        "description": "The end date of the trial period, if applicable."
+      },
+      "nextInvoiceDate": {
+        "type": "string",
+        "format": "date-time",
+        "description": "The date for the next invoice generation."
+      },
+      "planDetails": {
+        "type": "object",
+        "description": "Details of the subscription plan."
+      }
+    },
+    "required": ["subscriptionId", "customerId", "status", "planDetails"]
+  },
+  "steps": [
+    {
+      "id": "check-trial-status",
+      "type": "condition",
+      "description": "Check if the subscription is in a trial period and if it has ended.",
+      "expression": "$.status === 'trial' && new Date($.trialEndDate) <= new Date()",
+      "onTrue": "transition-to-active",
+      "onFalse": "schedule-next-check"
+    },
+    {
+      "id": "transition-to-active",
+      "type": "tool_code",
+      "description": "Transition subscription status from trial to active.",
+      "toolId": "updateSubscription",
+      "parameters": {
+        "id": "$.subscriptionId",
+        "updates": {
+          "status": "active"
+        }
+      },
+      "next": "generate-invoice"
+    },
+    {
+      "id": "generate-invoice",
+      "type": "tool_code",
+      "description": "Generate a monthly invoice for the active subscription.",
+      "toolId": "mcp_stripe_create_invoice",
+      "parameters": {
+        "customer_id": "$.customerId"
+      },
+      "next": "finalize-invoice"
+    },
+    {
+      "id": "finalize-invoice",
+      "type": "tool_code",
+      "description": "Finalize the generated invoice.",
+      "toolId": "mcp_stripe_finalize_invoice",
+      "parameters": {
+        "invoice_id": "$.generate-invoice.id"
+      },
+      "next": "schedule-next-invoice"
+    },
+    {
+      "id": "schedule-next-invoice",
+      "type": "tool_code",
+      "description": "Schedule the next invoice generation for one month later.",
+      "toolId": "updateSubscription",
+      "parameters": {
+        "id": "$.subscriptionId",
+        "updates": {
+          "next_invoice_date": "new Date(new Date().setMonth(new Date().getMonth() + 1))"
+        }
+      },
+      "next": "end"
+    },
+    {
+      "id": "schedule-next-check",
+      "type": "tool_code",
+      "description": "Schedule the next check for trial expiration or next invoice date.",
+      "toolId": "scheduleWorkflow",
+      "parameters": {
+        "workflowId": "subscription-management-workflow",
+        "delay": "86400000" // 24 hours in milliseconds
+      },
+      "next": "end"
+    }
+  ]
+}

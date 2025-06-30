@@ -1,0 +1,19 @@
+{
+  "testRunId": "run_1751225136051",
+  "workflowId": "assistant-task-manager",
+  "status": "completed",
+  "totalDuration": 53.72270000000003,
+  "stepDurations": {
+    "create-task-1": 13.10759999999999,
+    "create-task-2": 16.007000000000005,
+    "create-task-3": 3.357499999999959,
+    "list-all-tasks": 1.1749000000000365,
+    "update-task-2": 7.5785999999999945,
+    "create-dependency-relation": 3.4671000000000163,
+    "list-tasks-after-update": 1.1018000000000256,
+    "delete-obsolete-task": 1.016399999999976,
+    "final-task-list": 0.910000000000025
+  },
+  "successfulSteps": 5,
+  "failedSteps": 4
+}

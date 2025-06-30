@@ -100,10 +100,7 @@
         "instructions": "Creating an example script demonstrating Gemini API usage",
         "code_edit": "/**\n * Example script demonstrating Gemini API usage through the MCP server\n */\n\nrequire('dotenv').config();\nconst { executeToolProxy } = require('../tool-proxy');\n\nasync function runGeminiExamples() {\n  try {\n    console.log('1. Generating text with Gemini');\n    const textResult = await executeToolProxy('mcp_gemini_generate_text', {\n      prompt: 'Explain the concept of a Metaprotocol in 3 paragraphs',\n      temperature: 0.7,\n      maxTokens: 1000\n    });\n    \n    console.log('\\nText generation result:');\n    console.log(textResult.text);\n    if (textResult.files) {\n      console.log('\\nGenerated files:', textResult.files);\n    }\n    \n    console.log('\\n2. Using Gemini in chat mode');\n    const chatResult = await executeToolProxy('mcp_gemini_chat', {\n      messages: [\n        { role: 'user', content: 'What are the key components of a good API design?' },\n        { role: 'assistant', content: 'The key components of good API design include consistent naming conventions, proper error handling, comprehensive documentation, versioning strategy, and security measures.' },\n        { role: 'user', content: 'Can you elaborate on API versioning best practices?' }\n      ],\n      temperature: 0.8\n    });\n    \n    console.log('\\nChat result:');\n    console.log(chatResult.text);\n    if (chatResult.files) {\n      console.log('\\nGenerated files:', chatResult.files);\n    }\n    \n    console.log('\\n3. Generating documentation with Gemini');\n    const docResult = await executeToolProxy('mcp_gemini_generate_text', {\n      prompt: 'Generate a comprehensive README.md for a Node.js project called \"smart-mcp-server\" that provides tools for building and managing metaprotocols. Include sections for installation, usage examples, configuration options, and API documentation.',\n      systemInstruction: 'You are a technical documentation specialist focusing on clarity, completeness, and accuracy.',\n      temperature: 0.5,\n      maxTokens: 4000\n    });\n    \n    console.log('\\nGenerated documentation:');\n    console.log(docResult.text.substring(0, 500) + '...');\n    console.log('\\nFull documentation length:', docResult.text.length, 'characters');\n    \n  } catch (error) {\n    console.error('Error running Gemini examples:', error);\n  }\n}\n\n// Run the examples\nrunGeminiExamples().catch(console.error);"
       },
-      "dependencies": [
-        "create-gemini-server",
-        "register-gemini-tool"
-      ]
+      "dependencies": ["create-gemini-server", "register-gemini-tool"]
     },
     {
       "id": "update-package-json",
@@ -148,7 +145,7 @@
         "is_background": false
       },
       "dependencies": [
-        "create-gemini-client", 
+        "create-gemini-client",
         "create-gemini-tool",
         "create-gemini-server",
         "create-gemini-actions",
@@ -156,4 +153,4 @@
       ]
     }
   ]
-} 
+}

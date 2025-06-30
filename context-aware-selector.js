@@ -1,283 +1,388 @@
 /**
- * Context-Aware Tool Selector
- * 
- * This module provides functionality to select the most relevant tools based on user context.
- * It uses a scoring system that considers explicit mentions, category keywords, recent usage, and essential status.
+ * 🚀 Context-Aware Tool Selector 2.0 🚀
+ *
+ * This module revolutionizes tool selection by leveraging advanced context analysis,
+ * semantic similarity, adaptive learning, and multi-factor scoring. It not only considers
+ * explicit mentions, category keywords, recency, and essential status, but also
+ * semantic context, user intent, and dynamic feedback for continuous improvement.
  */
 
-// Tool categories with their associated tools
-const TOOL_CATEGORIES = {
-  FILESYSTEM: ['read_file', 'write_file', 'list_dir', 'delete_file', 'file_search', 'codebase_search', 'grep_search'],
+// --- Tool Category Definitions ---
+export const TOOL_CATEGORIES = {
+  FILESYSTEM: [
+    'read_file',
+    'write_file',
+    'list_dir',
+    'delete_file',
+    'file_search',
+    'codebase_search',
+    'grep_search',
+  ],
   CODE_EDITING: ['edit_file', 'reapply'],
   VERSION_CONTROL: [
-    'github', 'git', 
-    'mcp_github_create_repository', 'mcp_github_push_files', 'mcp_github_create_pull_request',
-    'mcp_github_create_branch', 'mcp_github_merge_pull_request', 'mcp_github_get_file_contents'
+    'github',
+    'git',
+    'mcp_github_create_repository',
+    'mcp_github_push_files',
+    'mcp_github_create_pull_request',
+    'mcp_github_create_branch',
+    'mcp_github_merge_pull_request',
+    'mcp_github_get_file_contents',
   ],
   MEMORY: [
-    'memory_create', 'memory_read', 'memory_search', 'memory_delete',
-    'mcp_memory_create_entities', 'mcp_memory_create_relations', 'mcp_memory_add_observations',
-    'mcp_memory_delete_entities', 'mcp_memory_delete_relations', 'mcp_memory_search_nodes',
-    'mcp_memory_open_nodes', 'mcp_memory_read_graph'
+    'memory_create',
+    'memory_read',
+    'memory_search',
+    'memory_delete',
+    'mcp_memory_create_entities',
+    'mcp_memory_create_relations',
+    'mcp_memory_add_observations',
+    'mcp_memory_delete_entities',
+    'mcp_memory_delete_relations',
+    'mcp_memory_search_nodes',
+    'mcp_memory_open_nodes',
+    'mcp_memory_read_graph',
   ],
   TERMINAL: [
-    'win_cli', 'execute_command', 'ssh', 'run_terminal_cmd',
-    'mcp_win_cli_execute_command', 'mcp_win_cli_ssh_execute', 'mcp_win_cli_ssh_disconnect'
+    'win_cli',
+    'execute_command',
+    'ssh',
+    'run_terminal_cmd',
+    'mcp_win_cli_execute_command',
+    'mcp_win_cli_ssh_execute',
+    'mcp_win_cli_ssh_disconnect',
   ],
   AI: [
-    'sequential_thinking', 'web_search', 'gemini_generate_text', 'gemini_chat', 'gemini_chat_message',
-    'mcp_sequential_thinking_sequentialthinking', 'web_search',
-    'gemini_generate_text', 'gemini_create_chat', 'gemini_chat_message', 
-    'gemini_get_chat_history', 'gemini_generate_with_images', 'gemini_generate_embedding'
-  ]
+    'sequential_thinking',
+    'web_search',
+    'gemini_generate_text',
+    'gemini_chat',
+    'gemini_chat_message',
+    'mcp_sequential_thinking_sequentialthinking',
+    'web_search',
+    'gemini_generate_text',
+    'gemini_create_chat',
+    'gemini_chat_message',
+    'gemini_get_chat_history',
+    'gemini_generate_with_images',
+    'gemini_generate_embedding',
+  ],
 };
 
-// Keywords associated with each category
+// --- Contextual Keywords for Each Category ---
 const CONTEXT_KEYWORDS = {
-  FILESYSTEM: ['file', 'directory', 'read', 'write', 'folder', 'search', 'list', 'delete', 'grep', 'code', 'content'],
-  CODE_EDITING: ['edit', 'change', 'update', 'modify', 'code', 'fix', 'reapply', 'implementation'],
-  VERSION_CONTROL: ['git', 'github', 'commit', 'push', 'pull', 'branch', 'merge', 'repository', 'pr', 'pull request', 'repo'],
-  MEMORY: ['remember', 'store', 'recall', 'memory', 'knowledge', 'retrieve', 'save', 'forget', 'search', 'entities', 'relations'],
-  TERMINAL: ['run', 'execute', 'command', 'terminal', 'shell', 'powershell', 'cmd', 'ssh', 'remote', 'cli'],
-  AI: ['think', 'research', 'search', 'generate', 'web', 'sequential', 'chat', 'gemini', 'ai', 'generate', 'model', 
-       'creative', 'answer', 'converse', 'image', 'vision', 'embedding', 'vector', 'text', 'content']
+  FILESYSTEM: [
+    'file',
+    'directory',
+    'read',
+    'write',
+    'folder',
+    'search',
+    'list',
+    'delete',
+    'grep',
+    'code',
+    'content',
+  ],
+  CODE_EDITING: [
+    'edit',
+    'change',
+    'update',
+    'modify',
+    'code',
+    'fix',
+    'reapply',
+    'implementation',
+  ],
+  VERSION_CONTROL: [
+    'git',
+    'github',
+    'commit',
+    'push',
+    'pull',
+    'branch',
+    'merge',
+    'repository',
+    'pr',
+    'pull request',
+    'repo',
+  ],
+  MEMORY: [
+    'remember',
+    'store',
+    'recall',
+    'memory',
+    'knowledge',
+    'retrieve',
+    'save',
+    'forget',
+    'search',
+    'entities',
+    'relations',
+  ],
+  TERMINAL: [
+    'run',
+    'execute',
+    'command',
+    'terminal',
+    'shell',
+    'powershell',
+    'cmd',
+    'ssh',
+    'remote',
+    'cli',
+  ],
+  AI: [
+    'think',
+    'research',
+    'search',
+    'generate',
+    'web',
+    'sequential',
+    'chat',
+    'gemini',
+    'ai',
+    'generate',
+    'model',
+    'creative',
+    'answer',
+    'converse',
+    'image',
+    'vision',
+    'embedding',
+    'vector',
+    'text',
+    'content',
+  ],
 };
 
-// Tools that are considered essential and should have a higher baseline score
-const ESSENTIAL_TOOLS = ['read_file', 'edit_file', 'list_dir', 'codebase_search'];
+// --- Essential Tools (Always Prioritized) ---
+const ESSENTIAL_TOOLS = [
+  'read_file',
+  'edit_file',
+  'list_dir',
+  'codebase_search',
+];
 
-// Store recently used tools with timestamps for recency scoring
+// --- Usage Tracking and Adaptive Learning ---
 let recentlyUsedTools = [];
+const toolUsageCounters = new Map();
+const toolFeedbackScores = new Map(); // Revolution: user feedback integration
 
-// Weight factors for different context signals (exposed for configuration)
+// --- Weight Factors (Configurable & Adaptive) ---
 const WEIGHT_FACTORS = {
-  EXPLICIT_MENTION: 10,   // Directly mentioned in query
-  CATEGORY_MATCH: 5,      // Category keywords present
-  RECENT_USAGE: 3,        // Tool used recently
-  RECENT_USAGE_DECAY_MINUTES: 60, // Time period for recency decay (1 hour)
-  ESSENTIAL_TOOLS: 2,     // Essential tools to always include
-  USAGE_FREQUENCY: 1      // Frequency of usage over time
+  EXPLICIT_MENTION: 12, // Directly mentioned in query (increased for revolution)
+  CATEGORY_MATCH: 6, // Category keywords present
+  SEMANTIC_SIMILARITY: 8, // Revolution: semantic similarity to context
+  RECENT_USAGE: 4, // Tool used recently
+  RECENT_USAGE_DECAY_MINUTES: 90, // Revolution: longer recency window
+  ESSENTIAL_TOOLS: 3, // Essential tools to always include
+  USAGE_FREQUENCY: 1.5, // Frequency of usage over time
+  FEEDBACK: 5, // Revolution: user feedback weight
 };
 
-// Store tool usage frequency history
-const toolUsageCounters = new Map();
+// --- Revolution: Simple Semantic Similarity (Jaccard) ---
+function semanticSimilarity(a, b) {
+  if (!a || !b) return 0;
+  const setA = new Set(a.toLowerCase().split(/\W+/));
+  const setB = new Set(b.toLowerCase().split(/\W+/));
+  const intersection = new Set([...setA].filter((x) => setB.has(x)));
+  const union = new Set([...setA, ...setB]);
+  return union.size === 0 ? 0 : intersection.size / union.size;
+}
 
-/**
- * Record a tool as being used
- * @param {string} toolId - The ID of the tool that was used
- */
-function recordToolUsage(toolId) {
-  // Add to the recent tools with current timestamp
+// --- Revolution: User Feedback Integration ---
+export function recordToolFeedback(toolId, feedbackScore) {
+  // feedbackScore: +1 (positive), 0 (neutral), -1 (negative)
+  const prev = toolFeedbackScores.get(toolId) || 0;
+  toolFeedbackScores.set(toolId, prev + feedbackScore);
+}
+
+// --- Usage Recording ---
+export function recordToolUsage(toolId) {
   recentlyUsedTools.push({
     id: toolId,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   });
-  
-  // Keep only the 20 most recent tools
-  if (recentlyUsedTools.length > 20) {
+  if (recentlyUsedTools.length > 30) {
     recentlyUsedTools.shift();
   }
-  
-  // Update usage counter for frequency scoring
   const currentCount = toolUsageCounters.get(toolId) || 0;
   toolUsageCounters.set(toolId, currentCount + 1);
 }
 
-/**
- * Get the category for a tool
- * @param {string} toolId - The ID of the tool
- * @returns {string|null} - The category or null if not found
- */
+// --- Category Detection (Enhanced) ---
 function getToolCategory(toolId) {
-  // Check for direct match
   for (const [category, tools] of Object.entries(TOOL_CATEGORIES)) {
-    if (tools.includes(toolId)) {
-      return category;
-    }
+    if (tools.includes(toolId)) return category;
   }
-  
-  // Check for partial matches with prefixes
-  if (toolId.startsWith('mcp_github_')) {
-    return 'VERSION_CONTROL';
-  } else if (toolId.startsWith('mcp_memory_')) {
-    return 'MEMORY';
-  } else if (toolId.startsWith('mcp_win_cli_')) {
-    return 'TERMINAL';
-  } else if (toolId.startsWith('mcp_sequential_thinking_') || toolId === 'web_search') {
+  if (toolId.startsWith('mcp_github_')) return 'VERSION_CONTROL';
+  if (toolId.startsWith('mcp_memory_')) return 'MEMORY';
+  if (toolId.startsWith('mcp_win_cli_')) return 'TERMINAL';
+  if (toolId.startsWith('mcp_sequential_thinking_') || toolId === 'web_search')
     return 'AI';
-  }
-  
   return null;
 }
 
-/**
- * Calculate a score for a tool based on the context
- * @param {object} tool - The tool to score
- * @param {string} context - The user's context/query
- * @returns {number} - The relevance score
- */
+// --- Revolution: Tool Description Extraction Helper ---
+function getToolDescription(tool) {
+  return tool.description || tool.summary || tool.name || tool.id || '';
+}
+
+// --- Revolution: Multi-Factor, Adaptive, Semantic Scoring ---
 function scoreToolForContext(tool, context) {
   const toolId = tool.id || tool.name;
   let score = 0;
-  
-  // 1. Score for explicit mention (highest weight)
+
+  // 1. Explicit mention
   const toolPattern = new RegExp(`\\b${toolId}\\b`, 'i');
   if (toolPattern.test(context)) {
     score += WEIGHT_FACTORS.EXPLICIT_MENTION;
   }
-  
-  // 2. Score for category keyword matches
+
+  // 2. Category keyword matches
   const category = getToolCategory(toolId);
-  
   if (category && CONTEXT_KEYWORDS[category]) {
-    CONTEXT_KEYWORDS[category].forEach(keyword => {
+    CONTEXT_KEYWORDS[category].forEach((keyword) => {
       if (context.toLowerCase().includes(keyword.toLowerCase())) {
         score += WEIGHT_FACTORS.CATEGORY_MATCH;
       }
     });
   }
-  
-  // 3. Score for recent usage (recency matters)
-  const recentUsage = recentlyUsedTools.find(rt => rt.id === toolId);
+
+  // 3. Revolution: Semantic similarity between tool description and context
+  const toolDesc = getToolDescription(tool);
+  const sim = semanticSimilarity(toolDesc, context);
+  score += WEIGHT_FACTORS.SEMANTIC_SIMILARITY * sim;
+
+  // 4. Recent usage (recency matters)
+  const recentUsage = recentlyUsedTools.find((rt) => rt.id === toolId);
   if (recentUsage) {
-    // Calculate recency factor (more recent = higher score)
     const ageInMinutes = (Date.now() - recentUsage.timestamp) / (1000 * 60);
-    const recencyFactor = Math.max(0, 1 - (ageInMinutes / WEIGHT_FACTORS.RECENT_USAGE_DECAY_MINUTES));
+    const recencyFactor = Math.max(
+      0,
+      1 - ageInMinutes / WEIGHT_FACTORS.RECENT_USAGE_DECAY_MINUTES
+    );
     score += WEIGHT_FACTORS.RECENT_USAGE * recencyFactor;
   }
-  
-  // 4. Score for essential status
+
+  // 5. Essential status
   if (ESSENTIAL_TOOLS.includes(toolId)) {
     score += WEIGHT_FACTORS.ESSENTIAL_TOOLS;
   }
-  
-  // 5. Score for usage frequency (popular tools get small boost)
+
+  // 6. Usage frequency (logarithmic scaling)
   const usageCount = toolUsageCounters.get(toolId) || 0;
   if (usageCount > 0) {
-    // Logarithmic scaling to prevent very frequent tools from dominating
     score += WEIGHT_FACTORS.USAGE_FREQUENCY * Math.log10(1 + usageCount);
   }
-  
+
+  // 7. Revolution: User feedback
+  const feedback = toolFeedbackScores.get(toolId) || 0;
+  if (feedback !== 0) {
+    score += WEIGHT_FACTORS.FEEDBACK * feedback;
+  }
+
+  // 8. Revolution: Diversity boost (prefer tools from underrepresented categories)
+  if (category) {
+    const categoryUsage = Array.from(toolUsageCounters.entries())
+      .filter(([id]) => getToolCategory(id) === category)
+      .reduce((sum, [, count]) => sum + count, 0);
+    if (categoryUsage < 3) score += 1.5; // Boost for less-used categories
+  }
+
   return score;
 }
 
-/**
- * Select the most relevant tools based on the user's context
- * @param {Object[]} availableTools - Array of available tools
- * @param {string} userContext - The user's context/query
- * @param {number} limit - Maximum number of tools to return
- * @returns {Object[]} - Sorted array of most relevant tools
- */
-function selectToolsForContext(availableTools, userContext, limit = 5) {
-  if (!availableTools || !availableTools.length || !userContext) {
-    return [];
-  }
-  
+// --- Revolution: Select Most Relevant Tools (with Diversity) ---
+export function selectToolsForContext(availableTools, userContext, limit = 5) {
+  if (!availableTools || !availableTools.length || !userContext) return [];
+
   // Score each tool
-  const scoredTools = availableTools.map(tool => ({
+  const scoredTools = availableTools.map((tool) => ({
     tool,
-    score: scoreToolForContext(tool, userContext)
+    score: scoreToolForContext(tool, userContext),
   }));
-  
+
   // Sort by score (descending)
   scoredTools.sort((a, b) => b.score - a.score);
-  
-  // Return top N tools
-  return scoredTools
-    .slice(0, limit)
-    .map(st => ({
-      ...st.tool,
-      relevance: st.score
-    }));
+
+  // Revolution: Ensure category diversity in top N
+  const selected = [];
+  const seenCategories = new Set();
+  for (const { tool, score } of scoredTools) {
+    const cat = getToolCategory(tool.id || tool.name);
+    if (!seenCategories.has(cat) || selected.length < Math.floor(limit / 2)) {
+      selected.push({ ...tool, relevance: score });
+      seenCategories.add(cat);
+    }
+    if (selected.length >= limit) break;
+  }
+  // If not enough, fill up with next best
+  if (selected.length < limit) {
+    for (const { tool, score } of scoredTools) {
+      if (!selected.find((t) => (t.id || t.name) === (tool.id || tool.name))) {
+        selected.push({ ...tool, relevance: score });
+        if (selected.length >= limit) break;
+      }
+    }
+  }
+  return selected.slice(0, limit);
 }
 
-/**
- * Get tools by category
- * @param {Object[]} availableTools - Array of available tools
- * @param {string} category - The category to filter by
- * @returns {Object[]} - Array of tools in the requested category
- */
-function getToolsByCategory(availableTools, category) {
-  if (!availableTools || !availableTools.length || !TOOL_CATEGORIES[category]) {
+// --- Get Tools by Category ---
+export function getToolsByCategory(availableTools, category) {
+  if (!availableTools || !availableTools.length || !TOOL_CATEGORIES[category])
     return [];
-  }
-  
-  return availableTools.filter(tool => 
+  return availableTools.filter((tool) =>
     TOOL_CATEGORIES[category].includes(tool.id || tool.name)
   );
 }
 
-/**
- * Analyze the user's interaction history and provide recommended tools
- * @param {string[]} recentQueries - Recent user queries
- * @param {Object[]} availableTools - Array of available tools
- * @param {number} limit - Maximum number of tools to return
- * @returns {Object[]} - Array of recommended tools
- */
-function getToolRecommendations(recentQueries, availableTools, limit = 3) {
-  if (!recentQueries || !recentQueries.length || !availableTools || !availableTools.length) {
+// --- Revolution: Personalized Recommendations (history + context) ---
+export function getToolRecommendations(
+  recentQueries,
+  availableTools,
+  limit = 3
+) {
+  if (
+    !recentQueries ||
+    !recentQueries.length ||
+    !availableTools ||
+    !availableTools.length
+  )
     return [];
-  }
-  
-  // Combine recent queries into a single context for analysis
-  const combinedContext = recentQueries.join(' ');
-  
-  // Get recommended tools based on the combined context
-  return selectToolsForContext(availableTools, combinedContext, limit);
+  // Revolution: Weight recent queries by recency
+  const weightedContext = recentQueries
+    .map((q, i) => q.repeat(recentQueries.length - i))
+    .join(' ');
+  return selectToolsForContext(availableTools, weightedContext, limit);
 }
 
-/**
- * Get most frequently used tools
- * @param {Object[]} availableTools - Array of available tools
- * @param {number} limit - Maximum number of tools to return
- * @returns {Object[]} - Array of most frequently used tools
- */
-function getMostFrequentlyUsedTools(availableTools, limit = 5) {
-  if (!availableTools || !availableTools.length) {
-    return [];
-  }
-  
-  // Get tools with usage counts
+// --- Most Frequently Used Tools ---
+export function getMostFrequentlyUsedTools(availableTools, limit = 5) {
+  if (!availableTools || !availableTools.length) return [];
   const toolsWithCounts = availableTools
-    .map(tool => {
+    .map((tool) => {
       const toolId = tool.id || tool.name;
       return {
         ...tool,
-        usageCount: toolUsageCounters.get(toolId) || 0
+        usageCount: toolUsageCounters.get(toolId) || 0,
       };
     })
-    .filter(tool => tool.usageCount > 0); // Only include used tools
-  
-  // Sort by usage count (descending)
+    .filter((tool) => tool.usageCount > 0);
   toolsWithCounts.sort((a, b) => b.usageCount - a.usageCount);
-  
-  // Return top N tools
   return toolsWithCounts.slice(0, limit);
 }
 
-/**
- * Clear usage history and counters
- */
-function clearUsageHistory() {
+// --- Revolution: Clear All Usage and Feedback History ---
+export function clearUsageHistory() {
   recentlyUsedTools = [];
   toolUsageCounters.clear();
+  toolFeedbackScores.clear();
 }
 
-/**
- * Update weight factors for scoring
- * @param {Object} newWeights - Object with weight factors to update
- */
-function updateWeightFactors(newWeights) {
+// --- Revolution: Update Weight Factors Dynamically ---
+export function updateWeightFactors(newWeights) {
   Object.assign(WEIGHT_FACTORS, newWeights);
 }
-
-// Export all the needed functions
-export {
-    recordToolUsage,
-    getToolsByCategory,
-    selectToolsForContext,
-    getToolRecommendations,
-    getMostFrequentlyUsedTools,
-    clearUsageHistory,
-    updateWeightFactors
-};

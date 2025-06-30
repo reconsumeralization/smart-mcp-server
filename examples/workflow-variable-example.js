@@ -1,11 +1,12 @@
+/* eslint-disable no-console */
 /**
  * Workflow Variable Example
- * 
+ *
  * This script demonstrates how to use dynamic variables in workflows
  */
 
 const { WorkflowTester } = require('../workflow-monitor');
-const path = require('path');
+const _path = require('path');
 
 // Simple variable store implementation
 class VariableStore {
@@ -16,7 +17,9 @@ class VariableStore {
 
   // Get a variable value
   get(name, defaultValue = null) {
-    return this.variables[name] !== undefined ? this.variables[name] : defaultValue;
+    return this.variables[name] !== undefined
+      ? this.variables[name]
+      : defaultValue;
   }
 
   // Set a variable value
@@ -35,7 +38,9 @@ class VariableStore {
     if (this.outputCaptures.has(stepId)) {
       const variableName = this.outputCaptures.get(stepId);
       this.set(variableName, result);
-      console.log(`Captured output from step ${stepId} to variable ${variableName}`);
+      console.log(
+        `Captured output from step ${stepId} to variable ${variableName}`
+      );
     }
   }
 
@@ -52,7 +57,7 @@ class VariableStore {
     if (typeof obj === 'string') {
       return this.substituteInString(obj);
     } else if (Array.isArray(obj)) {
-      return obj.map(item => this.substitute(item));
+      return obj.map((item) => this.substitute(item));
     } else if (obj !== null && typeof obj === 'object') {
       const result = {};
       for (const key in obj) {
@@ -69,12 +74,14 @@ class VariableStore {
     try {
       // Substitute variables in the condition
       const substitutedCondition = this.substituteInString(condition);
-      
+
       // For demo, we'll just eval the expression (not recommended for production)
-      // eslint-disable-next-line no-eval
+       
       return eval(substitutedCondition);
     } catch (error) {
-      console.error(`Error evaluating condition "${condition}": ${error.message}`);
+      console.error(
+        `Error evaluating condition "${condition}": ${error.message}`
+      );
       return false;
     }
   }
@@ -90,12 +97,17 @@ class VariableWorkflowTester extends WorkflowTester {
   // Override execute step to support variables
   async executeStep(step, workflowState, testRunId) {
     // Check if step has a condition and if it evaluates to false, skip it
-    if (step.condition && !this.variableStore.evaluateCondition(step.condition)) {
-      console.log(`Skipping step ${step.id} because condition "${step.condition}" is false`);
+    if (
+      step.condition &&
+      !this.variableStore.evaluateCondition(step.condition)
+    ) {
+      console.log(
+        `Skipping step ${step.id} because condition "${step.condition}" is false`
+      );
       workflowState.stepResults.set(step.id, {
         status: 'skipped',
         result: null,
-        timeTaken: 0
+        timeTaken: 0,
       });
       return { success: true, result: null };
     }
@@ -103,21 +115,23 @@ class VariableWorkflowTester extends WorkflowTester {
     // Substitute variables in step parameters
     const originalParams = step.params;
     step.params = this.variableStore.substitute(step.params);
-    
-    console.log(`Executing step ${step.id} with substituted params:`, 
-      JSON.stringify(step.params, null, 2));
-    
+
+    console.log(
+      `Executing step ${step.id} with substituted params:`,
+      JSON.stringify(step.params, null, 2)
+    );
+
     // Execute the step with substituted parameters
     const result = await super.executeStep(step, workflowState, testRunId);
-    
+
     // Restore original params to avoid modifying the original workflow definition
     step.params = originalParams;
-    
+
     // Process the step result to capture outputs
     if (result.success) {
       this.variableStore.processStepResult(step.id, result.result);
     }
-    
+
     return result;
   }
 
@@ -153,8 +167,8 @@ async function runVariableWorkflowExample() {
         environment: 'development',
         apiBaseUrl: 'https://api.example.com',
         maxRetries: 3,
-        enableDebug: true
-      }
+        enableDebug: true,
+      },
     });
 
     console.log('Variable workflow tester initialized');
@@ -162,53 +176,55 @@ async function runVariableWorkflowExample() {
 
     // Load the test workflow
     const workflow = {
-      id: "variable-demo-workflow",
-      description: "Demonstrates using variables in workflows",
+      id: 'variable-demo-workflow',
+      description: 'Demonstrates using variables in workflows',
       concurrencyLimit: 2,
       steps: [
         {
-          id: "configure-environment",
-          toolId: "mcp_sequential_thinking_sequentialthinking",
+          id: 'configure-environment',
+          toolId: 'mcp_sequential_thinking_sequentialthinking',
           params: {
-            thought: "Setting up the ${environment} environment with base URL ${apiBaseUrl}",
+            thought:
+              'Setting up the ${environment} environment with base URL ${apiBaseUrl}',
             thoughtNumber: 1,
             totalThoughts: 1,
-            nextThoughtNeeded: false
-          }
+            nextThoughtNeeded: false,
+          },
         },
         {
-          id: "conditional-debug-step",
-          toolId: "mcp_sequential_thinking_sequentialthinking",
-          condition: "${enableDebug} === true",
+          id: 'conditional-debug-step',
+          toolId: 'mcp_sequential_thinking_sequentialthinking',
+          condition: '${enableDebug} === true',
           params: {
-            thought: "This step only runs when debugging is enabled. Current retry setting: ${maxRetries}",
+            thought:
+              'This step only runs when debugging is enabled. Current retry setting: ${maxRetries}',
             thoughtNumber: 1,
             totalThoughts: 1,
-            nextThoughtNeeded: false
-          }
+            nextThoughtNeeded: false,
+          },
         },
         {
-          id: "update-variables",
-          toolId: "mcp_sequential_thinking_sequentialthinking",
+          id: 'update-variables',
+          toolId: 'mcp_sequential_thinking_sequentialthinking',
           params: {
-            thought: "Updating configuration based on environment",
+            thought: 'Updating configuration based on environment',
             thoughtNumber: 1,
             totalThoughts: 1,
-            nextThoughtNeeded: false
-          }
+            nextThoughtNeeded: false,
+          },
         },
         {
-          id: "conditional-prod-step",
-          toolId: "mcp_sequential_thinking_sequentialthinking",
+          id: 'conditional-prod-step',
+          toolId: 'mcp_sequential_thinking_sequentialthinking',
           condition: "${environment} === 'production'",
           params: {
-            thought: "This step only runs in production environment",
+            thought: 'This step only runs in production environment',
             thoughtNumber: 1,
             totalThoughts: 1,
-            nextThoughtNeeded: false
-          }
-        }
-      ]
+            nextThoughtNeeded: false,
+          },
+        },
+      ],
     };
 
     // Configure to capture the output of the update-variables step
@@ -218,7 +234,9 @@ async function runVariableWorkflowExample() {
     console.log('\n=== Running workflow with variable substitution ===');
     const result = await tester.executeWorkflow(workflow);
 
-    console.log(`Workflow execution ${result.success ? 'succeeded' : 'failed'}`);
+    console.log(
+      `Workflow execution ${result.success ? 'succeeded' : 'failed'}`
+    );
     console.log(`Test run ID: ${result.testRunId}`);
     console.log(`Time taken: ${result.timeTaken.toFixed(2)}ms`);
 
@@ -226,28 +244,31 @@ async function runVariableWorkflowExample() {
     console.log('\n=== Updating variables and running again ===');
     tester.setVariable('environment', 'production');
     tester.setVariable('enableDebug', false);
-    
+
     console.log('Updated variables:', tester.getAllVariables());
-    
+
     const secondResult = await tester.executeWorkflow(workflow);
-    
-    console.log(`Second workflow execution ${secondResult.success ? 'succeeded' : 'failed'}`);
+
+    console.log(
+      `Second workflow execution ${secondResult.success ? 'succeeded' : 'failed'}`
+    );
     console.log(`Test run ID: ${secondResult.testRunId}`);
     console.log(`Time taken: ${secondResult.timeTaken.toFixed(2)}ms`);
 
     // Generate a comparison report
-    console.log('\n=== Generating comparison report between runs ===');
-    const comparisonReport = tester.generateComparisonReport(
+    console.log('\\n=== Generating comparison report between runs ===');
+    const _comparisonReport = tester.generateComparisonReport(
       [result.testRunId, secondResult.testRunId],
       'variable_workflow_comparison'
     );
 
-    console.log('\nWorkflow variable testing complete. Check the logs, metrics, and reports directories for detailed results.');
-    
+    console.log(
+      '\nWorkflow variable testing complete. Check the logs, metrics, and reports directories for detailed results.'
+    );
   } catch (error) {
     console.error('Error running variable workflow example:', error);
   }
 }
 
 // Run the example
-runVariableWorkflowExample().catch(console.error); 
+runVariableWorkflowExample().catch(console.error);

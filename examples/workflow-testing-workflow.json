@@ -41,7 +41,10 @@
         "totalThoughts": 1,
         "nextThoughtNeeded": false
       },
-      "dependencies": ["analyze-workflow-structure", "research-testing-best-practices"]
+      "dependencies": [
+        "analyze-workflow-structure",
+        "research-testing-best-practices"
+      ]
     },
     {
       "id": "setup-mock-servers",
@@ -198,4 +201,4 @@
       "dependencies": ["setup-continuous-testing"]
     }
   ]
-} 
+}

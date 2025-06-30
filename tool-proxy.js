@@ -1,219 +1,176 @@
-import { spawn } from 'child_process';
-import { URL, fileURLToPath } from 'url';
-import path from 'path';
-import fetch from 'node-fetch';
+import logger from './logger.js';
+import {
+  mcp_stripe_create_customer,
+  mcp_stripe_create_product,
+  mcp_stripe_create_price,
+  mcp_stripe_create_payment_link,
+  mcp_stripe_create_invoice,
+  mcp_stripe_finalize_invoice,
+  mcp_stripe_list_subscriptions,
+  mcp_stripe_create_subscription,
+  mcp_stripe_create_refund,
+  mcp_stripe_manage_dispute,
+  mcp_stripe_retrieve_financial_report,
+  mcp_stripe_update_subscription,
+  mcp_stripe_cancel_subscription,
+} from './tools/stripe-tool.js';
+import githubTool from './tools/github-tool.js';
+import databaseTool from './tools/database-tool.js';
+import {
+  mcp_memory_create_entity,
+  mcp_memory_get_entity,
+  mcp_memory_create_relation,
+  mcp_memory_find_relations,
+  mcp_memory_add_observation,
+  mcp_memory_list_entities,
+  mcp_memory_delete_entity,
+} from './tools/memory-tool.js';
+import { updateSubscription } from './lib/subscription-db.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+/**
+ * A map to store handlers for internally executed tools.
+ * The key is the toolId (e.g., 'read_file'), and the value is the async function to execute.
+ */
+const internalTools = new Map();
 
-// Map to keep track of server processes
-const serverProcesses = new Map();
-// Map to store tool to server configuration
-const toolServerMap = new Map();
-
-// Register a tool with its server configuration
-export function registerTool(toolId, serverConfig) {
-  toolServerMap.set(toolId, serverConfig);
+/**
+ * Registers a function to handle the execution of an internal tool.
+ * @param {string} toolId - The unique identifier for the tool.
+ * @param {Function} handler - The async function that executes the tool's logic.
+ */
+export function registerInternalTool(toolId, handler) {
+  if (internalTools.has(toolId)) {
+    logger.warn(`Tool with ID '${toolId}' is being overwritten.`);
+  }
+  internalTools.set(toolId, handler);
 }
 
-// Ensure server for the tool is running
-export async function ensureServerRunning(toolId) {
-  const serverConfig = toolServerMap.get(toolId);
-  
-  if (!serverConfig) {
-    throw new Error(`No server configuration found for tool: ${toolId}`);
-  }
-  
-  const serverKey = `${serverConfig.type}-${serverConfig.command}`;
-  
-  if (serverProcesses.has(serverKey) && serverProcesses.get(serverKey).process) {
-    return serverProcesses.get(serverKey);
-  }
-  
-  console.log(`Starting server for tool: ${toolId}`);
-  
-  try {
-    if (serverConfig.type === 'stdio') {
-      const process = spawn(serverConfig.command, serverConfig.args || [], {
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-      
-      process.on('error', (error) => {
-        console.error(`Error starting server for ${toolId}:`, error);
-        serverProcesses.delete(serverKey);
-      });
-      
-      process.stdout.on('data', (data) => {
-        console.log(`Server stdout (${toolId}): ${data}`);
-      });
-      
-      process.stderr.on('data', (data) => {
-        console.error(`Server stderr (${toolId}): ${data}`);
-      });
-      
-      const serverInfo = { process, type: 'stdio' };
-      serverProcesses.set(serverKey, serverInfo);
-      return serverInfo;
-    } else if (serverConfig.type === 'sse') {
-      // For SSE type servers, we would start a long-running process
-      // and maintain an event source connection
-      // This is simplified for the example
-      const serverInfo = { url: serverConfig.url, type: 'sse' };
-      serverProcesses.set(serverKey, serverInfo);
-      return serverInfo;
-    } else {
-      throw new Error(`Unsupported server type: ${serverConfig.type}`);
-    }
-  } catch (error) {
-    console.error(`Failed to start server for ${toolId}:`, error);
-    throw error;
-  }
-}
-
-// Execute tool through appropriate server
+/**
+ * Executes a tool using the internal tool registry.
+ * @param {string} toolId - The ID of the tool to execute.
+ * @param {object} parameters - The parameters to pass to the tool.
+ * @returns {Promise<any>} The result of the tool execution.
+ */
 export async function executeToolProxy(toolId, parameters) {
-  try {
-    const serverConfig = toolServerMap.get(toolId);
-    if (!serverConfig) {
-      throw new Error(`No server configuration found for tool: ${toolId}`);
+  logger.info(`Attempting to execute tool: ${toolId}`, { toolId, parameters });
+
+  const handler = internalTools.get(toolId);
+
+  if (handler) {
+    try {
+      logger.info(`Executing internal tool: ${toolId}`);
+      const result = await handler(parameters);
+      logger.info(`Internal tool '${toolId}' executed successfully.`);
+      return result;
+    } catch (error) {
+      logger.error(`Error executing internal tool '${toolId}'`, {
+        error: error.message,
+        stack: error.stack,
+      });
+      throw new Error(`Execution of tool '${toolId}' failed: ${error.message}`);
     }
-
-    // Ensure the server is running if it's a managed process (e.g., stdio type)
-    if (serverConfig.type === 'stdio') {
-      await ensureServerRunning(toolId);
-    }
-
-    // Construct the URL for tool execution. Assuming tools expose an /execute endpoint.
-    // This might need to be more dynamic based on how tools are exposed by their servers.
-    const toolExecutionUrl = `${serverConfig.url}/execute`; 
-
-    console.log(`Executing tool ${toolId} on ${toolExecutionUrl} with parameters:`, parameters);
-
-    const response = await fetch(toolExecutionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        toolId: toolId, // Pass the toolId to the server if it needs it
-        parameters: parameters,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Tool execution failed with status ${response.status}: ${errorData.message || JSON.stringify(errorData)}`);
-    }
-
-    const result = await response.json();
-    console.log(`Tool ${toolId} execution successful:`, result);
-    return result;
-
-  } catch (error) {
-    console.error(`Error executing tool ${toolId}:`, error);
-    return {
-      status: 'error',
-      error: error.message
-    };
   }
+
+  logger.error(`Tool not found: ${toolId}. No internal handler is registered.`);
+  throw new Error(`Tool with ID '${toolId}' not found.`);
 }
 
-// Simulate GitHub tool execution
-function simulateGithubTool(toolId, parameters) {
-  const action = toolId.replace('mcp_github_', '');
-  
+// --- Register all internal tools ---
+
+// Filesystem Tools (Simulated)
+registerInternalTool('read_file', async (params) => {
+  logger.info('Simulating read_file', { params });
+  return { content: `Simulated file content for ${params.target_file}` };
+});
+registerInternalTool('write_file', async (params) => {
+  logger.info('Simulating write_file', { params });
+  return { success: true, file: params.target_file };
+});
+registerInternalTool('list_dir', async (params) => {
+  logger.info('Simulating list_dir', { params });
   return {
-    status: 'success',
-    data: {
-      action,
-      simulated: true,
-      parameters,
-      result: `Simulated GitHub ${action} operation completed successfully.`
-    }
+    items: [
+      { name: 'file1.txt', type: 'file' },
+      { name: 'dir1', type: 'directory' },
+    ],
   };
-}
-
-// Simulate memory tool execution
-function simulateMemoryTool(toolId, parameters) {
-  const action = toolId.replace('mcp_memory_', '');
-  
-  return {
-    status: 'success',
-    data: {
-      action,
-      simulated: true,
-      parameters,
-      result: `Simulated memory ${action} operation completed successfully.`
-    }
-  };
-}
-
-// Simulate Windows CLI tool execution
-function simulateWinCliTool(toolId, parameters) {
-  const action = toolId.replace('mcp_win_cli_', '');
-  
-  return {
-    status: 'success',
-    data: {
-      action,
-      simulated: true,
-      parameters,
-      output: `Simulated Windows CLI ${action} command executed successfully.`
-    }
-  };
-}
-
-// Simulate filesystem tool execution
-function simulateFilesystemTool(toolId, parameters) {
-  let result;
-  
-  switch (toolId) {
-    case 'read_file':
-      result = {
-        content: 'Simulated file content for ' + (parameters.target_file || 'unknown file'),
-        lineCount: 10
-      };
-      break;
-    case 'write_file':
-      result = {
-        success: true,
-        file: parameters.target_file || 'unknown file'
-      };
-      break;
-    case 'list_dir':
-      result = {
-        items: [
-          { name: 'file1.txt', type: 'file' },
-          { name: 'file2.js', type: 'file' },
-          { name: 'dir1', type: 'directory' }
-        ]
-      };
-      break;
-    default:
-      result = {
-        success: true,
-        operation: toolId
-      };
-  }
-  
-  return {
-    status: 'success',
-    data: result
-  };
-}
-
-// Clean up resources when process exits
-['SIGINT', 'SIGTERM', 'exit'].forEach(signal => {
-  process.on(signal, () => {
-    console.log('Cleaning up server processes...');
-    serverProcesses.forEach((info, key) => {
-      if (info.process && typeof info.process.kill === 'function') {
-        info.process.kill();
-      }
-    });
-  });
 });
 
-export default {
-  registerTool,
-  executeToolProxy
-}; 
+// Stripe Tools (Placeholders)
+registerInternalTool('mcp_stripe_create_customer', mcp_stripe_create_customer);
+registerInternalTool('mcp_stripe_create_product', mcp_stripe_create_product);
+registerInternalTool('mcp_stripe_create_price', mcp_stripe_create_price);
+registerInternalTool(
+  'mcp_stripe_create_payment_link',
+  mcp_stripe_create_payment_link
+);
+registerInternalTool('mcp_stripe_create_invoice', mcp_stripe_create_invoice);
+registerInternalTool(
+  'mcp_stripe_finalize_invoice',
+  mcp_stripe_finalize_invoice
+);
+registerInternalTool(
+  'mcp_stripe_list_subscriptions',
+  mcp_stripe_list_subscriptions
+);
+registerInternalTool(
+  'mcp_stripe_create_subscription',
+  mcp_stripe_create_subscription
+);
+registerInternalTool('mcp_stripe_create_refund', mcp_stripe_create_refund);
+registerInternalTool('mcp_stripe_manage_dispute', mcp_stripe_manage_dispute);
+registerInternalTool(
+  'mcp_stripe_retrieve_financial_report',
+  mcp_stripe_retrieve_financial_report
+);
+registerInternalTool(
+  'mcp_stripe_update_subscription',
+  mcp_stripe_update_subscription
+);
+registerInternalTool(
+  'mcp_stripe_cancel_subscription',
+  mcp_stripe_cancel_subscription
+);
+registerInternalTool('updateSubscription', updateSubscription);
+
+// GitHub Tools
+registerInternalTool(
+  'mcp_github_create_pull_request',
+  githubTool.create_pull_request
+);
+registerInternalTool(
+  'mcp_github_list_pull_requests',
+  githubTool.list_pull_requests
+);
+registerInternalTool(
+  'mcp_github_get_pull_request',
+  githubTool.get_pull_request
+);
+registerInternalTool('mcp_github_create_issue', githubTool.create_issue);
+registerInternalTool('mcp_github_list_issues', githubTool.list_issues);
+registerInternalTool(
+  'mcp_github_get_repository_info',
+  githubTool.get_repository_info
+);
+
+// Database Tool
+registerInternalTool('mcp_database_execute_query', databaseTool.execute_query);
+
+// Memory Tools
+registerInternalTool('mcp_memory_create_entity', mcp_memory_create_entity);
+registerInternalTool('mcp_memory_get_entity', mcp_memory_get_entity);
+registerInternalTool('mcp_memory_create_relation', mcp_memory_create_relation);
+registerInternalTool('mcp_memory_find_relations', mcp_memory_find_relations);
+registerInternalTool('mcp_memory_add_observation', mcp_memory_add_observation);
+registerInternalTool('mcp_memory_list_entities', mcp_memory_list_entities);
+registerInternalTool('mcp_memory_delete_entity', mcp_memory_delete_entity);
+
+registerInternalTool('scheduleWorkflow', async (params) => {
+  logger.info('Simulating scheduleWorkflow', { params });
+  return {
+    success: true,
+    message: `Workflow ${params.workflowId} scheduled with delay ${params.delay}`,
+  };
+});
+
+logger.info('Internal tools registered and ready.');

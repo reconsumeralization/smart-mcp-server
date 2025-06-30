@@ -1,13 +1,14 @@
+/* eslint-disable no-console */
 /**
  * Gemini Response Types Example
- * 
+ *
  * This example demonstrates how to configure the Gemini models
  * for different response types:
  * 1. Plain text responses
  * 2. JSON responses
  * 3. Text content with streaming
  * 4. Mixed content with code examples
- * 
+ *
  * Before running this example:
  * - Create a .env file in the project root with your GEMINI_API_KEY
  * - Or set the GEMINI_API_KEY environment variable before running
@@ -39,8 +40,12 @@ if (!API_KEY) {
   console.error('│               GEMINI API KEY REQUIRED                │');
   console.error('└───────────────────────────────────────────────────────┘');
   console.error('\nError: GEMINI_API_KEY environment variable is required');
-  console.error('\nTo run this example, set up your environment with a valid Gemini API key:');
-  console.error('\n1. Get an API key from: https://aistudio.google.com/app/apikey');
+  console.error(
+    '\nTo run this example, set up your environment with a valid Gemini API key:'
+  );
+  console.error(
+    '\n1. Get an API key from: https://aistudio.google.com/app/apikey'
+  );
   console.error('2. Run the example with one of these methods:');
   console.error('\n   • Windows PowerShell:');
   console.error('     $env:GEMINI_API_KEY = "your-api-key"');
@@ -49,10 +54,14 @@ if (!API_KEY) {
   console.error('     set GEMINI_API_KEY=your-api-key');
   console.error('     node examples/gemini-response-types-example.js');
   console.error('\n   • Linux/Mac:');
-  console.error('     GEMINI_API_KEY="your-api-key" node examples/gemini-response-types-example.js');
+  console.error(
+    '     GEMINI_API_KEY="your-api-key" node examples/gemini-response-types-example.js'
+  );
   console.error('\n   • Add to .env file:');
   console.error('     Create a .env file with GEMINI_API_KEY=your-api-key');
-  console.error('\nNote: API keys have model access restrictions. Make sure your key');
+  console.error(
+    '\nNote: API keys have model access restrictions. Make sure your key'
+  );
   console.error('      has access to the models used in this example:');
   console.error(`      • ${WORKING_MODEL}`);
   console.error(`      • ${BACKUP_MODEL}`);
@@ -60,13 +69,15 @@ if (!API_KEY) {
 }
 
 // Simple validation that the API key has the expected format (not a full validation)
-if (API_KEY === "your-api-key" || API_KEY.length < 10) {
+if (API_KEY === 'your-api-key' || API_KEY.length < 10) {
   console.error('\n┌───────────────────────────────────────────────────────┐');
   console.error('│               INVALID API KEY FORMAT                 │');
   console.error('└───────────────────────────────────────────────────────┘');
   console.error('\nWarning: The API key provided does not appear to be valid');
   console.error('Please provide your actual Gemini API key, not a placeholder');
-  console.error('Get a valid API key at: https://aistudio.google.com/app/apikey');
+  console.error(
+    'Get a valid API key at: https://aistudio.google.com/app/apikey'
+  );
 }
 
 /**
@@ -75,20 +86,33 @@ if (API_KEY === "your-api-key" || API_KEY.length < 10) {
  * @returns {boolean} - True if it's an API key error
  */
 function handleApiKeyError(error) {
-  if (error.message && (
-    error.message.includes('API key not valid') || 
-    error.message.includes('API_KEY_INVALID') ||
-    error.message.includes('permission')
-  )) {
-    console.error('\n┌───────────────────────────────────────────────────────┐');
+  if (
+    error.message &&
+    (error.message.includes('API key not valid') ||
+      error.message.includes('API_KEY_INVALID') ||
+      error.message.includes('permission'))
+  ) {
+    console.error(
+      '\n┌───────────────────────────────────────────────────────┐'
+    );
     console.error('│                  API KEY ERROR                      │');
     console.error('└───────────────────────────────────────────────────────┘');
-    console.error('\nYour Gemini API key is invalid or has insufficient permissions');
+    console.error(
+      '\nYour Gemini API key is invalid or has insufficient permissions'
+    );
     console.error('\nTroubleshooting steps:');
-    console.error('1. Verify you\'re using a valid key from https://aistudio.google.com/app/apikey');
-    console.error(`2. Check if your key has access to the "${WORKING_MODEL}" model`);
-    console.error('3. Make sure you haven\'t exceeded your quota or rate limits');
-    console.error('4. Try the backup model by changing WORKING_MODEL to BACKUP_MODEL in the code');
+    console.error(
+      "1. Verify you're using a valid key from https://aistudio.google.com/app/apikey"
+    );
+    console.error(
+      `2. Check if your key has access to the "${WORKING_MODEL}" model`
+    );
+    console.error(
+      "3. Make sure you haven't exceeded your quota or rate limits"
+    );
+    console.error(
+      '4. Try the backup model by changing WORKING_MODEL to BACKUP_MODEL in the code'
+    );
     return true;
   }
   return false;
@@ -105,7 +129,7 @@ const BACKUP_MODEL = 'gemini-1.5-flash'; // Backup in case of rate limiting
  */
 async function generatePlainTextResponse() {
   console.log('\n=== Example 1: Plain Text Response ===');
-  
+
   // Use the model we know works
   const model = genAI.getGenerativeModel({
     model: WORKING_MODEL,
@@ -114,18 +138,19 @@ async function generatePlainTextResponse() {
       topP: 0.9,
       topK: 40,
       maxOutputTokens: 2048,
-    }
+    },
   });
 
   try {
-    const prompt = 'Explain asynchronous programming in JavaScript with examples. Keep it concise.';
-    
+    const prompt =
+      'Explain asynchronous programming in JavaScript with examples. Keep it concise.';
+
     console.log(`Sending prompt: "${prompt}"`);
     const result = await model.generateContent(prompt);
-    
+
     console.log('\nPlain Text Response:');
     console.log(result.response.text());
-    
+
     // Save the response to a text file
     const textPath = path.join(outputDir, `plain_text_${Date.now()}.txt`);
     fs.writeFileSync(textPath, result.response.text());
@@ -145,7 +170,7 @@ async function generatePlainTextResponse() {
  */
 async function generateJsonResponse() {
   console.log('\n=== Example 2: JSON Response ===');
-  
+
   const model = genAI.getGenerativeModel({
     model: WORKING_MODEL,
     generationConfig: {
@@ -153,7 +178,7 @@ async function generateJsonResponse() {
       topP: 0.95,
       topK: 40,
       maxOutputTokens: 2048,
-    }
+    },
   });
 
   try {
@@ -175,24 +200,24 @@ async function generateJsonResponse() {
       },
       "bio": "..."
     }`;
-    
+
     console.log(`Sending JSON request...`);
     const result = await model.generateContent(prompt);
     const responseText = result.response.text().trim();
-    
+
     console.log('\nJSON Response (raw):');
     console.log(responseText);
-    
+
     // Parse and save the JSON
     try {
       // Try to extract just the JSON part if there's additional text
       const jsonMatch = responseText.match(/(\{[\s\S]*\})/);
       const jsonText = jsonMatch ? jsonMatch[0] : responseText;
-      
+
       const jsonData = JSON.parse(jsonText);
       console.log('\nParsed JSON:');
       console.log(JSON.stringify(jsonData, null, 2));
-      
+
       // Save to file
       const jsonPath = path.join(outputDir, `user_profile_${Date.now()}.json`);
       fs.writeFileSync(jsonPath, JSON.stringify(jsonData, null, 2));
@@ -216,7 +241,7 @@ async function generateJsonResponse() {
  */
 async function generateStreamingText() {
   console.log('\n=== Example 3: Streaming Text Response ===');
-  
+
   const model = genAI.getGenerativeModel({
     model: WORKING_MODEL,
     generationConfig: {
@@ -224,33 +249,36 @@ async function generateStreamingText() {
       topP: 0.9,
       topK: 40,
       maxOutputTokens: 2048,
-    }
+    },
   });
 
   try {
     // A prompt that asks for a structured response
-    const prompt = 'Create a step-by-step guide explaining the JavaScript event loop. Format it with numbered steps.';
-    
+    const prompt =
+      'Create a step-by-step guide explaining the JavaScript event loop. Format it with numbered steps.';
+
     console.log(`Generating content with streaming...`);
-    
+
     // Using stream for more interactive experience
     const response = await model.generateContentStream(prompt);
-    
+
     // Setup for saving the complete response
     let fullResponse = '';
-    
+
     console.log('\nStreaming response:');
     for await (const chunk of response.stream) {
       const chunkText = chunk.text();
       fullResponse += chunkText;
       process.stdout.write(chunkText);
     }
-    
+
     // Save the full response to a file
-    const streamPath = path.join(outputDir, `streamed_content_${Date.now()}.md`);
+    const streamPath = path.join(
+      outputDir,
+      `streamed_content_${Date.now()}.md`
+    );
     fs.writeFileSync(streamPath, fullResponse);
     console.log(`\n\nSaved streamed content to: ${streamPath}`);
-    
   } catch (error) {
     console.error('Error generating streaming content:', error);
   }
@@ -261,7 +289,7 @@ async function generateStreamingText() {
  */
 async function generateMixedContent() {
   console.log('\n=== Example 4: Mixed Content Response ===');
-  
+
   const model = genAI.getGenerativeModel({
     model: WORKING_MODEL,
     generationConfig: {
@@ -269,33 +297,33 @@ async function generateMixedContent() {
       topP: 0.9,
       topK: 40,
       maxOutputTokens: 2048,
-    }
+    },
   });
 
   try {
     // A prompt that asks for a structured response
-    const prompt = 'Create a step-by-step guide explaining the JavaScript event loop. Format it with numbered steps. Include some code examples.';
-    
+    const prompt =
+      'Create a step-by-step guide explaining the JavaScript event loop. Format it with numbered steps. Include some code examples.';
+
     console.log(`Generating content with streaming...`);
-    
+
     // Using stream for more interactive experience
     const response = await model.generateContentStream(prompt);
-    
+
     // Setup for saving the complete response
     let fullResponse = '';
-    
+
     console.log('\nStreaming response:');
     for await (const chunk of response.stream) {
       const chunkText = chunk.text();
       fullResponse += chunkText;
       process.stdout.write(chunkText);
     }
-    
+
     // Save the full response to a file
     const streamPath = path.join(outputDir, `mixed_content_${Date.now()}.md`);
     fs.writeFileSync(streamPath, fullResponse);
     console.log(`\n\nSaved streamed content to: ${streamPath}`);
-    
   } catch (error) {
     if (handleApiKeyError(error)) {
       // API key error already handled
@@ -330,7 +358,7 @@ if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY.length < 10) {
   console.error('GEMINI_API_KEY environment variable is missing or invalid.');
   process.exit(1);
 }
-runAllExamples().catch(error => {
+runAllExamples().catch((error) => {
   console.error('Unhandled error during execution:', error);
   process.exit(1);
-}); 
+});

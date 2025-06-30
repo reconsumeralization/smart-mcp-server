@@ -82,7 +82,11 @@
         "totalThoughts": 2,
         "nextThoughtNeeded": true
       },
-      "dependencies": ["analyze-content", "analyze-sentiment", "search-related-info"]
+      "dependencies": [
+        "analyze-content",
+        "analyze-sentiment",
+        "search-related-info"
+      ]
     },
     {
       "id": "generate-keywords",
@@ -104,7 +108,12 @@
         "totalThoughts": 1,
         "nextThoughtNeeded": false
       },
-      "dependencies": ["create-summary", "generate-keywords", "extract-metadata", "research-entities"]
+      "dependencies": [
+        "create-summary",
+        "generate-keywords",
+        "extract-metadata",
+        "research-entities"
+      ]
     }
   ]
-} 
+}

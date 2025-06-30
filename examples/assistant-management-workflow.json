@@ -1,0 +1,84 @@
+{
+  "id": "assistant-task-manager",
+  "description": "A workflow to manage the assistant's own development tasks using the memory store.",
+  "steps": [
+    {
+      "id": "create-task-1",
+      "toolId": "mcp_memory_create_entity",
+      "params": {
+        "id": "task-001",
+        "data": {
+          "title": "Implement full CRUD for memory store",
+          "status": "done",
+          "description": "Add list and delete functionality to the memory store and tools."
+        }
+      }
+    },
+    {
+      "id": "create-task-2",
+      "toolId": "mcp_memory_create_entity",
+      "params": {
+        "id": "task-002",
+        "data": {
+          "title": "Create a task management workflow",
+          "status": "in-progress",
+          "description": "Build a workflow to demonstrate managing tasks for the assistant."
+        }
+      }
+    },
+    {
+      "id": "create-task-3",
+      "toolId": "mcp_memory_create_entity",
+      "params": {
+        "id": "task-003",
+        "data": {
+          "title": "Investigate '100-50 list'",
+          "status": "todo",
+          "description": "Find out what the '100-50 list' is and how to import it."
+        }
+      }
+    },
+    {
+      "id": "list-all-tasks",
+      "toolId": "mcp_memory_list_entities",
+      "params": {}
+    },
+    {
+      "id": "update-task-2",
+      "toolId": "mcp_memory_create_entity",
+      "params": {
+        "id": "task-002",
+        "data": {
+          "status": "done",
+          "notes": "This workflow itself is the proof of completion."
+        }
+      }
+    },
+    {
+      "id": "create-dependency-relation",
+      "toolId": "mcp_memory_create_relation",
+      "params": {
+        "source": "task-003",
+        "target": "task-002",
+        "type": "depends-on"
+      }
+    },
+    {
+      "id": "list-tasks-after-update",
+      "toolId": "mcp_memory_list_entities",
+      "params": {}
+    },
+    {
+      "id": "delete-obsolete-task",
+      "toolId": "mcp_memory_delete_entity",
+      "params": {
+        "id": "task-001"
+      }
+    },
+    {
+      "id": "final-task-list",
+      "toolId": "mcp_memory_list_entities",
+      "params": {}
+    }
+  ]
+}

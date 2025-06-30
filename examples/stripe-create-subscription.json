@@ -29,9 +29,7 @@
           "interval": "${context.interval}"
         }
       },
-      "dependencies": [
-        "create_product"
-      ]
+      "dependencies": ["create_product"]
     },
     {
       "id": "create_subscription",
@@ -40,10 +38,7 @@
         "customer_id": "${steps.create_customer.id}",
         "price_id": "${steps.create_price.id}"
       },
-      "dependencies": [
-        "create_customer",
-        "create_price"
-      ]
+      "dependencies": ["create_customer", "create_price"]
     }
   ]
-} 
+}

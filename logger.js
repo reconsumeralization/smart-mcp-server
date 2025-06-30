@@ -1,6 +1,7 @@
 import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { storage } from './middleware/correlation-id.js'; // Import storage
 
 // Get directory name (ESM workaround)
 const __filename = fileURLToPath(import.meta.url);
@@ -33,14 +34,32 @@ const colors = {
 // Add colors to Winston
 winston.addColors(colors);
 
-// Define the format
-const format = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
-  winston.format.colorize({ all: true }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}`,
-  ),
-);
+// Custom format to inject requestId
+const addRequestId = winston.format((info) => {
+  const store = storage.getStore();
+  if (store && store.requestId) {
+    info.requestId = store.requestId;
+  }
+  return info;
+});
+
+// Define different formats for dev and prod
+const format =
+  process.env.NODE_ENV === 'production'
+    ? winston.format.combine(
+        addRequestId(),
+        winston.format.timestamp(),
+        winston.format.json()
+      )
+    : winston.format.combine(
+        addRequestId(),
+        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+        winston.format.colorize({ all: true }),
+        winston.format.printf(
+          (info) =>
+            `[${info.requestId || 'N/A'}] ${info.timestamp} ${info.level}: ${info.message}`
+        )
+      );
 
 // Define file transports
 const transports = [
@@ -69,8 +88,9 @@ try {
     fs.mkdirSync(path.join(__dirname, 'logs'));
   }
 } catch (error) {
+  // eslint-disable-next-line no-console
   console.error('Error creating logs directory:', error);
 }
 
 // Export the logger
-export default logger; 
+export default logger;

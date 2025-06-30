@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "task-002": {
+      "title": "Create a task management workflow",
+      "status": "done",
+      "description": "Build a workflow to demonstrate managing tasks for the assistant.",
+      "notes": "This workflow itself is the proof of completion."
+    },
+    "task-003": {
+      "title": "Investigate '100-50 list'",
+      "status": "todo",
+      "description": "Find out what the '100-50 list' is and how to import it."
+    }
+  },
+  "relations": [
+    {
+      "source": "task-003",
+      "target": "task-002",
+      "type": "depends-on"
+    },
+    {
+      "source": "task-003",
+      "target": "task-002",
+      "type": "depends-on"
+    }
+  ],
+  "observations": []
+}

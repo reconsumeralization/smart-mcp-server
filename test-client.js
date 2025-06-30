@@ -1,5 +1,6 @@
+/* eslint-disable no-console */
 import fetch from 'node-fetch';
-import readline from 'readline';
+import { createInterface } from 'readline';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -9,30 +10,30 @@ dotenv.config();
 const SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3000';
 
 // Create readline interface
-const rl = readline.createInterface({
+const rl = createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
 // Helper function to ask questions
 function askQuestion(query) {
-  return new Promise(resolve => rl.question(query, resolve));
+  return new Promise((resolve) => rl.question(query, resolve));
 }
 
 // Fetch all tools from the server
 async function fetchTools(query = '') {
   try {
-    const url = query ? 
-      `${SERVER_URL}/tools?query=${encodeURIComponent(query)}` : 
-      `${SERVER_URL}/tools`;
-      
+    const url = query
+      ? `${SERVER_URL}/tools?query=${encodeURIComponent(query)}`
+      : `${SERVER_URL}/tools`;
+
     console.log(`Fetching tools from: ${url}`);
-    
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Server responded with status: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data.tools || [];
   } catch (error) {
@@ -48,7 +49,7 @@ async function fetchCategories() {
     if (!response.ok) {
       throw new Error(`Server responded with status: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data.categories || [];
   } catch (error) {
@@ -61,20 +62,22 @@ async function fetchCategories() {
 async function executeTool(toolId, params) {
   try {
     console.log(`Executing tool ${toolId} with params:`, params);
-    
+
     const response = await fetch(`${SERVER_URL}/execute/${toolId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(params)
+      body: JSON.stringify(params),
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Server error: ${errorData.error || response.statusText}`);
+      throw new Error(
+        `Server error: ${errorData.error || response.statusText}`
+      );
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -90,7 +93,7 @@ async function checkHealth() {
     if (!response.ok) {
       throw new Error(`Server responded with status: ${response.status}`);
     }
-    
+
     const data = await response.json();
     console.log('\n=== Server Health ===');
     console.log(`Status: ${data.status}`);
@@ -110,10 +113,10 @@ function displayTools(tools) {
     console.log('No tools found.');
     return;
   }
-  
+
   console.log(`\nFound ${tools.length} tools:`);
   console.log('====================');
-  
+
   // Group by category
   const categorized = tools.reduce((acc, tool) => {
     if (!acc[tool.category]) {
@@ -122,12 +125,14 @@ function displayTools(tools) {
     acc[tool.category].push(tool);
     return acc;
   }, {});
-  
+
   // Display by category
   for (const [category, categoryTools] of Object.entries(categorized)) {
     console.log(`\n== ${category.toUpperCase()} (${categoryTools.length}) ==`);
     categoryTools.forEach((tool, index) => {
-      console.log(`${index + 1}. ${tool.name} (${tool.id}): ${tool.description}`);
+      console.log(
+        `${index + 1}. ${tool.name} (${tool.id}): ${tool.description}`
+      );
     });
   }
   console.log('====================\n');
@@ -144,22 +149,22 @@ async function showMenu() {
     console.log('5. Check server health');
     console.log('6. Exit');
     console.log('============================');
-    
+
     const choice = await askQuestion('Enter your choice (1-6): ');
-    
+
     switch (choice) {
-      case '1':
+      case '1': {
         const allTools = await fetchTools();
         displayTools(allTools);
         break;
-        
-      case '2':
+      }
+      case '2': {
         const query = await askQuestion('Enter your context query: ');
         const filteredTools = await fetchTools(query);
         displayTools(filteredTools);
         break;
-        
-      case '3':
+      }
+      case '3': {
         const categories = await fetchCategories();
         console.log('\n=== Categories ===');
         categories.forEach((cat, index) => {
@@ -167,8 +172,8 @@ async function showMenu() {
         });
         console.log('==================\n');
         break;
-        
-      case '4':
+      }
+      case '4': {
         const toolId = await askQuestion('Enter tool ID to execute: ');
         const paramsStr = await askQuestion('Enter parameters as JSON: ');
         let params;
@@ -183,18 +188,19 @@ async function showMenu() {
         console.log(JSON.stringify(result, null, 2));
         console.log('========================\n');
         break;
-        
-      case '5':
+      }
+      case '5': {
         await checkHealth();
         break;
-        
-      case '6':
+      }
+      case '6': {
         console.log('Exiting...');
         rl.close();
         return;
-        
-      default:
+      }
+      default: {
         console.log('Invalid choice. Please enter a number from 1 to 6.');
+      }
     }
   }
 }
@@ -203,22 +209,21 @@ async function showMenu() {
 async function main() {
   console.log('Starting Smart MCP Test Client...');
   console.log(`Connecting to server at: ${SERVER_URL}`);
-  
+
   try {
     // Check if server is up
     await checkHealth();
-    
+
     // Start interactive menu
     await showMenu();
   } catch (error) {
-    console.error('Failed to connect to server:', error.message);
-    console.log('Please make sure the server is running and try again.');
+    console.error('An error occurred:', error);
     rl.close();
   }
 }
 
 // Run the main function
-main().catch(error => {
+main().catch((error) => {
   console.error('Unhandled error:', error);
   process.exit(1);
-}); 
+});
