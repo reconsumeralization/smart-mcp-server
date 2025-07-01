@@ -1,506 +1,520 @@
-# Smart MCP Server (Gemini Edition)
+# Smart MCP Server
 
-This project is a sophisticated, context-aware agent that leverages Google's Gemini models for intelligent workflow execution. It is compliant with both the Model Context Protocol (MCP) and the Agent-to-Agent (A2A) protocol, allowing it to serve as a powerful tool in a multi-agent system.
+A sophisticated, context-aware Model Context Protocol (MCP) server with Agent-to-Agent (A2A) protocol compliance. Features intelligent workflow execution, secure token management, and comprehensive AI model integration including Google's Gemini models.
 
-The server dynamically loads and manages workflows, using Gemini's native function calling capabilities to intelligently select and execute the correct workflow based on natural language task descriptions.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![MCP Compliant](https://img.shields.io/badge/MCP-v1.0-blue)](https://modelcontextprotocol.io/)
+[![A2A Compliant](https://img.shields.io/badge/A2A-v1.0-green)](https://github.com/modelcontextprotocol/specification)
 
-## Key Features
+## 🌟 Key Features
 
-- **Gemini-Powered Intelligence**: Uses Gemini (configurable model, e.g., `gemini-pro`) for state-of-the-art function calling to drive workflow selection.
-- **A2A Compliant**: Implements the Agent-to-Agent protocol, allowing it to communicate and collaborate with other AI agents. Includes `/.well-known/agent.json` for discovery and a `/a2a/tasks` endpoint for execution.
-- **Dynamic Workflow System**: Automatically loads workflow definitions from JSON files, making it easy to add or modify complex processes without changing the core code.
-- **Centralized Configuration**: A single `config.js` file manages all essential settings, from server ports to API keys.
-- **Extensible and Modular**: The architecture is designed to be easily extended with new workflows and capabilities.
+### 🔐 **Secure Token Management**
+- **MCP/A2A Compliant Tokens**: Automatically generates and manages protocol-compliant API tokens
+- **AES-256-CBC Encryption**: Secure token storage with industry-standard encryption
+- **Automatic Refresh**: Intelligent token validation and refresh mechanisms
+- **CLI Management**: Easy token generation, validation, and monitoring via CLI tools
 
-## Getting Started
+### 🤖 **Multi-Model AI Integration**
+- **Gemini Models**: Full integration with Google's Gemini 2.5 Pro, Gemini Pro, and embedding models
+- **OpenAI Support**: GPT-4, GPT-3.5 Turbo, and embedding models
+- **Anthropic Integration**: Claude 3 Opus, Sonnet, and Haiku models
+- **Model-Agnostic Architecture**: Unified interface across all AI providers
+
+### 🔄 **Advanced Workflow System**
+- **Dynamic Workflow Loading**: Automatically loads workflow definitions from JSON files
+- **Intelligent Execution**: Uses AI function calling for optimal workflow selection
+- **Progress Monitoring**: Real-time execution tracking with metrics and logging
+- **Error Recovery**: Sophisticated error handling and retry mechanisms
+
+### 🌐 **Protocol Compliance**
+- **MCP v1.0**: Full Model Context Protocol implementation
+- **A2A v1.0**: Agent-to-Agent protocol for multi-agent collaboration
+- **Tool Discovery**: Automatic tool registration and capability advertisement
+- **Secure Communication**: Encrypted inter-agent communication
+
+### 🛠️ **Comprehensive Toolset**
+- **GitHub Integration**: Repository management, analytics, and automation
+- **Stripe Integration**: Payment processing and subscription management
+- **System Health Monitoring**: Real-time system metrics and alerting
+- **Documentation Tools**: Automated documentation consolidation and management
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- A Google Gemini API Key
+- **Node.js** v18.0.0 or higher
+- **npm** v7.0.0 or higher
+- **Google Gemini API Key** (for AI features)
 
 ### Installation
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/reconsumeralization/smart-mcp-server.git
-    cd smart-mcp-server
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Set up your environment:**
-    - Copy the `.env.example` file to a new file named `.env`:
-      ```bash
-      cp .env.example .env
-      ```
-    - Open the `.env` file and add your Google Gemini API key:
-      ```
-      GEMINI_API_KEY=your_gemini_api_key_here
-      ```
-
-### Running the Server
-
--   **To start the server in production mode:**
-    ```bash
-    npm start
-    ```
--   **To start the server in development mode (with hot reloading):**
-    ```bash
-    npm run dev
-    ```
-
-The server will start on the port defined in your configuration (default is `3000`).
-
-## API Documentation
-
-API documentation is available via Swagger UI. Once the server is running, you can access it at:
-
-`http://localhost:3000/api-docs`
-
-This interface allows you to explore and interact with all the available endpoints, including the A2A task endpoint.
-
-## How It Works
-
-1.  **A2A Task Received**: An external agent sends a POST request to the `/a2a/tasks` endpoint with a `task_description`.
-2.  **Workflow Selection**: The server prepares a list of all available workflows and sends them along with the task description to the Gemini API.
-3.  **Gemini Function Calling**: Gemini analyzes the task and selects the most appropriate workflow to execute, returning it as a "function call".
-4.  **Workflow Execution**: The `WorkflowManager` executes the selected workflow, processing each step and interpolating the necessary arguments.
-5.  **A2A Response**: The server returns the result of the workflow execution in a standard A2A format.
-
-## Adding New Workflows
-
-To add a new workflow, simply create a new `.json` file in the `/examples` directory. The server will automatically load it on startup. Ensure the workflow JSON is valid and includes the required `id`, `name`, `description`, and `steps` fields.
-
-## 🚀 Overview
-
-Smart MCP Server is a powerful middleware that serves as a context-aware bridge between AI models and tools. It analyzes user context, historical patterns, and content to intelligently present the most relevant tools, improving efficiency and reducing cognitive load. This repository provides the core server, a context-aware selector, and integrations with various services including Google's Gemini API.
-
-## ✨ Key Features
-
-- **Context-Aware Tool Selection**: Intelligently selects and presents tools based on:
-  - User message content and context
-  - Historical usage patterns
-  - Tool categories (filesystem, code editing, AI, etc.)
-  - Essential tool designation
-
-- **Tool Server Architecture**: Manages multiple tool server instances with:
-  - Server lifecycle management
-  - Tool registration
-  - Execution proxying
-  - Error handling
-
-- **Gemini API Integration**: Full integration with Google's Gemini models:
-  - Text generation
-  - JSON response formatting
-  - Streaming capabilities
-  - Advanced model configuration
-
-- **Workflow System**: Define, execute, and monitor complex workflows:
-  - Sequential and parallel step execution
-  - Dependency management
-  - Variable storage and interjection
-  - Progress monitoring
-  - Execution history
-
-- **Documentation Automation**: Tools for gathering and ingesting documentation:
-  - Repository scanning
-  - Markdown parsing
-  - Documentation structure analysis
-  - Knowledge integration
-
-## 📋 Prerequisites
-
-- Node.js (v16.0.0 or higher)
-- npm (v7.0.0 or higher)
-- For Gemini API: Google AI API key
-
-## 🔧 Installation
-
-1. Clone the repository:
-
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/reconsumeralization/smart-mcp-server.git
    cd smart-mcp-server
    ```
 
-2. Install dependencies:
-
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. Configure environment variables:
-
+3. **Generate MCP/A2A compliant tokens:**
    ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
+   npm run token:generate
    ```
 
-## 🏗️ Project Structure
+4. **Start the server:**
+   ```bash
+   npm start
+   ```
 
-```plaintext
+The server will start on port 3000 (configurable) with full MCP and A2A protocol support.
+
+## 🔑 Token Management
+
+### CLI Commands
+
+```bash
+# Generate a new MCP/A2A compliant token
+npm run token:generate
+
+# Refresh existing token
+npm run token:refresh
+
+# Validate current token compliance
+npm run token:validate
+
+# Show detailed token information
+npm run token:info
+
+# Export token metadata (no sensitive data)
+npm run token:export
+
+# Show help
+npm run token:help
+```
+
+### Token Features
+
+- **🛡️ Security**: AES-256-CBC encryption with secure key management
+- **✅ Compliance**: Full MCP v1.0 and A2A v1.0 protocol compliance
+- **🔄 Auto-Refresh**: Automatic token validation and refresh
+- **📊 Monitoring**: Detailed token status and usage tracking
+
+## 🏗️ Architecture
+
+```
 smart-mcp-server/
-├── context-aware-selector.js  # Tool selection based on context
-├── docs/                      # Documentation files
-├── examples/                  # Example scripts
-├── lib/                       # Shared libraries
-├── schema/                    # Tool schema definitions
-├── server.js                  # Main server implementation
-├── servers/                   # Tool server implementations
-├── test/                      # Test files
-├── tool-proxy.js              # Tool execution proxy
-├── tools/                     # Tool implementations
-└── workflow-monitor.js        # Workflow monitoring system
+├── src/
+│   ├── archer/                    # Arrow server for agentic framework
+│   ├── lib/
+│   │   ├── token-manager.js       # Secure token management
+│   │   ├── agents/                # AI agent implementations
+│   │   └── ai-workflows/          # Workflow orchestration
+│   ├── models/
+│   │   └── drivers/               # AI model drivers (Gemini, OpenAI, Anthropic)
+│   ├── tools/                     # MCP-compliant tool implementations
+│   ├── routes/                    # API endpoints
+│   └── middleware/                # Authentication, validation, etc.
+├── examples/                      # Workflow examples and demos
+├── scripts/                       # Management and utility scripts
+├── docs/                          # Comprehensive documentation
+└── public/                        # A2A agent discovery
 ```
 
-## 🚀 Advanced Examples
+## 🔌 API Endpoints
 
-### 1. Multi-Tool Orchestration
+### Core Endpoints
+- `GET /health` - Health check and system status
+- `POST /a2a/tasks` - Agent-to-Agent task execution
+- `GET /.well-known/agent.json` - Agent discovery (A2A protocol)
 
-Combine multiple tools for complex tasks:
+### Workflow Management
+- `GET /api/workflows` - List all available workflows
+- `POST /api/workflows/:id/execute` - Execute a specific workflow
+- `GET /api/workflows/:id/status` - Get workflow execution status
+
+### Token Management
+- `POST /api/tokens/refresh` - Refresh API tokens
+- `GET /api/tokens/info` - Get token information
+- `POST /api/tokens/validate` - Validate token compliance
+
+### Tool Integration
+- `GET /api/tools` - List available MCP tools
+- `POST /api/tools/execute` - Execute a tool with parameters
+
+## 🤖 AI Model Integration
+
+### Gemini Integration
 
 ```javascript
-import { ToolOrchestrator } from './lib/tool-orchestrator.js';
+import { GeminiDriver } from './src/models/drivers/gemini-driver.js';
 
-// Create an orchestrator with error handling and retry logic
-const orchestrator = new ToolOrchestrator({
-  maxRetries: 3,
-  retryDelay: 1000,
-  fallbackStrategy: 'alternative-tool'
+const gemini = new GeminiDriver();
+await gemini.initialize(); // Automatic token management
+
+// Text generation with MCP compliance
+const result = await gemini.generate({
+  prompt: "Explain quantum computing",
+  temperature: 0.7,
+  maxTokens: 1024
 });
 
-// Define a complex task using multiple tools
-const task = orchestrator.createTask()
-  .use('gemini-tool')
-    .withConfig({ temperature: 0.2 })
-    .forStep('analyze-requirements')
-  .use('github-tool')
-    .withAuth(process.env.GITHUB_TOKEN)
-    .forStep('create-pr')
-  .use('database-tool')
-    .withRetry(5)
-    .forStep('store-results');
+// Streaming responses
+for await (const chunk of gemini.stream({ prompt: "Write a story" })) {
+  console.log(chunk.text);
+}
 
-// Execute with progress monitoring
-const result = await task.execute({
-  onProgress: (step, progress) => console.log(`${step}: ${progress}%`),
-  onError: (step, error) => console.error(`Error in ${step}:`, error)
+// Embeddings
+const embedding = await gemini.embedding({ 
+  text: "Convert this to vector representation" 
 });
 ```
 
-### 2. Context-Aware Tool Selection with Memory
+### Multi-Model Support
 
 ```javascript
-import { ContextAnalyzer } from './lib/context-analyzer.js';
-import { MemoryStore } from './lib/memory-store.js';
+import { ModelDriver } from './src/models/ModelDriver.js';
 
-// Initialize with persistent memory
-const memory = new MemoryStore({
-  storage: 'redis',
-  ttl: '24h',
-  namespace: 'tool-selection'
-});
-
-const analyzer = new ContextAnalyzer({
-  memory,
-  embeddings: true,
-  contextWindow: 10
-});
-
-// Analyze context with historical data
-const toolSuggestions = await analyzer.analyze({
-  currentMessage: "Help me optimize this SQL query",
-  userHistory: await memory.getUserHistory('user123'),
-  projectContext: {
-    language: 'SQL',
-    database: 'PostgreSQL',
-    performance: true
-  }
-});
-
-// Get ranked tool suggestions with confidence scores
-const rankedTools = toolSuggestions.getRankedTools();
-console.log(rankedTools);
-// [
-//   { tool: 'database-optimizer', confidence: 0.95 },
-//   { tool: 'query-analyzer', confidence: 0.85 },
-//   { tool: 'performance-monitor', confidence: 0.75 }
-// ]
-```
-
-### 3. Advanced Workflow with Error Recovery
-
-```javascript
-import { WorkflowBuilder } from './lib/workflow-builder.js';
-import { ErrorRecoveryStrategy } from './lib/error-recovery.js';
-
-// Create a workflow with sophisticated error handling
-const workflow = new WorkflowBuilder()
-  .addNode('data-extraction', {
-    tool: 'database-tool',
-    fallback: 'file-system-tool',
-    validation: (data) => data.length > 0
-  })
-  .addNode('data-transformation', {
-    tool: 'gemini-tool',
-    retries: 3,
-    timeout: '5m',
-    recovery: new ErrorRecoveryStrategy({
-      onTimeout: 'switch-model',
-      onError: 'reduce-batch-size',
-      onValidationFail: 'human-review'
-    })
-  })
-  .addNode('data-loading', {
-    tool: 'database-tool',
-    mode: 'batch',
-    batchSize: 1000,
-    monitoring: {
-      metrics: ['throughput', 'latency', 'errors'],
-      alerts: {
-        errorRate: { threshold: 0.01, action: 'pause' },
-        latency: { threshold: '500ms', action: 'reduce-batch-size' }
-      }
-    }
-  })
-  .setEdges([
-    ['data-extraction', 'data-transformation'],
-    ['data-transformation', 'data-loading']
-  ])
-  .build();
-
-// Execute with real-time monitoring
-const execution = await workflow.execute({
-  inputs: { query: 'SELECT * FROM large_table' },
-  monitoring: {
-    interval: '1s',
-    metrics: ['progress', 'resource-usage', 'throughput'],
-    onMetric: (metric) => console.log(`${metric.name}: ${metric.value}`),
-    onAlert: (alert) => handleAlert(alert)
-  }
-});
-```
-
-### 4. AI-Powered Tool Composition
-
-```javascript
-import { AIToolComposer } from './lib/ai-tool-composer.js';
-import { ToolRegistry } from './lib/tool-registry.js';
-
-// Initialize AI-powered tool composer
-const composer = new AIToolComposer({
-  model: 'gemini-2.0-flash',
-  optimization: 'performance',
-  constraints: {
-    maxTools: 5,
-    maxMemory: '2GB',
-    timeout: '10m'
-  }
-});
-
-// Register available tools with capabilities
-const registry = new ToolRegistry()
-  .register('database-tool', {
-    capabilities: ['query', 'transform', 'optimize'],
-    costs: { memory: '500MB', latency: '100ms' }
-  })
-  .register('gemini-tool', {
-    capabilities: ['analyze', 'generate', 'translate'],
-    costs: { memory: '1GB', latency: '2s' }
-  });
-
-// Let AI compose optimal tool chain for task
-const composition = await composer.compose({
-  task: 'Analyze and optimize database performance',
-  context: {
-    database: 'PostgreSQL',
-    dataSize: '10GB',
-    performance: {
-      current: { qps: 1000, latency: '200ms' },
-      target: { qps: 2000, latency: '100ms' }
-    }
-  },
-  registry
-});
-
-// Execute the AI-composed tool chain
-const result = await composition.execute({
-  monitoring: true,
-  optimization: true,
-  reporting: true
-});
-```
-
-## 🚀 Usage
-
-### Running the Server
-
-Start the main server:
-
-```bash
-npm run server
-```
-
-### Testing the Context-Aware Selector
-
-```bash
-npm run test
-```
-
-### Running Examples
-
-Several example scripts are provided to demonstrate various features:
-
-```bash
-# Test Gemini API integration
-node examples/gemini-example.js
-
-# Test context-aware selector
-node test-context-aware-selector.js
-
-# Run workflow examples
-node examples/test-workflow.js
-```
-
-## 🔌 Available Tool Integrations
-
-### AI Tools
-
-- **Gemini API**: Google's generative AI models for text generation, chat, and more
-- **Sequential Thinking**: Step-by-step reasoning tool
-- **Web Research**: Internet search capabilities
-
-### Development Tools
-
-- **GitHub**: Repository management, issue tracking, PR creation
-- **Filesystem**: File manipulation, code editing
-- **Database**: PostgreSQL integration (planned)
-
-### Memory Tools
-
-- **Knowledge Graph**: For storing and retrieving structured information
-- **Vector Store**: For semantic search and retrieval
-
-## 📊 Context-Aware Tool Selection
-
-The context-aware selector analyzes user messages and historical usage to present the most relevant tools:
-
-```javascript
-// Example usage
-import { selectToolsForContext } from './context-aware-selector.js';
-
-const userContext = {
-  message: "Help me create a new React component",
-  history: ["git status", "npm install"]
+// Unified interface across all models
+const models = {
+  gemini: new GeminiDriver(),
+  openai: new OpenAIDriver(),
+  anthropic: new AnthropicDriver()
 };
 
-const selectedTools = selectToolsForContext(userContext, allTools);
+// Automatic model selection based on task
+const bestModel = await ModelDriver.selectOptimal({
+  task: "code_generation",
+  requirements: { speed: "fast", quality: "high" }
+});
 ```
 
 ## 🔄 Workflow System
 
-Define complex workflows with dependencies and execute them:
+### Defining Workflows
 
-```javascript
-// Example workflow definition (JSON)
-const workflow = {
-  "id": "db-integration",
-  "description": "Database Integration Workflow",
-  "concurrencyLimit": 3, 
+Create workflow JSON files in the `examples/` directory:
+
+```json
+{
+  "id": "data-analysis-workflow",
+  "name": "Data Analysis Pipeline",
+  "description": "Comprehensive data analysis with AI insights",
+  "version": "1.0",
+  "mcp_compliant": true,
+  "a2a_compliant": true,
   "steps": [
     {
-      "id": "research-orm",
-      "type": "web-search",
+      "id": "data-extraction",
+      "type": "database-query",
+      "tool": "mcp_database_tool",
       "parameters": {
-        "query": "Node.js ORM comparison prisma sequelize"
+        "query": "SELECT * FROM analytics_data WHERE date >= '{{start_date}}'"
       }
     },
-    // Additional steps...
+    {
+      "id": "ai-analysis",
+      "type": "ai-processing",
+      "tool": "mcp_gemini_tool",
+      "parameters": {
+        "model": "gemini-2.5-pro",
+        "prompt": "Analyze this data and provide insights: {{data}}"
+      },
+      "depends_on": ["data-extraction"]
+    },
+    {
+      "id": "report-generation",
+      "type": "document-creation",
+      "tool": "mcp_documentation_tool",
+      "parameters": {
+        "template": "analysis-report",
+        "data": "{{ai-analysis.result}}"
+      },
+      "depends_on": ["ai-analysis"]
+    }
   ]
-};
-```
-
-## 🌐 Gemini API Integration
-
-Use Google's Gemini models for various tasks:
-
-```javascript
-import { GeminiClient } from './lib/gemini-client.js';
-
-// Initialize client
-const client = new GeminiClient();
-
-// Generate text
-const result = await client.generateText("Explain quantum computing");
-console.log(result.text);
-
-// Generate JSON
-const userData = await client.generateJson(
-  "Create a JSON user profile with name, email, and age"
-);
-console.log(userData);
-
-// Stream responses
-const stream = await client.generateStream("Write a story about a robot");
-for await (const chunk of stream.stream) {
-  process.stdout.write(chunk.text());
 }
 ```
 
-## 🔍 API Endpoints
+### Executing Workflows
 
-The server exposes the following API endpoints:
+```bash
+# List available workflows
+curl http://localhost:3000/api/workflows
 
-- `POST /api/tools`: Register a new tool
-- `GET /api/tools`: Get all available tools
-- `POST /api/execute`: Execute a tool
-- `GET /api/context`: Get context-aware tool suggestions
-- `POST /api/workflows`: Register a new workflow
-- `GET /api/workflows`: Get all workflows
-- `GET /api/workflows/:id`: Get a specific workflow
-- `POST /api/workflows/:id/execute`: Execute a workflow
+# Execute a workflow
+curl -X POST http://localhost:3000/api/workflows/data-analysis-workflow/execute \
+  -H "Content-Type: application/json" \
+  -d '{"start_date": "2024-01-01"}'
+
+# Monitor execution
+curl http://localhost:3000/api/workflows/execution-id-123/status
+```
+
+## 🛠️ Available Tools
+
+### GitHub Tool (`mcp_github_tool`)
+```javascript
+// Repository analytics
+const stats = await tools.mcp_github_search_repositories({
+  query: "machine learning",
+  sort: "stars",
+  limit: 10
+});
+
+// Create pull request
+const pr = await tools.mcp_github_create_pull_request({
+  owner: "username",
+  repo: "repository",
+  title: "Feature: Add new functionality",
+  body: "Description of changes",
+  head: "feature-branch",
+  base: "main"
+});
+```
+
+### System Health Tool (`mcp_system_health_tool`)
+```javascript
+// Get system metrics
+const health = await tools.mcp_system_health_check();
+console.log(health); // { cpu: 45, memory: 67, status: "healthy" }
+
+// Monitor performance
+const metrics = await tools.mcp_system_performance_metrics({
+  duration: "1h",
+  interval: "5m"
+});
+```
+
+### Documentation Tool (`mcp_documentation_tool`)
+```javascript
+// Consolidate documentation
+const docs = await tools.mcp_consolidate_documentation({
+  source: "./docs",
+  output: "./consolidated-docs.md",
+  format: "markdown"
+});
+```
+
+## 🔍 Context-Aware Tool Selection
+
+The system intelligently selects tools based on context:
+
+```javascript
+import { selectToolsForContext } from './src/context-aware-selector.js';
+
+const context = {
+  message: "Help me optimize this database query",
+  history: ["SELECT * FROM users", "EXPLAIN ANALYZE"],
+  project: { type: "database", language: "SQL" }
+};
+
+const selectedTools = selectToolsForContext(context, availableTools);
+// Returns: [database-tool, performance-tool, query-optimizer]
+```
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+npm test
+
+# Test specific components
+npm run test:integration
+npm run test:tools
+npm run test:workflows
+
+# Test token management
+npm run token:validate
+npm run token:info
+```
+
+## 📊 Monitoring and Analytics
+
+### Real-time Metrics
+- **System Health**: CPU, memory, disk usage
+- **API Performance**: Response times, error rates
+- **Token Usage**: API calls, quota monitoring
+- **Workflow Execution**: Success rates, performance metrics
+
+### Logging
+```bash
+# View logs
+tail -f logs/all.log
+tail -f logs/error.log
+
+# Workflow-specific logs
+ls logs/workflow-test/
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+```bash
+# Core Configuration
+PORT=3000
+NODE_ENV=production
+LOG_LEVEL=info
+
+# AI Models (automatically managed by token system)
+GEMINI_MODEL=gemini-2.5-pro
+
+# External Integrations
+GITHUB_TOKEN=your_github_token
+STRIPE_SECRET_KEY=your_stripe_key
+
+# Database
+POSTGRES_URL=postgresql://user:pass@localhost:5432/db
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+```
+
+### Agent Configuration
+
+The system automatically advertises its capabilities via `public/agent.json`:
+
+```json
+{
+  "id": "smart-mcp-agent",
+  "name": "Smart MCP Agent",
+  "protocol_versions": {
+    "mcp": "1.0",
+    "a2a": "1.0"
+  },
+  "capabilities": [
+    "workflow_execution",
+    "token_management", 
+    "model_interaction"
+  ],
+  "supported_models": [
+    "gemini-2.5-pro",
+    "gpt-4",
+    "claude-3-opus"
+  ]
+}
+```
+
+## 🚀 Advanced Usage
+
+### Custom Tool Development
+
+```javascript
+// Create a new MCP-compliant tool
+export async function mcp_custom_tool(params) {
+  const { input, options = {} } = params;
+  
+  try {
+    // Tool implementation
+    const result = await processInput(input, options);
+    
+    return {
+      success: true,
+      result,
+      metadata: {
+        mcp_compliant: true,
+        execution_time: Date.now() - startTime
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      metadata: { mcp_compliant: true }
+    };
+  }
+}
+```
+
+### Multi-Agent Coordination
+
+```javascript
+// A2A protocol communication
+const taskResult = await fetch('http://other-agent:3000/a2a/tasks', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    task_description: "Analyze financial data",
+    context: { timeframe: "Q4 2024" }
+  })
+});
+```
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the `docs/` directory:
+Comprehensive documentation is available:
 
-- [Context-Aware Selector](docs/context-aware-selector.md)
-- [Gemini Integration](docs/gemini-integration.md)
-- [Workflow Testing](docs/workflow-testing.md)
+- [**Token Management Guide**](docs/token-management.md)
+- [**Workflow Development**](docs/workflow-development.md) 
+- [**Tool Integration**](docs/tool-integration.md)
+- [**A2A Protocol Guide**](docs/a2a-protocol.md)
+- [**Security Best Practices**](docs/security.md)
 
-## 🛠️ Development
+## 🔐 Security
 
-### Adding a New Tool
-
-1. Create a tool implementation in the `tools/` directory
-2. Define the tool schema in the `schema/` directory
-3. Add server implementation in the `servers/` directory
-4. Register the tool in `server.js`
-
-### Running Tests
-
-```bash
-npm test
-```
+- **🔒 Token Encryption**: AES-256-CBC encryption for all sensitive data
+- **🛡️ Secure Storage**: File permissions and access controls
+- **🔄 Auto-Rotation**: Automatic token refresh and validation
+- **📊 Audit Logging**: Comprehensive security event logging
+- **🚫 No Hardcoded Secrets**: All credentials via environment variables
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md).
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes with tests
+4. Ensure MCP/A2A compliance
+5. Submit a pull request
+
+### Development Setup
+
+```bash
+# Install development dependencies
+npm install
+
+# Run in development mode
+npm run dev
+
+# Run tests with coverage
+npm run test:coverage
+
+# Lint and format code
+npm run lint
+npm run format
+```
+
+## 📈 Roadmap
+
+- [ ] **Enhanced AI Models**: Integration with more AI providers
+- [ ] **Advanced Workflows**: Visual workflow builder and editor
+- [ ] **Real-time Collaboration**: Multi-user workflow execution
+- [ ] **Plugin System**: Third-party tool integration framework
+- [ ] **Cloud Deployment**: One-click cloud deployment options
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Contact
+## 🙏 Acknowledgments
 
-Project Maintainer: [David Weatherspoon](https://github.com/reconsumeralization)
+- [Model Context Protocol](https://modelcontextprotocol.io/) for the MCP specification
+- [Google AI](https://ai.google.dev/) for Gemini API access
+- [OpenAI](https://openai.com/) for GPT model integration
+- [Anthropic](https://anthropic.com/) for Claude model support
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/reconsumeralization/smart-mcp-server/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/reconsumeralization/smart-mcp-server/discussions)
+- **Email**: [David Weatherspoon](mailto:david@reconsumeralization.com)
+
+---
+
+**Built with ❤️ for the AI agent ecosystem**
+
+*Smart MCP Server - Empowering intelligent agent collaboration through secure, protocol-compliant infrastructure.*

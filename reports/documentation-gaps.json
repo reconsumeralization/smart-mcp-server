@@ -1,0 +1,56 @@
+{
+  "missing": [
+    {
+      "type": "API Documentation",
+      "description": "Complete OpenAPI/Swagger documentation",
+      "priority": "High",
+      "pages": 15
+    },
+    {
+      "type": "Developer Onboarding Guide",
+      "description": "Step-by-step setup for new developers",
+      "priority": "High",
+      "pages": 8
+    },
+    {
+      "type": "Production Deployment Guide",
+      "description": "Comprehensive production setup instructions",
+      "priority": "High",
+      "pages": 12
+    },
+    {
+      "type": "Security Best Practices",
+      "description": "Security guidelines and implementation",
+      "priority": "Medium",
+      "pages": 6
+    },
+    {
+      "type": "Performance Optimization Guide",
+      "description": "Performance tuning and monitoring",
+      "priority": "Medium",
+      "pages": 10
+    },
+    {
+      "type": "Error Handling Documentation",
+      "description": "Error codes and troubleshooting",
+      "priority": "Medium",
+      "pages": 8
+    }
+  ],
+  "incomplete": [
+    {
+      "type": "Testing Documentation",
+      "description": "Expand unit and integration testing guides",
+      "priority": "High",
+      "currentPages": 7,
+      "targetPages": 15
+    },
+    {
+      "type": "Architecture Documentation",
+      "description": "Add more detailed system diagrams",
+      "priority": "Medium",
+      "currentPages": 11,
+      "targetPages": 18
+    }
+  ]
+}

@@ -3,9 +3,15 @@
   "name": "Smart MCP Agent",
   "description": "A context-aware agent that manages and executes workflows using the Model Context Protocol (MCP) and interacts with other agents via the Agent2Agent (A2A) protocol.",
   "version": "1.0.0",
+  "protocol_versions": {
+    "mcp": "1.0",
+    "a2a": "1.0"
+  },
   "endpoints": {
     "tasks": "/a2a/tasks",
-    "workflows": "/api/workflows"
+    "workflows": "/api/workflows",
+    "token_management": "/api/tokens",
+    "health": "/health"
   },
   "capabilities": [
     {
@@ -34,10 +40,147 @@
           }
         }
       }
+    },
+    {
+      "name": "token_management",
+      "description": "Manages MCP/A2A compliant API tokens with automatic refresh and validation.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["generate", "refresh", "validate", "info"],
+            "description": "The token management action to perform."
+          },
+          "token_id": {
+            "type": "string",
+            "description": "Optional token identifier (defaults to 'gemini_primary')."
+          }
+        },
+        "required": ["action"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the operation was successful."
+          },
+          "token_info": {
+            "type": "object",
+            "description": "Token metadata and compliance information."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable status message."
+          }
+        }
+      }
+    },
+    {
+      "name": "model_interaction",
+      "description": "Interacts with AI models through MCP-compliant drivers with automatic token management.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "Model identifier (e.g., 'gemini-2.5-pro', 'gpt-4', 'claude-3')."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "The prompt to send to the model."
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Model-specific parameters."
+          }
+        },
+        "required": ["model", "prompt"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "response": {
+            "type": "string",
+            "description": "The model's response."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Response metadata including compliance information."
+          }
+        }
+      }
+    }
+  ],
+  "compliance": {
+    "mcp": {
+      "version": "1.0",
+      "features": [
+        "tool_discovery",
+        "context_management",
+        "error_handling",
+        "streaming_support"
+      ]
+    },
+    "a2a": {
+      "version": "1.0",
+      "features": [
+        "agent_discovery",
+        "task_delegation",
+        "workflow_coordination",
+        "secure_communication"
+      ]
+    },
+    "security": {
+      "token_encryption": "aes-256-gcm",
+      "secure_storage": true,
+      "automatic_refresh": true,
+      "compliance_validation": true
+    }
+  },
+  "supported_models": [
+    {
+      "provider": "google",
+      "models": ["gemini-2.5-pro", "gemini-pro", "text-embedding-004"],
+      "capabilities": ["text_generation", "embeddings", "streaming"]
+    },
+    {
+      "provider": "openai",
+      "models": ["gpt-4", "gpt-3.5-turbo", "text-embedding-ada-002"],
+      "capabilities": ["text_generation", "embeddings", "streaming"]
+    },
+    {
+      "provider": "anthropic",
+      "models": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
+      "capabilities": ["text_generation", "streaming"]
+    }
+  ],
+  "tools": [
+    {
+      "name": "mcp_github_tool",
+      "description": "GitHub repository management and analytics",
+      "compliance": "mcp_1.0"
+    },
+    {
+      "name": "mcp_stripe_tool",
+      "description": "Payment processing and subscription management",
+      "compliance": "mcp_1.0"
+    },
+    {
+      "name": "mcp_documentation_tool",
+      "description": "Documentation consolidation and management",
+      "compliance": "mcp_1.0"
+    },
+    {
+      "name": "mcp_system_health_tool",
+      "description": "System monitoring and health checks",
+      "compliance": "mcp_1.0"
     }
   ],
   "contact": {
     "email": "support@example.com"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "last_updated": "2025-01-07T23:37:00Z"
 }

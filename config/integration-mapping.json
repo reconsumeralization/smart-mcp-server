@@ -1,0 +1,52 @@
+{
+  "documentsToCode": [
+    {
+      "doc": "architecture",
+      "code": [
+        "server.js",
+        "workflow-manager.js"
+      ]
+    },
+    {
+      "doc": "integrations",
+      "code": [
+        "tools/gemini-tool.js",
+        "tools/stripe-tool.js"
+      ]
+    },
+    {
+      "doc": "financial",
+      "code": [
+        "lib/agents/compliance_agent/"
+      ]
+    }
+  ],
+  "documentsToExamples": [
+    {
+      "doc": "integrations",
+      "examples": [
+        "gemini-integration-workflow.json"
+      ]
+    },
+    {
+      "doc": "financial",
+      "examples": [
+        "stripe-sell-product.json"
+      ]
+    }
+  ],
+  "dependencies": {
+    "buildOrder": [
+      "overview",
+      "architecture",
+      "integrations",
+      "financial",
+      "development"
+    ],
+    "criticalPath": [
+      "architecture",
+      "integrations",
+      "financial"
+    ]
+  }
+}

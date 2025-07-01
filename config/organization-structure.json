@@ -1,0 +1,18 @@
+{
+  "current_state": "Documentation exists but needs optimization",
+  "sections": {
+    "business_docs": 8,
+    "technical_docs": 7,
+    "compliance_docs": 1,
+    "examples": 1,
+    "other": 7
+  },
+  "total_files": 24,
+  "structure_score": 7.5,
+  "improvements_needed": [
+    "Better cross-referencing",
+    "Clearer navigation hierarchy",
+    "Standardized formatting",
+    "Missing integration guides"
+  ]
+}

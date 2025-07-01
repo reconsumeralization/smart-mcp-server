@@ -1,0 +1,81 @@
+{
+  "masterDocument": "CONSOLIDATED_DOCUMENTATION.md",
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Project Overview",
+      "priority": 1,
+      "subsections": [
+        "Introduction",
+        "Features",
+        "Architecture Summary",
+        "Getting Started"
+      ],
+      "wordCount": 0,
+      "pageEstimate": 0,
+      "status": "ready"
+    },
+    {
+      "id": "architecture",
+      "title": "System Architecture",
+      "priority": 2,
+      "subsections": [
+        "Core Components",
+        "Data Flow",
+        "Security Model",
+        "Scalability Design"
+      ],
+      "wordCount": 0,
+      "pageEstimate": 0,
+      "status": "ready"
+    },
+    {
+      "id": "integrations",
+      "title": "Integrations & APIs",
+      "priority": 3,
+      "subsections": [
+        "Gemini AI",
+        "Stripe Payments",
+        "A2A Protocol",
+        "Third-party Services"
+      ],
+      "wordCount": 0,
+      "pageEstimate": 0,
+      "status": "ready"
+    },
+    {
+      "id": "financial",
+      "title": "Financial Services",
+      "priority": 4,
+      "subsections": [
+        "Payment Processing",
+        "Compliance",
+        "Risk Management",
+        "Reconciliation"
+      ],
+      "wordCount": 0,
+      "pageEstimate": 0,
+      "status": "ready"
+    },
+    {
+      "id": "development",
+      "title": "Development Guide",
+      "priority": 5,
+      "subsections": [
+        "Setup",
+        "Testing",
+        "Deployment",
+        "Monitoring"
+      ],
+      "wordCount": 0,
+      "pageEstimate": 0,
+      "status": "ready"
+    }
+  ],
+  "tableOfContents": {
+    "maxDepth": 3,
+    "includePageNumbers": true,
+    "includeImages": true,
+    "includeCodeBlocks": true
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "core": [
+    "Workflow Management",
+    "Context-Aware Tool Selection",
+    "Gemini AI Integration",
+    "Stripe Payment Processing",
+    "A2A Protocol Support",
+    "Docker Containerization",
+    "Express Server Framework",
+    "MongoDB Database Integration"
+  ],
+  "integrations": [
+    "Stripe API",
+    "Gemini AI API",
+    "Redis Caching",
+    "PostgreSQL Support",
+    "Freight Logistics",
+    "Document Processing"
+  ],
+  "tools": [
+    "Gemini Tool",
+    "Stripe Tool",
+    "Financial Core Tool",
+    "Market Data Tool",
+    "Trading Execution Tool"
+  ],
+  "agents": [
+    "Compliance Agent",
+    "Agent Manager",
+    "Multi-agent Communication"
+  ]
+}

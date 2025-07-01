@@ -1,0 +1,72 @@
+{
+  "components": [
+    {
+      "name": "Financial Overview",
+      "metrics": [
+        "Total Revenue",
+        "Transaction Count",
+        "Average Transaction Value",
+        "Monthly Growth"
+      ],
+      "chartTypes": [
+        "line",
+        "bar",
+        "pie"
+      ]
+    },
+    {
+      "name": "System Performance",
+      "metrics": [
+        "Response Time",
+        "Error Rate",
+        "Uptime",
+        "API Usage"
+      ],
+      "chartTypes": [
+        "line",
+        "gauge",
+        "heatmap"
+      ]
+    },
+    {
+      "name": "Workflow Analytics",
+      "metrics": [
+        "Workflows Executed",
+        "Success Rate",
+        "Average Duration",
+        "Popular Tools"
+      ],
+      "chartTypes": [
+        "bar",
+        "donut",
+        "timeline"
+      ]
+    },
+    {
+      "name": "User Activity",
+      "metrics": [
+        "Active Users",
+        "Session Duration",
+        "Feature Usage",
+        "Geographic Distribution"
+      ],
+      "chartTypes": [
+        "line",
+        "bar",
+        "map"
+      ]
+    }
+  ],
+  "technology": {
+    "frontend": "React with Chart.js",
+    "backend": "Express API endpoints",
+    "dataAggregation": "MongoDB aggregation pipeline",
+    "realTime": "Socket.io for live updates"
+  },
+  "implementation": {
+    "routes": "routes/analytics.js",
+    "services": "services/AnalyticsService.js",
+    "frontend": "public/dashboard/",
+    "api": "/api/analytics/*"
+  }
+}

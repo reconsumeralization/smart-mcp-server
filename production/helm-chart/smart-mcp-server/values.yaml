@@ -1,0 +1,24 @@
+replicaCount: 3
+image:
+  repository: your-docker-registry/smart-mcp-server
+  pullPolicy: IfNotPresent
+  tag: "latest"
+service:
+  type: LoadBalancer
+  port: 80
+
+# Resource requests and limits
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "500m"
+    memory: "1Gi"
+
+# Secrets - These should be set during deployment, e.g., via --set or a separate values file
+# The values here are placeholders and MUST be changed.
+secrets:
+  mongodbUri: "mongodb://user:password@host:port/dbname"
+  jwtSecret: "your-super-secret-key"
+  jwtRefreshSecret: "your-other-super-secret-key"

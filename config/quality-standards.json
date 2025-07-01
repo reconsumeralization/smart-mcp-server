@@ -1,0 +1,25 @@
+{
+  "documentation": {
+    "minWordsPerSection": 200,
+    "maxWordsPerSection": 2000,
+    "requiredElements": [
+      "overview",
+      "examples",
+      "references"
+    ],
+    "codeExamples": "required",
+    "images": "recommended"
+  },
+  "formatting": {
+    "headingStructure": "hierarchical",
+    "codeBlockLanguage": "required",
+    "linkFormat": "descriptive",
+    "imageAltText": "required"
+  },
+  "accessibility": {
+    "contrastRatio": "4.5:1",
+    "altTextRequired": true,
+    "headingStructure": "logical",
+    "keyboardNavigation": true
+  }
+}

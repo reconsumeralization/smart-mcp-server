@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import readline from 'readline';
-import { WorkflowTester as _WorkflowTester } from './workflow-monitor.js';
+import { WorkflowTester as _WorkflowTester } from './src/workflow-monitor.js';
 
 // Get directory name
 const __filename = fileURLToPath(import.meta.url);
@@ -32,7 +32,7 @@ let clientProcess = null;
 function startServer() {
   console.log(`${colors.info}Starting Smart MCP Server...${colors.reset}`);
 
-  serverProcess = spawn('node', ['server.js'], {
+  serverProcess = spawn('node', ['src/server.js'], {
     cwd: __dirname,
     env: process.env,
     stdio: ['ignore', 'pipe', 'pipe'],

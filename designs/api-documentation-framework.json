@@ -1,0 +1,41 @@
+{
+  "standard": "OpenAPI 3.0",
+  "generator": "swagger-jsdoc",
+  "ui": "swagger-ui-express",
+  "structure": {
+    "info": {
+      "title": "Smart MCP Server API",
+      "version": "2.0.0",
+      "description": "Comprehensive API for AI-powered financial and document management"
+    },
+    "servers": [
+      {
+        "url": "http://localhost:3000",
+        "description": "Development"
+      },
+      {
+        "url": "https://api.smartmcp.com",
+        "description": "Production"
+      }
+    ],
+    "tags": [
+      "Authentication",
+      "Workflows",
+      "Financial Services",
+      "Analytics",
+      "Admin"
+    ]
+  },
+  "endpoints": {
+    "authentication": 5,
+    "workflows": 12,
+    "financial": 8,
+    "analytics": 6,
+    "admin": 4
+  },
+  "examples": {
+    "requests": "Include sample requests for all endpoints",
+    "responses": "Show success and error responses",
+    "schemas": "Complete data model documentation"
+  }
+}

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: smart-mcp-server
+version: 1.0.0
+description: A Helm chart for Smart MCP Server

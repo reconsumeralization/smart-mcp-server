@@ -1,0 +1,189 @@
+{
+  "id": "financial-trading-execution",
+  "name": "financial_trading_execution",
+  "description": "Comprehensive trading workflow including market analysis, order placement, risk checks, and execution monitoring",
+  "version": "1.0.0",
+  "parameters": {
+    "type": "object",
+    "required": ["symbol", "side", "quantity", "account_id"],
+    "properties": {
+      "symbol": {
+        "type": "string",
+        "description": "Stock symbol to trade"
+      },
+      "side": {
+        "type": "string",
+        "enum": ["BUY", "SELL"],
+        "description": "Trade direction"
+      },
+      "quantity": {
+        "type": "number",
+        "description": "Number of shares to trade"
+      },
+      "order_type": {
+        "type": "string",
+        "enum": ["MARKET", "LIMIT", "STOP"],
+        "description": "Order type",
+        "default": "MARKET"
+      },
+      "limit_price": {
+        "type": "number",
+        "description": "Limit price for LIMIT orders"
+      },
+      "account_id": {
+        "type": "string",
+        "description": "Account identifier"
+      },
+      "perform_analysis": {
+        "type": "boolean",
+        "description": "Whether to perform pre-trade analysis",
+        "default": true
+      }
+    }
+  },
+  "concurrencyLimit": 2,
+  "steps": [
+    {
+      "id": "get-account-balance",
+      "toolId": "mcp_financial_get_balance",
+      "params": {
+        "account_id": "{{account_id}}"
+      },
+      "description": "Check account balance and buying power"
+    },
+    {
+      "id": "get-current-quote",
+      "toolId": "mcp_market_get_quote",
+      "params": {
+        "symbol": "{{symbol}}"
+      },
+      "description": "Get current market quote for the symbol"
+    },
+    {
+      "id": "get-market-news",
+      "toolId": "mcp_market_get_news",
+      "params": {
+        "symbol": "{{symbol}}",
+        "limit": 5
+      },
+      "description": "Get recent news for the symbol",
+      "condition": "{{perform_analysis}}"
+    },
+    {
+      "id": "technical-analysis",
+      "toolId": "mcp_market_technical_analysis",
+      "params": {
+        "symbol": "{{symbol}}",
+        "indicators": ["SMA", "RSI", "MACD"]
+      },
+      "description": "Perform technical analysis on the symbol",
+      "condition": "{{perform_analysis}}",
+      "dependencies": ["get-current-quote"]
+    },
+    {
+      "id": "pre-trade-risk-check",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Performing pre-trade risk assessment. Checking position size limits, concentration risk, account buying power, and market conditions. Validating trade against risk parameters.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "description": "Perform pre-trade risk assessment",
+      "dependencies": ["get-account-balance", "get-current-quote"]
+    },
+    {
+      "id": "market-impact-analysis",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing potential market impact of the trade. Considering order size relative to average volume, current bid-ask spread, and optimal execution strategy. Recommending order type and timing.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "description": "Analyze market impact and execution strategy",
+      "dependencies": ["get-current-quote", "technical-analysis"],
+      "condition": "{{perform_analysis}}"
+    },
+    {
+      "id": "place-order",
+      "toolId": "mcp_trading_place_order",
+      "params": {
+        "symbol": "{{symbol}}",
+        "side": "{{side}}",
+        "quantity": "{{quantity}}",
+        "orderType": "{{order_type}}",
+        "price": "{{limit_price}}",
+        "accountId": "{{account_id}}"
+      },
+      "description": "Place the trading order",
+      "dependencies": ["pre-trade-risk-check"]
+    },
+    {
+      "id": "monitor-execution",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Monitoring order execution. Checking fill status, execution price, and market conditions. Preparing execution summary and next steps if needed.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "description": "Monitor order execution",
+      "dependencies": ["place-order"]
+    },
+    {
+      "id": "get-order-status",
+      "toolId": "mcp_trading_get_order",
+      "params": {
+        "orderId": "{{place-order.orderId}}"
+      },
+      "description": "Get final order status and fill details",
+      "dependencies": ["monitor-execution"]
+    },
+    {
+      "id": "post-trade-analysis",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Conducting post-trade analysis. Evaluating execution quality, price improvement/slippage, and updating portfolio risk metrics. Documenting trade rationale and outcomes.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "description": "Perform post-trade analysis and documentation",
+      "dependencies": ["get-order-status"]
+    },
+    {
+      "id": "update-portfolio-risk",
+      "toolId": "mcp_financial_calculate_risk",
+      "params": {
+        "account_id": "{{account_id}}"
+      },
+      "description": "Recalculate portfolio risk metrics after trade",
+      "dependencies": ["post-trade-analysis"]
+    },
+    {
+      "id": "generate-execution-report",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Generating comprehensive execution report including trade details, execution quality metrics, market impact analysis, and updated portfolio metrics. Formatting for compliance and audit trail.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "description": "Generate comprehensive execution report",
+      "dependencies": ["update-portfolio-risk"]
+    }
+  ],
+  "metadata": {
+    "category": "trading_execution",
+    "tags": ["trading", "execution", "risk", "compliance"],
+    "estimatedDuration": "30-60 seconds",
+    "requiredCapabilities": [
+      "trade_execution",
+      "risk_management",
+      "market_analysis"
+    ],
+    "riskLevel": "high",
+    "complianceRequired": true
+  }
+} 

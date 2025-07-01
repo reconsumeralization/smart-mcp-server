@@ -1,0 +1,38 @@
+{
+  "linkTypes": [
+    "internal",
+    "external",
+    "code",
+    "image",
+    "table"
+  ],
+  "indexing": {
+    "keywords": [
+      "MCP",
+      "Gemini",
+      "Stripe",
+      "A2A",
+      "Financial",
+      "API",
+      "Integration"
+    ],
+    "concepts": [
+      "Architecture",
+      "Security",
+      "Compliance",
+      "Testing",
+      "Deployment"
+    ],
+    "codeElements": [
+      "functions",
+      "classes",
+      "endpoints",
+      "schemas"
+    ]
+  },
+  "validation": {
+    "checkBrokenLinks": true,
+    "validateImagePaths": true,
+    "verifyCodeReferences": true
+  }
+}

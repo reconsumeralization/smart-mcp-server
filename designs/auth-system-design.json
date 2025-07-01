@@ -1,0 +1,55 @@
+{
+  "architecture": {
+    "type": "JWT-based",
+    "components": [
+      "Auth Middleware",
+      "User Service",
+      "Token Service",
+      "Role Manager"
+    ],
+    "storage": "MongoDB with encrypted passwords",
+    "tokenExpiry": "24 hours",
+    "refreshTokens": true
+  },
+  "roles": [
+    {
+      "name": "admin",
+      "permissions": [
+        "*"
+      ]
+    },
+    {
+      "name": "user",
+      "permissions": [
+        "read",
+        "execute_workflows"
+      ]
+    },
+    {
+      "name": "viewer",
+      "permissions": [
+        "read"
+      ]
+    },
+    {
+      "name": "api_client",
+      "permissions": [
+        "api_access",
+        "execute_workflows"
+      ]
+    }
+  ],
+  "endpoints": [
+    "POST /auth/login",
+    "POST /auth/logout",
+    "POST /auth/refresh",
+    "GET /auth/profile",
+    "PUT /auth/profile"
+  ],
+  "implementation": {
+    "middleware": "middleware/auth.js",
+    "routes": "routes/auth.js",
+    "models": "models/User.js",
+    "services": "services/AuthService.js"
+  }
+}

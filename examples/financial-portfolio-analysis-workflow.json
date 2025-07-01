@@ -1,0 +1,131 @@
+{
+  "id": "financial-portfolio-analysis",
+  "name": "financial_portfolio_analysis",
+  "description": "Comprehensive portfolio analysis including performance metrics, risk assessment, and rebalancing recommendations",
+  "version": "1.0.0",
+  "parameters": {
+    "type": "object",
+    "required": ["account_id"],
+    "properties": {
+      "account_id": {
+        "type": "string",
+        "description": "Account identifier for portfolio analysis"
+      },
+      "analysis_period": {
+        "type": "string",
+        "description": "Analysis period (1M, 3M, 6M, 1Y)",
+        "default": "1M"
+      },
+      "include_recommendations": {
+        "type": "boolean",
+        "description": "Whether to include rebalancing recommendations",
+        "default": true
+      }
+    }
+  },
+  "concurrencyLimit": 3,
+  "steps": [
+    {
+      "id": "get-account-info",
+      "toolId": "mcp_financial_get_account",
+      "params": {
+        "account_id": "{{account_id}}"
+      },
+      "description": "Retrieve account information and current balances"
+    },
+    {
+      "id": "get-portfolio-positions",
+      "toolId": "mcp_financial_get_portfolio",
+      "params": {
+        "account_id": "{{account_id}}"
+      },
+      "description": "Get current portfolio positions and allocation",
+      "dependencies": ["get-account-info"]
+    },
+    {
+      "id": "calculate-performance",
+      "toolId": "mcp_financial_calculate_performance",
+      "params": {
+        "account_id": "{{account_id}}",
+        "period": "{{analysis_period}}"
+      },
+      "description": "Calculate portfolio performance metrics",
+      "dependencies": ["get-portfolio-positions"]
+    },
+    {
+      "id": "assess-risk",
+      "toolId": "mcp_financial_calculate_risk",
+      "params": {
+        "account_id": "{{account_id}}",
+        "confidence_level": 0.95
+      },
+      "description": "Assess portfolio risk metrics including VaR",
+      "dependencies": ["get-portfolio-positions"]
+    },
+    {
+      "id": "get-market-indices",
+      "toolId": "mcp_market_get_indices",
+      "params": {},
+      "description": "Get current market indices for benchmark comparison"
+    },
+    {
+      "id": "analyze-holdings",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing portfolio holdings against current market conditions. Evaluating sector allocation, concentration risk, and performance relative to benchmarks. Identifying potential optimization opportunities.",
+        "thoughtNumber": 1,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "description": "Analyze individual holdings and sector allocation",
+      "dependencies": ["get-portfolio-positions", "get-market-indices"]
+    },
+    {
+      "id": "market-outlook-analysis",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Considering current market outlook and economic indicators. Analyzing how portfolio positioning aligns with market trends and potential risks. Evaluating defensive vs. growth positioning.",
+        "thoughtNumber": 2,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": true
+      },
+      "description": "Analyze market outlook and portfolio positioning",
+      "dependencies": ["analyze-holdings"]
+    },
+    {
+      "id": "generate-recommendations",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Based on portfolio analysis, risk assessment, and market outlook, generating specific rebalancing recommendations. Considering tax implications, transaction costs, and client risk tolerance.",
+        "thoughtNumber": 3,
+        "totalThoughts": 3,
+        "nextThoughtNeeded": false
+      },
+      "description": "Generate portfolio rebalancing recommendations",
+      "dependencies": ["market-outlook-analysis", "assess-risk", "calculate-performance"],
+      "condition": "{{include_recommendations}}"
+    },
+    {
+      "id": "compile-report",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Compiling comprehensive portfolio analysis report with executive summary, detailed metrics, risk assessment, performance attribution, and actionable recommendations. Formatting for client presentation.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "description": "Compile comprehensive portfolio analysis report",
+      "dependencies": ["generate-recommendations", "assess-risk", "calculate-performance"]
+    }
+  ],
+  "metadata": {
+    "category": "financial_analysis",
+    "tags": ["portfolio", "risk", "performance", "analysis"],
+    "estimatedDuration": "2-3 minutes",
+    "requiredCapabilities": [
+      "portfolio_management",
+      "risk_assessment",
+      "market_analysis"
+    ]
+  }
+} 

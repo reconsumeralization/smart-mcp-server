@@ -1,0 +1,185 @@
+{
+  "id": "financial-dashboard-generation",
+  "name": "financial_dashboard_generation",
+  "description": "Generate comprehensive financial dashboard with market overview, portfolio summary, risk metrics, and trading activity",
+  "version": "1.0.0",
+  "parameters": {
+    "type": "object",
+    "required": ["account_id"],
+    "properties": {
+      "account_id": {
+        "type": "string",
+        "description": "Account identifier for dashboard generation"
+      },
+      "include_market_news": {
+        "type": "boolean",
+        "description": "Include market news in dashboard",
+        "default": true
+      },
+      "include_technical_analysis": {
+        "type": "boolean",
+        "description": "Include technical analysis for portfolio holdings",
+        "default": false
+      },
+      "dashboard_period": {
+        "type": "string",
+        "description": "Dashboard time period (1D, 1W, 1M)",
+        "default": "1D"
+      }
+    }
+  },
+  "concurrencyLimit": 5,
+  "steps": [
+    {
+      "id": "get-market-overview",
+      "toolId": "mcp_market_get_indices",
+      "params": {},
+      "description": "Get major market indices and sector performance"
+    },
+    {
+      "id": "get-economic-indicators",
+      "toolId": "mcp_market_get_economic_indicators",
+      "params": {
+        "indicators": ["VIX", "FED_RATE", "INFLATION"]
+      },
+      "description": "Get key economic indicators"
+    },
+    {
+      "id": "get-portfolio-summary",
+      "toolId": "mcp_financial_get_portfolio",
+      "params": {
+        "account_id": "{{account_id}}"
+      },
+      "description": "Get portfolio positions and allocation"
+    },
+    {
+      "id": "get-account-balance",
+      "toolId": "mcp_financial_get_balance",
+      "params": {
+        "account_id": "{{account_id}}"
+      },
+      "description": "Get account balance and buying power"
+    },
+    {
+      "id": "calculate-portfolio-performance",
+      "toolId": "mcp_financial_calculate_performance",
+      "params": {
+        "account_id": "{{account_id}}",
+        "period": "{{dashboard_period}}"
+      },
+      "description": "Calculate portfolio performance metrics",
+      "dependencies": ["get-portfolio-summary"]
+    },
+    {
+      "id": "assess-portfolio-risk",
+      "toolId": "mcp_financial_calculate_risk",
+      "params": {
+        "account_id": "{{account_id}}"
+      },
+      "description": "Calculate portfolio risk metrics",
+      "dependencies": ["get-portfolio-summary"]
+    },
+    {
+      "id": "get-recent-trades",
+      "toolId": "mcp_trading_get_trades",
+      "params": {
+        "accountId": "{{account_id}}",
+        "startDate": "{{dashboard_period}}"
+      },
+      "description": "Get recent trading activity"
+    },
+    {
+      "id": "get-pending-orders",
+      "toolId": "mcp_trading_get_orders",
+      "params": {
+        "accountId": "{{account_id}}",
+        "status": "NEW"
+      },
+      "description": "Get pending orders"
+    },
+    {
+      "id": "get-market-news",
+      "toolId": "mcp_market_get_news",
+      "params": {
+        "limit": 10
+      },
+      "description": "Get latest market news and sentiment",
+      "condition": "{{include_market_news}}"
+    },
+    {
+      "id": "analyze-top-holdings",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing top portfolio holdings for technical signals and news impact. Evaluating position performance and identifying any immediate attention items or opportunities.",
+        "thoughtNumber": 1,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": true
+      },
+      "description": "Analyze top portfolio holdings",
+      "dependencies": ["get-portfolio-summary", "get-market-news"],
+      "condition": "{{include_technical_analysis}}"
+    },
+    {
+      "id": "market-correlation-analysis",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Analyzing portfolio correlation with market movements. Assessing how portfolio performance relates to market indices and identifying diversification effectiveness.",
+        "thoughtNumber": 2,
+        "totalThoughts": 2,
+        "nextThoughtNeeded": false
+      },
+      "description": "Analyze portfolio-market correlation",
+      "dependencies": ["analyze-top-holdings", "get-market-overview", "calculate-portfolio-performance"],
+      "condition": "{{include_technical_analysis}}"
+    },
+    {
+      "id": "generate-alerts",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Generating important alerts and notifications. Checking for risk limit breaches, unusual market movements, position concentration, margin requirements, and other items requiring attention.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "description": "Generate dashboard alerts and notifications",
+      "dependencies": ["assess-portfolio-risk", "get-account-balance", "get-pending-orders"]
+    },
+    {
+      "id": "calculate-daily-pnl",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Calculating daily P&L breakdown by position, sector, and strategy. Identifying top contributors and detractors to portfolio performance for the dashboard period.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "description": "Calculate daily P&L attribution",
+      "dependencies": ["calculate-portfolio-performance", "get-recent-trades"]
+    },
+    {
+      "id": "compile-dashboard-data",
+      "toolId": "mcp_sequential_thinking_sequentialthinking",
+      "params": {
+        "thought": "Compiling all dashboard components into structured format. Organizing market overview, portfolio metrics, risk indicators, trading activity, alerts, and performance attribution for presentation.",
+        "thoughtNumber": 1,
+        "totalThoughts": 1,
+        "nextThoughtNeeded": false
+      },
+      "description": "Compile comprehensive dashboard data",
+      "dependencies": ["generate-alerts", "calculate-daily-pnl"]
+    }
+  ],
+  "metadata": {
+    "category": "financial_dashboard",
+    "tags": ["dashboard", "portfolio", "market", "risk", "performance"],
+    "estimatedDuration": "1-2 minutes",
+    "requiredCapabilities": [
+      "portfolio_management",
+      "market_analysis",
+      "risk_assessment",
+      "data_aggregation"
+    ],
+    "outputFormat": "dashboard_json",
+    "refreshable": true
+  }
+} 

@@ -1,0 +1,16 @@
+{
+  "service": "v0-ai-images",
+  "maxImages": 25,
+  "imageFormats": [
+    "png",
+    "svg"
+  ],
+  "defaultSize": "1024x768",
+  "styles": {
+    "technical": "clean, technical diagram, professional",
+    "architectural": "system architecture, flowchart, modern design",
+    "workflow": "process flow, step-by-step, clear arrows",
+    "ui": "user interface, modern, clean design",
+    "financial": "financial charts, professional, business"
+  }
+}

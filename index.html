@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 30px auto;
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .account-summary {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .summary-item {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin: 0 10px;
+            background-color: #e9f7ff;
+        }
+        .summary-item h2 {
+            margin-top: 0;
+            color: #0056b3;
+            font-size: 1.2em;
+        }
+        .summary-item p {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #28a745;
+            margin: 5px 0;
+        }
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .actions button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .actions button:hover {
+            background-color: #0056b3;
+        }
+        .actions button:active {
+            background-color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Account Overview</h1>
+
+        <div class="account-summary">
+            <div class="summary-item">
+                <h2>Current Cash Balance</h2>
+                <p>$10,500.00</p>
+            </div>
+            <div class="summary-item">
+                <h2>Buying Power</h2>
+                <p>$21,000.00</p>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button onclick="alert('Viewing Monthly Statements...')">View Monthly Statements</button>
+            <button onclick="alert('Initiating Fund Transfer...')">Initiate Fund Transfer</button>
+        </div>
+    </div>
+</body>
+</html>

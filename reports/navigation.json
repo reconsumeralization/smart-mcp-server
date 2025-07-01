@@ -1,0 +1,117 @@
+{
+  "ADVANCED_IMPLEMENTATION_PLAN.md": {
+    "prev": null,
+    "next": "COMPREHENSIVE_A2A_SYSTEM_PLAN.md",
+    "title": "ADVANCED_IMPLEMENTATION_PLAN.md"
+  },
+  "COMPREHENSIVE_A2A_SYSTEM_PLAN.md": {
+    "prev": "ADVANCED_IMPLEMENTATION_PLAN.md",
+    "next": "production\\disaster-recovery\\DR_PLAN.md",
+    "title": "COMPREHENSIVE_A2A_SYSTEM_PLAN.md"
+  },
+  "production\\disaster-recovery\\DR_PLAN.md": {
+    "prev": "COMPREHENSIVE_A2A_SYSTEM_PLAN.md",
+    "next": "PROJECT_IMPLEMENTATION_PLAN.md",
+    "title": "DR_PLAN.md"
+  },
+  "PROJECT_IMPLEMENTATION_PLAN.md": {
+    "prev": "production\\disaster-recovery\\DR_PLAN.md",
+    "next": "docs\\COMPREHENSIVE_A2A_FINANCIAL_SYSTEM_PLAN.md",
+    "title": "PROJECT_IMPLEMENTATION_PLAN.md"
+  },
+  "docs\\COMPREHENSIVE_A2A_FINANCIAL_SYSTEM_PLAN.md": {
+    "prev": "PROJECT_IMPLEMENTATION_PLAN.md",
+    "next": "docs\\FINANCIAL_SERVICES_ARCHITECTURE.md",
+    "title": "COMPREHENSIVE_A2A_FINANCIAL_SYSTEM_PLAN.md"
+  },
+  "docs\\FINANCIAL_SERVICES_ARCHITECTURE.md": {
+    "prev": "docs\\COMPREHENSIVE_A2A_FINANCIAL_SYSTEM_PLAN.md",
+    "next": "docs\\compliance\\stripe_services_and_policies.md",
+    "title": "FINANCIAL_SERVICES_ARCHITECTURE.md"
+  },
+  "docs\\compliance\\stripe_services_and_policies.md": {
+    "prev": "docs\\FINANCIAL_SERVICES_ARCHITECTURE.md",
+    "next": "examples\\README.md",
+    "title": "stripe_services_and_policies.md"
+  },
+  "examples\\README.md": {
+    "prev": "docs\\compliance\\stripe_services_and_policies.md",
+    "next": "A2A_INTEGRATION.md",
+    "title": "README.md"
+  },
+  "A2A_INTEGRATION.md": {
+    "prev": "examples\\README.md",
+    "next": "CODE_OF_CONDUCT.md",
+    "title": "A2A_INTEGRATION.md"
+  },
+  "CODE_OF_CONDUCT.md": {
+    "prev": "A2A_INTEGRATION.md",
+    "next": "CONSOLIDATED_DOCUMENTATION.md",
+    "title": "CODE_OF_CONDUCT.md"
+  },
+  "CONSOLIDATED_DOCUMENTATION.md": {
+    "prev": "CODE_OF_CONDUCT.md",
+    "next": "consolidated_guide.md",
+    "title": "CONSOLIDATED_DOCUMENTATION.md"
+  },
+  "consolidated_guide.md": {
+    "prev": "CONSOLIDATED_DOCUMENTATION.md",
+    "next": "CONTRIBUTING.md",
+    "title": "consolidated_guide.md"
+  },
+  "CONTRIBUTING.md": {
+    "prev": "consolidated_guide.md",
+    "next": "DEPLOYMENT.md",
+    "title": "CONTRIBUTING.md"
+  },
+  "DEPLOYMENT.md": {
+    "prev": "CONTRIBUTING.md",
+    "next": "docs\\context-aware-selector.md",
+    "title": "DEPLOYMENT.md"
+  },
+  "docs\\context-aware-selector.md": {
+    "prev": "DEPLOYMENT.md",
+    "next": "docs\\freight-logistics-integration.md",
+    "title": "context-aware-selector.md"
+  },
+  "docs\\freight-logistics-integration.md": {
+    "prev": "docs\\context-aware-selector.md",
+    "next": "docs\\gemini-integration.md",
+    "title": "freight-logistics-integration.md"
+  },
+  "docs\\gemini-integration.md": {
+    "prev": "docs\\freight-logistics-integration.md",
+    "next": "docs\\workflow-testing.md",
+    "title": "gemini-integration.md"
+  },
+  "docs\\workflow-testing.md": {
+    "prev": "docs\\gemini-integration.md",
+    "next": "gemini.md",
+    "title": "workflow-testing.md"
+  },
+  "gemini.md": {
+    "prev": "docs\\workflow-testing.md",
+    "next": "production\\security\\HARDENING_CHECKLIST.md",
+    "title": "gemini.md"
+  },
+  "production\\security\\HARDENING_CHECKLIST.md": {
+    "prev": "gemini.md",
+    "next": "PROJECT_COMPLETION_SUMMARY.md",
+    "title": "HARDENING_CHECKLIST.md"
+  },
+  "PROJECT_COMPLETION_SUMMARY.md": {
+    "prev": "production\\security\\HARDENING_CHECKLIST.md",
+    "next": "README.md",
+    "title": "PROJECT_COMPLETION_SUMMARY.md"
+  },
+  "README.md": {
+    "prev": "PROJECT_COMPLETION_SUMMARY.md",
+    "next": "TROUBLESHOOTING.md",
+    "title": "README.md"
+  },
+  "TROUBLESHOOTING.md": {
+    "prev": "README.md",
+    "next": null,
+    "title": "TROUBLESHOOTING.md"
+  }
+}
