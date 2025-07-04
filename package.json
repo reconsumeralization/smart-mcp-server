@@ -40,7 +40,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.55.1",
+    "@anthropic-ai/sdk": "^0.56.0",
     "@google/generative-ai": "^0.24.1",
     "@modelcontextprotocol/sdk": "^0.4.0",
     "@octokit/rest": "^22.0.0",
