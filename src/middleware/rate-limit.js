@@ -54,6 +54,16 @@ export const adminLimiter = rateLimit({
   handler: rateLimitExceededHandler,
 });
 
+// Stricter rate limiter for agent registration
+export const registrationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Max 10 registration attempts per hour from the same IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many registration attempts, please try again after an hour.',
+  handler: rateLimitExceededHandler,
+});
+
 // Rate limiter factory function to create custom limiters
 export const createRateLimiter = (
   requestsPerMinute,
@@ -80,5 +90,6 @@ export default {
   authLimiter,
   executionLimiter,
   adminLimiter,
+  registrationLimiter,
   createRateLimiter,
 };

@@ -1,0 +1,35 @@
+{
+  "id": "stripe-treasury-workflow",
+  "description": "A workflow demonstrating Stripe Treasury functionalities: creating a financial account and making an outbound transfer.",
+  "concurrencyLimit": 1,
+  "steps": [
+    {
+      "id": "create-financial-account",
+      "toolId": "mcp_stripe_treasury_create_financial_account",
+      "params": {
+        "country": "US",
+        "supported_currencies": ["usd"],
+        "features": {
+          "card_issuing": { "requested": true },
+          "deposit_insurance": { "requested": false },
+          "financial_addresses": { "aba": { "requested": true } },
+          "inbound_transfers": { "ach": { "requested": true } },
+          "intra_stripe_flows": { "requested": true },
+          "outbound_payments": { "ach": { "requested": true }, "us_domestic_wire": { "requested": true } },
+          "outbound_transfers": { "ach": { "requested": true }, "us_domestic_wire": { "requested": true } }
+        }
+      }
+    },
+    {
+      "id": "create-outbound-transfer",
+      "toolId": "mcp_stripe_treasury_create_outbound_transfer",
+      "params": {
+        "amount": 1000,
+        "currency": "usd",
+        "financial_account": "{{steps.create-financial-account.output.id}}",
+        "destination_payment_method": "pm_xxxxxxxxxxxxxxxxxxxx"
+      },
+      "dependencies": ["create-financial-account"]
+    }
+  ]
+} 

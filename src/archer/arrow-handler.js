@@ -3,7 +3,7 @@ import { getDriver, listDrivers } from '../models/index.js';
 import { callTool, listTools } from '../registry/index.js';
 
 /**
- * Handle an incoming KnightArcher "arrow".
+ * Handle an incoming {{companyName}} "arrow".
  * @param {import('./types').Arrow} arrow
  * @returns {Promise<import('./types').Arrow>}
  */
@@ -31,8 +31,8 @@ export async function handleArrow(arrow) {
         const vector = await driver.embedding(arrow.payload);
         return { type: 'result', payload: { vector } };
       }
-      case 'toolCall': {
-        const result = await callTool(arrow.payload.toolId, arrow.payload.args);
+      case 'tool.call': {
+        const result = await callTool(arrow.payload.toolName, arrow.payload.args);
         return { type: 'result', payload: result };
       }
       case 'capabilities': {

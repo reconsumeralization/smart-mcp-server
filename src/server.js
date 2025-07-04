@@ -74,6 +74,9 @@ app.get('/.well-known/agent.json', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'agent.json'));
 });
 
+// A2A Protocol v2 Endpoints
+app.use('/a2a/v2', a2aRouter);
+
 // --- MCP Server Initialization ---
 
 const mcpServer = new McpServer({
@@ -273,7 +276,6 @@ app.use('/admin', adminRouter);
 // --- Workflow API (protected) ---
 
 app.use('/api/workflows', auth.authenticate, workflowRouter);
-app.use('/a2a', a2aRouter);
 
 // Register analytics and notification routes
 app.use('/api/analytics', analyticsRouter);

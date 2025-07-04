@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const EventEmitter = require('events');
+const { createClient } = require('redis');
 
 /**
  * Comprehensive Security Manager
@@ -14,7 +15,7 @@ class SecurityManager extends EventEmitter {
         super();
         this.config = {
             jwtSecret: config.jwtSecret || process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex'),
-            encryptionKey: config.encryptionKey || process.env.ENCRYPTION_KEY || crypto.randomBytes(32),
+            encryptionKey: config.encryptionKey || process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex'),
             saltRounds: config.saltRounds || 12,
             sessionTimeout: config.sessionTimeout || 3600000, // 1 hour
             maxLoginAttempts: config.maxLoginAttempts || 5,
@@ -22,7 +23,13 @@ class SecurityManager extends EventEmitter {
             ...config
         };
 
-        this.activeSessions = new Map();
+        // Initialize Redis client
+        this.redisClient = createClient({
+            url: process.env.REDIS_URL || 'redis://localhost:6379'
+        });
+        this.redisClient.on('error', (err) => console.error('Redis Client Error', err));
+        this.redisClient.connect().catch(console.error);
+
         this.loginAttempts = new Map();
         this.securityEvents = [];
         this.trustedIPs = new Set(config.trustedIPs || []);
@@ -128,13 +135,13 @@ class SecurityManager extends EventEmitter {
     /**
      * Session Management
      */
-    createSession(userId, metadata = {}) {
+    async createSession(userId, metadata = {}) {
         const sessionId = crypto.randomUUID();
         const session = {
             id: sessionId,
             userId,
-            createdAt: new Date(),
-            lastActivity: new Date(),
+            createdAt: new Date().toISOString(),
+            lastActivity: new Date().toISOString(),
             metadata: {
                 ip: metadata.ip,
                 userAgent: metadata.userAgent,
@@ -142,31 +149,36 @@ class SecurityManager extends EventEmitter {
             }
         };
 
-        this.activeSessions.set(sessionId, session);
+        await this.redisClient.setEx(
+            `session:${sessionId}`,
+            this.config.sessionTimeout / 1000,
+            JSON.stringify(session)
+        );
         this.logSecurityEvent('session_created', { sessionId, userId });
-
-        // Auto-cleanup session after timeout
-        setTimeout(() => {
-            this.destroySession(sessionId);
-        }, this.config.sessionTimeout);
 
         return sessionId;
     }
 
-    getSession(sessionId) {
-        const session = this.activeSessions.get(sessionId);
-        if (session) {
-            session.lastActivity = new Date();
+    async getSession(sessionId) {
+        const sessionData = await this.redisClient.get(`session:${sessionId}`);
+        if (sessionData) {
+            const session = JSON.parse(sessionData);
+            session.lastActivity = new Date().toISOString();
+            // Update expiry time on activity
+            await this.redisClient.setEx(
+                `session:${sessionId}`,
+                this.config.sessionTimeout / 1000,
+                JSON.stringify(session)
+            );
             return session;
         }
         return null;
     }
 
-    destroySession(sessionId) {
-        const session = this.activeSessions.get(sessionId);
-        if (session) {
-            this.activeSessions.delete(sessionId);
-            this.logSecurityEvent('session_destroyed', { sessionId, userId: session.userId });
+    async destroySession(sessionId) {
+        const deleted = await this.redisClient.del(`session:${sessionId}`);
+        if (deleted) {
+            this.logSecurityEvent('session_destroyed', { sessionId });
         }
     }
 
@@ -248,104 +260,70 @@ class SecurityManager extends EventEmitter {
             this.analyzeSecurityEvents();
         }, 60000); // Check every minute
 
-        // Clean up old events
+        // Cleanup old security events periodically
         setInterval(() => {
             this.cleanupSecurityEvents();
-        }, 3600000); // Clean up every hour
+        }, 3600000); // Every hour
     }
 
     logSecurityEvent(type, data) {
         const event = {
-            id: crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
             type,
-            timestamp: new Date(),
-            data: {
-                ...data,
-                ip: data.ip || 'unknown',
-                userAgent: data.userAgent || 'unknown'
-            }
+            ...data
         };
-
         this.securityEvents.push(event);
-        this.emit('securityEvent', event);
-
-        // Log critical events immediately
-        if (['account_locked', 'suspicious_activity', 'security_breach'].includes(type)) {
-            console.warn(`🚨 SECURITY ALERT: ${type}`, event);
-        }
+        this.emit('security_event', event);
     }
 
     analyzeSecurityEvents() {
-        const recentEvents = this.securityEvents.filter(
-            event => Date.now() - event.timestamp.getTime() < 300000 // Last 5 minutes
+        // Placeholder for advanced security analytics
+        // e.g., detect unusual login patterns, brute-force attempts
+        // Generate alerts if anomalies are detected
+        // Example: simple check for too many failed logins in short period
+        const recentFailedLogins = this.securityEvents.filter(e => 
+            e.type === 'login_failed' && 
+            (new Date().getTime() - new Date(e.timestamp).getTime()) < (5 * 60 * 1000) // Last 5 minutes
         );
 
-        // Detect brute force attacks
-        const failedLogins = recentEvents.filter(e => e.type === 'login_failed');
-        const ipGroups = {};
-        
-        failedLogins.forEach(event => {
-            const ip = event.data.ip;
-            if (!ipGroups[ip]) ipGroups[ip] = 0;
-            ipGroups[ip]++;
-        });
-
-        Object.entries(ipGroups).forEach(([ip, count]) => {
-            if (count >= 10 && !this.trustedIPs.has(ip)) {
-                this.logSecurityEvent('suspicious_activity', {
-                    type: 'brute_force_detected',
-                    ip,
-                    attempts: count
-                });
-            }
-        });
-
-        // Detect unusual access patterns
-        const requests = recentEvents.filter(e => e.type === 'request');
-        const pathCounts = {};
-        
-        requests.forEach(event => {
-            const path = event.data.path;
-            if (!pathCounts[path]) pathCounts[path] = 0;
-            pathCounts[path]++;
-        });
-
-        Object.entries(pathCounts).forEach(([path, count]) => {
-            if (count >= 50) { // More than 50 requests to same path in 5 minutes
-                this.logSecurityEvent('suspicious_activity', {
-                    type: 'high_frequency_access',
-                    path,
-                    requests: count
-                });
-            }
-        });
+        if (recentFailedLogins.length > 10) {
+            this.emit('alerts', [{ type: 'excessive_failed_logins', message: 'Multiple failed login attempts detected.' }]);
+        }
     }
 
     cleanupSecurityEvents() {
-        const cutoff = Date.now() - (24 * 60 * 60 * 1000); // 24 hours ago
-        this.securityEvents = this.securityEvents.filter(
-            event => event.timestamp.getTime() > cutoff
-        );
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        this.securityEvents = this.securityEvents.filter(event => new Date(event.timestamp) > oneDayAgo);
     }
 
     /**
      * Authorization Middleware
      */
     requireAuth(roles = []) {
-        return (req, res, next) => {
+        return async (req, res, next) => {
             const sessionId = req.headers['x-session-id'];
             
             if (!sessionId) {
-                return res.status(401).json({ error: 'No session provided' });
+                return res.status(401).json({ error: 'Authentication required' });
             }
 
-            const session = this.getSession(sessionId);
+            const session = await this.getSession(sessionId);
             if (!session) {
                 return res.status(401).json({ error: 'Invalid session' });
             }
 
             req.session = session;
-            req.user = { id: session.userId };
+            req.user = { id: session.userId }; // Assuming user ID is stored in session
+
+            // Role-based authorization: check if user has any of the required roles
+            if (roles.length > 0 && !roles.includes(req.user.role)) { // Assuming role is part of req.user now
+                return res.status(403).json({
+                    error: 'Insufficient permissions',
+                    required: roles,
+                    current: req.user.role
+                });
+            }
+
             next();
         };
     }
@@ -367,38 +345,20 @@ class SecurityManager extends EventEmitter {
     }
 
     /**
-     * Security Status
+     * Status and Metrics
      */
     getSecurityStatus() {
-        const recentEvents = this.securityEvents.filter(
-            event => Date.now() - event.timestamp.getTime() < 3600000 // Last hour
-        );
-
-        const criticalEvents = recentEvents.filter(
-            event => ['account_locked', 'suspicious_activity', 'security_breach'].includes(event.type)
-        );
-
         return {
-            status: criticalEvents.length > 0 ? 'alert' : 'secure',
             activeSessions: this.activeSessions.size,
-            recentEvents: recentEvents.length,
-            criticalEvents: criticalEvents.length,
-            lockedAccounts: Array.from(this.loginAttempts.keys()).filter(
-                key => this.isAccountLocked(key.replace('login_', ''))
-            ).length,
-            trustedIPs: this.trustedIPs.size,
-            lastAnalysis: new Date()
+            loginAttemptsTracked: this.loginAttempts.size,
+            securityEventsCount: this.securityEvents.length,
+            trustedIPsCount: this.trustedIPs.size
         };
     }
 
-    /**
-     * Export security events for analysis
-     */
     exportSecurityEvents(hours = 24) {
-        const cutoff = Date.now() - (hours * 60 * 60 * 1000);
-        return this.securityEvents.filter(
-            event => event.timestamp.getTime() > cutoff
-        );
+        const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
+        return this.securityEvents.filter(event => new Date(event.timestamp) > cutoff);
     }
 }
 

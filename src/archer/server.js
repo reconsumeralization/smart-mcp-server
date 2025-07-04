@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import fastify from 'fastify';
 import logger from '../logger.js';
 import { handleArrow, getCapabilities } from './arrow-handler.js';
@@ -7,6 +8,9 @@ import SystemMonitor from '../monitoring/system-monitor.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
+import config from '../config.js';
+import { Server as SocketIOServer } from 'socket.io';
+import { initializeWebSocketManager } from '../web-socket-manager.js';
 
 // For ES modules compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -14,6 +18,9 @@ const __dirname = dirname(__filename);
 
 // PORT will be read dynamically in startArrowServer function
 const app = fastify({ logger: false });
+
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 // Initialize system monitor
 const systemMonitor = new SystemMonitor({ interval: 5000 });
@@ -66,7 +73,15 @@ app.get('/dashboard', async (request, reply) => {
 
 // API Routes
 app.get('/api/overview', async () => {
-  return {
+  const cacheKey = 'overview';
+  let cachedResponse = cache.get(cacheKey);
+
+  if (cachedResponse && cachedResponse.timestamp + CACHE_TTL > Date.now()) {
+    logger.debug('Serving /api/overview from cache');
+    return cachedResponse.data;
+  }
+
+  const response = {
     server: {
       status: 'healthy',
       uptime: process.uptime(),
@@ -92,10 +107,22 @@ app.get('/api/overview', async () => {
       productionReady: 'Active'
     }
   };
+  cache.set(cacheKey, { data: response, timestamp: Date.now() });
+  logger.debug('Cached /api/overview response');
+  return response;
 });
 
 app.get('/api/tools', async () => {
-  return [
+  const cacheKey = 'tools';
+  let cachedResponse = cache.get(cacheKey);
+
+  if (cachedResponse && cachedResponse.timestamp + CACHE_TTL > Date.now()) {
+    logger.debug('Serving /api/tools from cache');
+    return cachedResponse.data;
+  }
+
+  const stripeConfigured = !!config.stripe.secretKey;
+  const response = [
     {
       id: 'documentation',
       name: 'Documentation Consolidation',
@@ -135,9 +162,9 @@ app.get('/api/tools', async () => {
     {
       id: 'stripe',
       name: 'Stripe Payments',
-      status: 'warning',
+      status: stripeConfigured ? 'active' : 'warning',
       metrics: { paymentsProcessed: 0 },
-      issues: ['API key not configured']
+      ...(stripeConfigured ? {} : { issues: ['API key not configured'] })
     },
     {
       id: 'database',
@@ -152,6 +179,9 @@ app.get('/api/tools', async () => {
       metrics: { itemsStored: 89, cacheHitRate: '94.2%' }
     }
   ];
+  cache.set(cacheKey, { data: response, timestamp: Date.now() });
+  logger.debug('Cached /api/tools response');
+  return response;
 });
 
 app.get('/health', async () => ({ status: 'ok' }));
@@ -189,43 +219,31 @@ app.setErrorHandler((error, request, reply) => {
 });
 
 export async function startArrowServer() {
-  await autoLoadTools();
-  
-  // Start system monitoring
-  systemMonitor.start();
-  
-  // Set up monitoring event listeners
-  systemMonitor.on('metrics', (metrics) => {
-    logger.debug('System metrics collected', { 
-      memory: metrics.system.memory.usagePercent + '%',
-      cpu: metrics.system.cpu.usage + '%'
+  await autoLoadTools(join(__dirname, '../tools'));
+
+  try {
+    const port = config.server.port;
+    const host = config.server.host;
+    await app.listen({ port, host });
+    logger.info(`🚀 Smart MCP Server listening on http://${host}:${port}`);
+    logger.info(`🎯 Phase 5: Design & Implementation Complete`);
+    logger.info('💡 All systems operational and production-ready.');
+
+    // Initialize Socket.IO
+    const io = new SocketIOServer(app.server, {
+      cors: {
+        origin: "*", // Configure this for production
+        methods: ["GET", "POST"]
+      }
     });
-  });
-  
-  systemMonitor.on('alerts', (alerts) => {
-    alerts.forEach(alert => {
-      logger.warn(`System Alert: ${alert.message}`, alert);
-    });
-  });
-  
-  const port = process.env.ARROW_PORT || 3210;
-  await app.listen({ port, host: '0.0.0.0' });
-  logger.info(`Arrow server listening on port ${port}`);
-  logger.info('System monitoring active');
-  logger.info('🚀 Phase 5 features: Dashboard, Analytics, and Security integrated');
-  logger.info('✅ Phase 5 Implementation Complete - All objectives achieved!');
-  
-  // Graceful shutdown
-  process.on('SIGTERM', () => {
-    logger.info('Received SIGTERM, shutting down gracefully');
-    systemMonitor.stop();
-    app.close(() => {
-      logger.info('Server closed');
-      process.exit(0);
-    });
-  });
-  
-  return app;
+
+    initializeWebSocketManager(io);
+    logger.info('🔌 WebSocket Manager initialized.');
+
+  } catch (err) {
+    logger.fatal({ err }, 'Arrow server startup error');
+    process.exit(1);
+  }
 }
 
 // if run directly

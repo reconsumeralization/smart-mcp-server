@@ -17,16 +17,16 @@ class DatabaseTool {
       'SOTA AI-powered database management tool with advanced analytics, adaptive error handling, intelligent query optimization, and predictive performance monitoring.';
     this.version = '2.1.0';
     this.capabilities = [
-      'execute_query',
-      'transaction_support',
-      'parameterized_queries',
-      'logging',
-      'query_analysis',
-      'performance_monitoring',
-      'adaptive_error_recovery',
-      'ai_query_suggestions',
-      'predictive_analytics',
-      'self_healing',
+      'mcp_execute_query',
+      'mcp_transaction_support',
+      'mcp_parameterized_queries',
+      'mcp_logging',
+      'mcp_query_analysis',
+      'mcp_performance_monitoring',
+      'mcp_adaptive_error_recovery',
+      'mcp_ai_query_suggestions',
+      'mcp_predictive_analytics',
+      'mcp_self_healing',
     ];
     this.queryHistory = [];
     this.errorHistory = [];
@@ -39,7 +39,7 @@ class DatabaseTool {
    * @param {string} query
    * @returns {object} Analysis result
    */
-  analyze_query(query) {
+  mcp_analyze_query(query) {
     const lower = query.toLowerCase();
     const hints = [];
     if (lower.includes('select *')) {
@@ -87,7 +87,7 @@ class DatabaseTool {
    * @param {string} query
    * @returns {Promise<object>} Suggestions
    */
-  async ai_query_suggestions(query) {
+  async mcp_ai_query_suggestions(query) {
     // SOTA: In production, integrate with LLM/AI API for deep query optimization
     // Example: Use Google Gemini, OpenAI, or Zencoder AI
     // For now, return static and heuristic suggestions
@@ -103,7 +103,7 @@ class DatabaseTool {
       'Use connection pooling for high-concurrency workloads.',
     ];
     // Optionally, add context-aware suggestions based on query analysis
-    const analysis = this.analyze_query(query);
+    const analysis = this.mcp_analyze_query(query);
     return {
       suggestions: [...staticSuggestions, ...analysis.hints],
     };
@@ -115,7 +115,7 @@ class DatabaseTool {
    * @param {object} metrics - Query execution metrics
    * @returns {object} Prediction result
    */
-  ai_predict_performance(metrics) {
+  mcp_ai_predict_performance(metrics) {
     // SOTA: Placeholder for ML-based prediction
     // Example: If duration > 1000ms, flag as slow
     if (metrics.durationMs > 1000) {
@@ -137,7 +137,7 @@ class DatabaseTool {
    * @param {Array} [options.params] - Optional array of parameters for parameterized queries.
    * @returns {Promise<object>} Result object with success, rows, analysis, and optional error.
    */
-  async execute_query({ query, params = [] }) {
+  async mcp_execute_query({ query, params = [] }) {
     logger.info('Executing database query', { query, params });
     if (typeof query !== 'string' || !query.trim()) {
       logger.error('Invalid query provided', { query });
@@ -145,14 +145,14 @@ class DatabaseTool {
     }
 
     // Analyze query before execution
-    const analysis = this.analyze_query(query);
+    const analysis = this.mcp_analyze_query(query);
     if (analysis.hints.length > 0) {
       logger.warn('Query analysis hints', { hints: analysis.hints });
     }
 
     const start = Date.now();
     try {
-      const { rows } = await query(query, params);
+      const { rows } = await pool.query(query, params);
       const duration = Date.now() - start;
       logger.info('Database query executed successfully', {
         rowCount: rows.length,
@@ -166,7 +166,7 @@ class DatabaseTool {
       });
 
       // SOTA: Predict performance and flag anomalies
-      const prediction = this.ai_predict_performance({ durationMs: duration });
+      const prediction = this.mcp_ai_predict_performance({ durationMs: duration });
 
       return {
         success: true,
@@ -189,7 +189,7 @@ class DatabaseTool {
       });
 
       // Adaptive error recovery: suggest improvements
-      const aiSuggestions = await this.ai_query_suggestions(query);
+      const aiSuggestions = await this.mcp_ai_query_suggestions(query);
 
       // SOTA: Self-healing - attempt to provide actionable advice
       let selfHealing = null;
@@ -215,7 +215,7 @@ class DatabaseTool {
    * @param {Array<{query: string, params?: Array}>} queries
    * @returns {Promise<object>} Result object with success, results, and optional error.
    */
-  async execute_transaction(queries) {
+  async mcp_execute_transaction(queries) {
     if (!Array.isArray(queries) || queries.length === 0) {
       logger.error('No queries provided for transaction');
       return { success: false, error: 'No queries provided for transaction.' };
@@ -232,7 +232,7 @@ class DatabaseTool {
       for (const { query, params = [] } of queries) {
         logger.info('Executing transaction query', { query, params });
         // Analyze each query
-        const analysis = this.analyze_query(query);
+        const analysis = this.mcp_analyze_query(query);
         if (analysis.hints.length > 0) {
           logger.warn('Transaction query analysis hints', {
             hints: analysis.hints,
@@ -254,7 +254,7 @@ class DatabaseTool {
       });
 
       // SOTA: Predict performance for transaction
-      const prediction = this.ai_predict_performance({ durationMs: duration });
+      const prediction = this.mcp_ai_predict_performance({ durationMs: duration });
 
       return { success: true, results, durationMs: duration, prediction };
     } catch (error) {
@@ -271,7 +271,7 @@ class DatabaseTool {
       // Adaptive error recovery: suggest improvements for the failed query
       const failedQuery = queries.find((q) => q.query);
       const aiSuggestions = failedQuery
-        ? await this.ai_query_suggestions(failedQuery.query)
+        ? await this.mcp_ai_query_suggestions(failedQuery.query)
         : {};
 
       // SOTA: Self-healing advice
@@ -296,11 +296,11 @@ class DatabaseTool {
   }
 
   /**
-   * Returns recent query, error, and performance history for monitoring and debugging.
-   * @param {number} [limit=10]
-   * @returns {object}
+   * Retrieves a history of executed queries or transactions.
+   * @param {number} [limit=10] - The maximum number of history entries to return.
+   * @returns {Array<object>} Query history entries.
    */
-  get_history(limit = 10) {
+  mcp_get_history(limit = 10) {
     return {
       recentQueries: this.queryHistory.slice(-limit),
       recentErrors: this.errorHistory.slice(-limit),
@@ -309,10 +309,11 @@ class DatabaseTool {
   }
 
   /**
-   * SOTA: Returns AI-driven recommendations for database optimization based on history.
-   * @returns {Promise<object>} Recommendations
+   * Provides AI-powered optimization recommendations for the database.
+   * In production, this would be a more sophisticated AI call.
+   * @returns {Promise<Array<string>>} Optimization recommendations.
    */
-  async get_optimization_recommendations() {
+  async mcp_get_optimization_recommendations() {
     // Analyze history for slow queries, frequent errors, and suggest improvements
     const slowQueries = this.performanceMetrics.filter(
       (m) => m.durationMs > 1000
@@ -344,5 +345,4 @@ class DatabaseTool {
   }
 }
 
-const databaseTool = new DatabaseTool();
-export default databaseTool;
+export default new DatabaseTool();

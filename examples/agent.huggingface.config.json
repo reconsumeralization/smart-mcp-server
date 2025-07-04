@@ -1,0 +1,22 @@
+{
+  "serverUrl": "http://localhost:3000",
+  "huggingFaceApiUrl": "https://api-inference.huggingface.co/models/",
+  "huggingFaceModel": "google/gemma-2-2b-it",
+  "agentCard": {
+    "name": "Hugging Face AI Agent",
+    "description": "An AI agent that uses the Hugging Face Inference API for text generation.",
+    "url": "cloud",
+    "capabilities": [
+      "text-generation",
+      "natural-language-processing"
+    ],
+    "skills": [
+      {
+        "id": "text-generator",
+        "name": "Text Generator",
+        "description": "Generates text based on a given prompt using a Hugging Face model.",
+        "tags": ["AI", "text", "generation", "Hugging Face"]
+      }
+    ]
+  }
+} 

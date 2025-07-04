@@ -6,6 +6,7 @@ import redisClient from './redis-client.js';
 import logger from '../logger.js';
 import db from './db-client.js';
 import { executeToolProxy } from '../tool-proxy.js';
+import agentManager from './lib/agents/agent-manager.js';
 
 const WORKFLOW_PREFIX = 'workflow:';
 const EXECUTION_PREFIX = 'execution:';
@@ -360,21 +361,31 @@ async function _runWorkflowEnhanced(workflow, parameters, executionId, config) {
           attempt: 1
         });
 
-        // Execute step with timeout and retry logic
-        const result = await executeStepWithRetry(
-          step.tool || step.toolId, 
-          processedParams, 
-          config,
-          executionId,
-          step.id
-        );
+        let result;
 
-        const stepEndTime = performance.now();
-        const stepDuration = stepEndTime - stepStartTime;
-        const stepMemAfter = process.memoryUsage();
+        if (step.type === 'a2a_message') {
+          // Handle A2A message step
+          const { senderAgentId, receiverAgentId, messageContent, conversationId } = processedParams;
+          if (!senderAgentId || !receiverAgentId || !messageContent) {
+            throw new Error('A2A message step requires senderAgentId, receiverAgentId, and messageContent.');
+          }
+          result = await agentManager.sendMessageToAgent(senderAgentId, receiverAgentId, messageContent, conversationId);
+          if (!result.success) {
+            throw new Error(result.error);
+          }
+        } else {
+          // Existing tool execution logic
+          result = await executeStepWithRetry(
+            step.tool || step.toolId, 
+            processedParams, 
+            config,
+            executionId,
+            step.id
+          );
+        }
 
         stepResults[step.id] = result;
-        stepStatus.set(stepId, 'completed');
+        stepStatus.set(step.id, 'completed');
         
         // Record step performance
         stepPerformance.set(step.id, {
@@ -637,7 +648,12 @@ function validateWorkflow(workflow) {
         stepIds.add(step.id);
       }
       
-      if (!step.tool && !step.toolId) {
+      if (step.type === 'a2a_message') {
+        // Validate A2A message specific parameters
+        if (!step.params || !step.params.senderAgentId || !step.params.receiverAgentId || !step.params.messageContent) {
+          errors.push(`A2A message step ${step.id} requires senderAgentId, receiverAgentId, and messageContent in its params.`);
+        }
+      } else if (!step.tool && !step.toolId) {
         errors.push(`Step ${step.id} missing tool/toolId`);
       }
       

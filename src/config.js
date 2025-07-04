@@ -42,6 +42,12 @@ const schema = {
       format: ['fatal','error','warn','info','debug','trace','silent'],
       default: 'info',
       env: 'LOG_LEVEL'
+    },
+    centralizedLog: {
+      doc: 'Enable centralized logging',
+      format: Boolean,
+      default: false,
+      env: 'ENABLE_CENTRALIZED_LOG'
     }
   },
   stripe: {
@@ -87,6 +93,30 @@ const schema = {
     }
   },
   a2a: {
+    enabled: {
+      doc: 'Enable A2A protocol features',
+      format: Boolean,
+      default: true,
+      env: 'A2A_ENABLED'
+    },
+    heartbeatInterval: {
+      doc: 'Agent heartbeat interval in seconds',
+      format: 'nat',
+      default: 60,
+      env: 'A2A_HEARTBEAT_INTERVAL'
+    },
+    agentTimeout: {
+      doc: 'Time in seconds before an inactive agent is considered offline',
+      format: 'nat',
+      default: 180,
+      env: 'A2A_AGENT_TIMEOUT'
+    },
+    taskCleanupInterval: {
+      doc: 'Interval in seconds for cleaning up old tasks',
+      format: 'nat',
+      default: 3600,
+      env: 'A2A_TASK_CLEANUP_INTERVAL'
+    },
     matchThreshold: {
       doc: 'A2A match threshold',
       format: Number,

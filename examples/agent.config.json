@@ -1,0 +1,20 @@
+{
+  "serverUrl": "http://localhost:3000",
+  "agentCard": {
+    "name": "SME On-Premise Agent",
+    "description": "An example agent running on a local machine for A2A communication.",
+    "url": "local",
+    "capabilities": [
+      "data-processing",
+      "local-file-access"
+    ],
+    "skills": [
+        {
+            "id": "local-file-reader",
+            "name": "Local File Reader",
+            "description": "Can read files from the local filesystem.",
+            "tags": ["file", "local"]
+        }
+    ]
+  }
+} 

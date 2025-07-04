@@ -1,0 +1,26 @@
+{
+  "id": "stripe-issuing-workflow",
+  "description": "A workflow demonstrating Stripe Issuing functionalities: creating a cardholder and issuing a card.",
+  "concurrencyLimit": 1,
+  "steps": [
+    {
+      "id": "create-cardholder",
+      "toolId": "mcp_stripe_issuing_create_cardholder",
+      "params": {
+        "type": "individual",
+        "name": "Jane Doe",
+        "email": "jane.doe@example.com"
+      }
+    },
+    {
+      "id": "issue-card",
+      "toolId": "mcp_stripe_issuing_create_card",
+      "params": {
+        "cardholder": "{{steps.create-cardholder.output.id}}",
+        "currency": "usd",
+        "type": "virtual"
+      },
+      "dependencies": ["create-cardholder"]
+    }
+  ]
+}

@@ -1,6 +1,4 @@
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import {
   getWorkflowExecution,
   getAllWorkflows,
@@ -10,196 +8,121 @@ import { getFunctionCall } from '../lib/gemini-client.js';
 import rateLimiters from '../middleware/rate-limit.js';
 import logger from '../logger.js';
 import agentManager from '../lib/agents/agent-manager.js';
-import config from '../config.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import agentDiscoveryDoc from '../../public/agent.json'; // Import the agent discovery document
+import Joi from 'joi';
 
 const router = express.Router();
 
-// --- A2A Protocol Endpoints ---
+// Joi schema for AgentDiscovery document validation
+const agentDiscoverySchema = Joi.object({
+  id: Joi.string().guid({ version: 'uuidv4' }).required(),
+  name: Joi.string().min(1).required(),
+  description: Joi.string().min(1),
+  version: Joi.string().required(),
+  protocol_versions: Joi.object().pattern(Joi.string().regex(/^[a-zA-Z0-9_\\-]+$/), Joi.string()).min(1).required(),
+  endpoints: Joi.object().pattern(Joi.string().regex(/^[a-zA-Z0-9_\\-]+$/), Joi.string().uri({ allowRelative: true })).min(1).required(),
+  capabilities: Joi.array().items(Joi.object({
+    name: Joi.string().min(1).required(),
+    description: Joi.string().min(1).required(),
+    input_schema: Joi.object().unknown(true).required(),
+    output_schema: Joi.object().unknown(true).required(),
+  })).min(1).required(),
+  compliance: Joi.object().unknown(true),
+  contact: Joi.object({
+    email: Joi.string().email(),
+  }),
+  license: Joi.string(),
+  last_updated: Joi.string().isoDate(),
+}).unknown(false); // Disallow unknown properties
 
-// Agent discovery endpoint - Enhanced with financial capabilities
-router.get('/.well-known/agent.json', (req, res) => {
-  const agentInfo = {
-    agent_id: 'smart-mcp-financial-gateway',
-    name: 'Smart MCP Financial Gateway',
-    description: 'An intelligent financial services gateway providing comprehensive trading, portfolio management, risk analysis, and compliance capabilities through a network of specialized AI agents.',
-    version: '2.0.0',
-    endpoints: {
-      task_execution: '/a2a/tasks',
-      agent_discovery: '/a2a/agents',
-      workflow_execution: '/a2a/workflows',
-      financial_services: '/a2a/financial'
-    },
-    capabilities: [
-      {
-        name: 'financial_portfolio_management',
-        description: 'Complete portfolio management including performance analysis, risk assessment, and rebalancing recommendations.',
-        parameters: {
-          type: 'object',
-          required: ['account_id'],
-          properties: {
-            account_id: { type: 'string', description: 'Account identifier' },
-            analysis_type: { type: 'string', enum: ['performance', 'risk', 'allocation'], description: 'Type of analysis to perform' }
-          }
-        }
-      },
-      {
-        name: 'trading_execution',
-        description: 'Execute trades, manage orders, and provide execution reports.',
-        parameters: {
-          type: 'object',
-          required: ['action'],
-          properties: {
-            action: { type: 'string', enum: ['place_order', 'cancel_order', 'get_orders', 'execution_report'] },
-            symbol: { type: 'string', description: 'Stock symbol' },
-            side: { type: 'string', enum: ['BUY', 'SELL'] },
-            quantity: { type: 'number', description: 'Number of shares' },
-            order_type: { type: 'string', enum: ['MARKET', 'LIMIT', 'STOP'] }
-          }
-        }
-      },
-      {
-        name: 'market_data_analysis',
-        description: 'Provide real-time market data, historical analysis, and technical indicators.',
-        parameters: {
-          type: 'object',
-          required: ['data_type'],
-          properties: {
-            data_type: { type: 'string', enum: ['quote', 'historical', 'technical', 'news', 'indices'] },
-            symbol: { type: 'string', description: 'Stock symbol' },
-            period: { type: 'string', description: 'Time period for analysis' }
-          }
-        }
-      },
-      {
-        name: 'risk_management',
-        description: 'Calculate risk metrics, perform stress testing, and monitor compliance.',
-        parameters: {
-          type: 'object',
-          required: ['account_id'],
-          properties: {
-            account_id: { type: 'string', description: 'Account identifier' },
-            risk_type: { type: 'string', enum: ['var', 'stress_test', 'compliance_check'] }
-          }
-        }
-      },
-      {
-        name: 'regulatory_compliance',
-        description: 'Generate compliance reports, audit trails, and regulatory filings.',
-        parameters: {
-          type: 'object',
-          properties: {
-            report_type: { type: 'string', enum: ['audit', 'regulatory', 'risk_report'] },
-            period: { type: 'string', description: 'Reporting period' }
-          }
-        }
-      },
-      {
-        name: 'workflow_execution',
-        description: 'Execute complex financial workflows with intelligent tool selection.',
-        parameters: {
-          type: 'object',
-          required: ['task_description'],
-          properties: {
-            task_description: { type: 'string', description: 'Natural language description of the task' }
-          }
-        }
-      }
-    ],
-    specializations: [
-      'portfolio_management',
-      'risk_management',
-      'trade_execution',
-      'regulatory_compliance',
-      'client_services',
-      'market_analysis'
-    ],
-    supported_protocols: ['A2A', 'MCP'],
-    network: {
-      agents: agentManager.listAgents({ status: 'active' }).length,
-      capabilities: Array.from(agentManager.capabilityIndex.keys()),
-      last_updated: new Date().toISOString()
-    }
-  };
+// --- Agent Endpoints ---
+router.post('/agents/register', rateLimiters.registrationLimiter, (req, res) => {
+  const agentInfo = req.body;
 
-  res.json(agentInfo);
+  const { error } = agentDiscoverySchema.validate(agentInfo);
+  if (error) {
+    logger.warn('A2A Agent Registration Validation Error', { error: error.details, agentInfo });
+    return res.status(400).json({ error: 'Invalid agent registration format', details: error.details });
+  }
+
+  const agentId = agentManager.registerAgent(agentInfo);
+  res.status(201).json({ agentId });
 });
 
-// Submit a task via A2A: Enhanced with agent delegation
+// Updated Agent Discovery Endpoint (GET /a2a/agents)
+router.get('/agents', (req, res) => {
+  // For simplicity and to adhere to the AgentDiscovery schema, we return the predefined agent.json
+  // In a multi-agent scenario, this would dynamically list available agents.
+  res.json(agentDiscoveryDoc);
+});
+
+router.get('/agents/:agentId', (req, res) => {
+  const { agentId } = req.params;
+  const agent = agentManager.getAgent(agentId);
+  if (agent) {
+    res.json(agent);
+  } else {
+    res.status(404).json({ error: 'Agent not found' });
+  }
+});
+
+
+// --- Task Endpoints ---
 router.post('/tasks', rateLimiters.standardLimiter, async (req, res, next) => {
   try {
-    const { task_description, requester, priority = 'normal', context = {}, ...payload } = req.body;
+    const { id, initiator_agent_uuid, title, description, params, context_id, priority = 'normal', callback_url, metadata, idempotencyKey, ...payload } = req.body;
 
-    if (!task_description) {
+    // Validate required fields based on A2ATaskSubmissionRequest schema
+    if (!id || !initiator_agent_uuid || !title || !description || !params) {
       return res.status(400).json({
-        error: 'Invalid A2A message format. Required field: "task_description"',
+        error: 'Invalid A2A task submission format. Required fields: id, initiator_agent_uuid, title, description, params',
       });
     }
 
-    logger.info('A2A Task received', { task_description, requester, priority });
+    if (idempotencyKey) {
+      const existingTask = agentManager.findTaskByIdempotencyKey(idempotencyKey);
+      if (existingTask) {
+        logger.info(`Idempotent task request received. Returning existing task ${existingTask.id}.`);
+        return res.status(200).json(existingTask);
+      }
+    }
 
-    // Analyze task to determine if it should be handled by agents or workflows
-    const taskAnalysis = await analyzeTaskRequirements(task_description);
+    logger.info('A2A Task received', { id, title, initiator_agent_uuid, priority });
+
+    const taskAnalysis = await analyzeTaskRequirements(description);
 
     if (taskAnalysis.useAgents) {
-      // Delegate to specialized agents
       const delegationResult = await agentManager.delegateTask({
-        description: task_description,
+        id: id,
+        initiator_agent_uuid: initiator_agent_uuid,
+        description: description,
         requiredCapabilities: taskAnalysis.capabilities,
         priority: priority,
-        context: { ...context, ...payload, requester }
+        context: { ...context_id && { context_id }, ...callback_url && { callback_url }, ...metadata && { metadata }, ...payload, idempotencyKey }
       });
-
-      return res.status(202).json({
-        message: 'Task delegated to specialized agent',
-        taskId: delegationResult.taskId,
-        assignedAgent: delegationResult.assignedAgent,
-        statusUrl: `/a2a/tasks/${delegationResult.taskId}`,
-        success: delegationResult.success,
-        result: delegationResult.result,
-        error: delegationResult.error
-      });
+      return res.status(202).json(delegationResult);
     } else {
-      // Use traditional workflow execution
       const allWorkflows = await getAllWorkflows();
-
       const workflowFunctions = allWorkflows.map((wf) => ({
         name: wf.name,
         description: wf.description,
-        parameters: {
-          type: 'object',
-          properties: {
-            ...wf.parameters?.properties,
-          },
-          required: wf.parameters?.required || [],
-        },
+        parameters: wf.parameters,
       }));
 
-      const functionCall = await getFunctionCall(
-        task_description,
-        workflowFunctions,
-        payload
-      );
+      const functionCall = await getFunctionCall(description, workflowFunctions, payload);
 
       if (!functionCall) {
-        return res
-          .status(404)
-          .json({ error: 'No suitable workflow or agent found for the given task.' });
+        return res.status(404).json({ error: 'No suitable workflow or agent found for the given task.' });
       }
 
-      const workflowName = functionCall.name;
-      const workflowParams = functionCall.args;
+      const { executionId } = await executeWorkflow(functionCall.name, functionCall.args);
 
-      // Execute the workflow asynchronously
-      const { executionId } = await executeWorkflow(workflowName, workflowParams);
-
-      // Immediately respond with the execution ID
+      // For consistency, return the submitted task ID if a workflow is executed.
       res.status(202).json({
         message: 'Workflow execution started',
+        id: id, // Return the submitted task ID
         executionId: executionId,
-        statusUrl: `/a2a/tasks/${executionId}`,
+        statusUrl: `/a2a/v2/tasks/${executionId}`,
       });
     }
   } catch (error) {
@@ -208,252 +131,149 @@ router.post('/tasks', rateLimiters.standardLimiter, async (req, res, next) => {
   }
 });
 
-// Get task execution status/result - Enhanced for both workflows and agent tasks
 router.get('/tasks/:taskId', rateLimiters.standardLimiter, async (req, res, next) => {
   try {
     const { taskId } = req.params;
-    
-    // Check if it's an agent task first
     const agentTask = agentManager.getTask(taskId);
+
     if (agentTask) {
+      // Format agent task to match A2ATaskStatusUpdateResponse schema
       return res.json({
-        taskId: taskId,
-        status: agentTask.status,
-        assignedAgent: agentTask.assignedAgent,
-        description: agentTask.description,
+        id: agentTask.id,
+        status: agentTask.status, // Assuming agentTask.status maps directly to a2a_task_state enum
+        message: agentTask.message || `Task ${agentTask.status}`,
+        progress: agentTask.progress || (agentTask.status === 'completed' ? 100 : 0),
         result: agentTask.result,
         error: agentTask.error,
-        createdAt: agentTask.createdAt,
-        completedAt: agentTask.completedAt,
+        assignee_agent_uuid: agentTask.assignedAgent,
         type: 'agent_task'
       });
     }
 
-    // Check if it's a workflow execution
     const execution = await getWorkflowExecution(taskId);
     if (execution) {
+      // Format workflow execution to match A2ATaskStatusUpdateResponse schema
       return res.json({
-        ...execution,
+        id: execution.executionId,
+        status: execution.status, // Assuming execution.status maps directly
+        message: execution.message || `Workflow ${execution.status}`,
+        progress: execution.progress || (execution.status === 'completed' ? 100 : 0),
+        result: execution.result,
+        error: execution.error,
+        assignee_agent_uuid: null, // Workflows don't have a single assignee agent in this context
         type: 'workflow_execution'
       });
     }
 
-    return res.status(404).json({ 
-      error: `Task with ID '${taskId}' not found.` 
-    });
+    return res.status(404).json({ error: `Task with ID '${taskId}' not found.` });
   } catch (error) {
-    logger.error('A2A Task Status Error', {
-      error,
-      taskId: req.params.taskId,
-    });
+    logger.error('A2A Task Status Error', { error, taskId: req.params.taskId });
     next(error);
   }
 });
 
-// Agent discovery and management endpoints
-router.get('/agents', rateLimiters.standardLimiter, (req, res) => {
+router.post('/tasks/:taskId/status', rateLimiters.standardLimiter, async (req, res, next) => {
   try {
-    const { status, specialization, capability } = req.query;
-    
-    const agents = agentManager.listAgents({
-      status,
-      specialization,
-      capability
-    });
+    const { taskId } = req.params;
+    const { status, message, progress, result, error, assignee_agent_uuid } = req.body;
 
-    res.json({
-      agents: agents.map(agent => ({
-        id: agent.id,
-        name: agent.name,
-        specialization: agent.specialization,
-        capabilities: agent.capabilities,
-        status: agent.status,
-        performanceMetrics: agent.performanceMetrics,
-        lastSeen: agent.lastSeen
-      })),
-      count: agents.length
-    });
-  } catch (error) {
-    logger.error('Agent discovery error', { error });
-    res.status(500).json({ error: 'Failed to retrieve agents' });
-  }
-});
-
-// Get specific agent information
-router.get('/agents/:agentId', rateLimiters.standardLimiter, (req, res) => {
-  try {
-    const { agentId } = req.params;
-    const agent = agentManager.getAgent(agentId);
-    
-    if (!agent) {
-      return res.status(404).json({ error: `Agent ${agentId} not found` });
-    }
-
-    res.json(agent);
-  } catch (error) {
-    logger.error('Get agent error', { error, agentId: req.params.agentId });
-    res.status(500).json({ error: 'Failed to retrieve agent information' });
-  }
-});
-
-// Register external agent
-router.post('/agents/register', rateLimiters.standardLimiter, (req, res) => {
-  try {
-    const agentInfo = req.body;
-    
-    if (!agentInfo.name || !agentInfo.capabilities || !agentInfo.endpoint) {
+    // Basic validation for required fields for status update
+    if (!status) {
       return res.status(400).json({
-        error: 'Required fields: name, capabilities, endpoint'
+        error: 'Invalid A2A task status update format. Required field: status',
       });
     }
 
-    const agentId = agentManager.registerAgent(agentInfo);
-    
-    res.status(201).json({
-      message: 'Agent registered successfully',
-      agentId: agentId
-    });
-  } catch (error) {
-    logger.error('Agent registration error', { error, body: req.body });
-    res.status(500).json({ error: 'Failed to register agent' });
-  }
-});
+    // In a real scenario, you'd likely have an agentManager.updateTaskStatus method
+    // that handles updating the task in your persistent storage (e.g., database).
+    // For this example, we'll simulate the update on the in-memory task.
+    const updatedTask = agentManager.updateTaskStatus(taskId, { status, message, progress, result, error, assignee_agent_uuid });
 
-// Financial services specific endpoints
-router.get('/financial/portfolio/:accountId', rateLimiters.standardLimiter, async (req, res) => {
-  try {
-    const { accountId } = req.params;
-    
-    const result = await agentManager.delegateTask({
-      description: `Get portfolio information for account ${accountId}`,
-      requiredCapabilities: ['asset_allocation', 'performance_monitoring'],
-      context: { accountId }
-    });
-
-    res.json(result);
-  } catch (error) {
-    logger.error('Portfolio request error', { error, accountId: req.params.accountId });
-    res.status(500).json({ error: 'Failed to retrieve portfolio information' });
-  }
-});
-
-router.post('/financial/trade', rateLimiters.execution, async (req, res) => {
-  try {
-    const { symbol, side, quantity, orderType, accountId } = req.body;
-    
-    if (!symbol || !side || !quantity) {
-      return res.status(400).json({
-        error: 'Required fields: symbol, side, quantity'
-      });
+    if (!updatedTask) {
+      return res.status(404).json({ error: `Task with ID '${taskId}' not found for status update.` });
     }
 
-    const result = await agentManager.delegateTask({
-      description: `Place ${side} order for ${quantity} shares of ${symbol}`,
-      requiredCapabilities: ['order_routing', 'execution_optimization'],
-      context: { symbol, side, quantity, orderType, accountId }
-    });
-
-    res.json(result);
-  } catch (error) {
-    logger.error('Trade execution error', { error, body: req.body });
-    res.status(500).json({ error: 'Failed to execute trade' });
-  }
-});
-
-router.get('/financial/risk/:accountId', rateLimiters.standardLimiter, async (req, res) => {
-  try {
-    const { accountId } = req.params;
-    
-    const result = await agentManager.delegateTask({
-      description: `Calculate risk metrics for account ${accountId}`,
-      requiredCapabilities: ['var_calculation', 'stress_testing'],
-      context: { accountId }
-    });
-
-    res.json(result);
-  } catch (error) {
-    logger.error('Risk analysis error', { error, accountId: req.params.accountId });
-    res.status(500).json({ error: 'Failed to calculate risk metrics' });
-  }
-});
-
-// Network status and health
-router.get('/network/status', rateLimiters.standardLimiter, (req, res) => {
-  try {
-    const networkStatus = agentManager.getNetworkStatus();
-    res.json(networkStatus);
-  } catch (error) {
-    logger.error('Network status error', { error });
-    res.status(500).json({ error: 'Failed to retrieve network status' });
-  }
-});
-
-// List all tasks
-router.get('/tasks', rateLimiters.standardLimiter, (req, res) => {
-  try {
-    const { status, agentId, limit = 50 } = req.query;
-    
-    const tasks = agentManager.listTasks({ status, agentId });
-    
-    res.json({
-      tasks: tasks.slice(0, parseInt(limit)),
-      count: tasks.length
+    logger.info(`Task ${taskId} status updated to ${status}`, { taskId, status, message });
+    return res.status(200).json({
+      message: `Task ${taskId} status updated successfully.`, 
+      updatedTask
     });
   } catch (error) {
-    logger.error('List tasks error', { error });
-    res.status(500).json({ error: 'Failed to retrieve tasks' });
+    logger.error('A2A Task Status Update Error', { error, taskId: req.params.taskId, body: req.body });
+    next(error);
   }
 });
 
-/**
- * Analyze task requirements to determine if agents or workflows should be used
- * @param {string} taskDescription - Natural language task description
- * @returns {object} Analysis result
- */
+// Duplicated from agent-manager.js for now. Will be refactored.
 async function analyzeTaskRequirements(taskDescription) {
   const description = taskDescription.toLowerCase();
-  
-  // Financial keywords that suggest agent delegation
   const financialKeywords = [
     'portfolio', 'risk', 'trade', 'order', 'compliance', 'audit',
     'performance', 'allocation', 'rebalance', 'var', 'stress test',
-    'market data', 'quote', 'price', 'analysis', 'report'
+    'market data', 'quote', 'price', 'analysis', 'report',
+    'financial account', 'treasury', 'outbound transfer', 'outbound payment', 'received credit', 'received debit',
+    'card issuing', 'issue card', 'cardholder', 'authorization', 'dispute',
+    'sms', 'send message', 'call', 'phone verification', 'phone number lookup',
+    'company enrichment', 'person data', 'website visitor'
   ];
 
-  const hasFinancialKeywords = financialKeywords.some(keyword => 
-    description.includes(keyword)
-  );
+  const hasFinancialKeywords = financialKeywords.some(keyword => description.includes(keyword));
+
+  const capabilities = [];
 
   if (hasFinancialKeywords) {
-    // Determine required capabilities based on keywords
-    const capabilities = [];
-    
-    if (description.includes('portfolio') || description.includes('allocation')) {
-      capabilities.push('asset_allocation', 'performance_monitoring');
-    }
-    if (description.includes('risk') || description.includes('var')) {
-      capabilities.push('var_calculation', 'stress_testing');
-    }
-    if (description.includes('trade') || description.includes('order')) {
-      capabilities.push('order_routing', 'execution_optimization');
-    }
-    if (description.includes('compliance') || description.includes('audit')) {
-      capabilities.push('regulatory_monitoring', 'audit_support');
-    }
-    if (description.includes('market') || description.includes('quote')) {
-      capabilities.push('real_time_quotes', 'market_analysis');
+    if (description.includes('portfolio') || description.includes('allocation')) capabilities.push('financial_portfolio_management');
+    if (description.includes('trade') || description.includes('order')) capabilities.push('trading_execution');
+    if (description.includes('risk') || description.includes('compliance')) capabilities.push('risk_management');
+
+    // Stripe Treasury capabilities
+    if (description.includes('financial account') || description.includes('treasury') || 
+        description.includes('outbound transfer') || description.includes('outbound payment') ||
+        description.includes('received credit') || description.includes('received debit')) {
+      capabilities.push('financial_treasury_management');
     }
 
-    return {
-      useAgents: true,
-      capabilities: capabilities.length > 0 ? capabilities : ['asset_allocation']
-    };
+    // Stripe Issuing capabilities
+    if (description.includes('card issuing') || description.includes('issue card') || 
+        description.includes('cardholder') || description.includes('authorization') || 
+        description.includes('dispute')) {
+      capabilities.push('financial_card_issuing');
+    }
+
+    // Twilio capabilities
+    if (description.includes('sms') || description.includes('send message')) {
+      capabilities.push('communication_sms');
+    }
+    if (description.includes('call')) {
+      capabilities.push('communication_voice');
+    }
+    if (description.includes('phone verification')) {
+      capabilities.push('identity_phone_verification');
+    }
+    if (description.includes('phone number lookup')) {
+      capabilities.push('data_phone_lookup');
+    }
+
+    // Clearbit capabilities
+    if (description.includes('company enrichment')) {
+      capabilities.push('data_company_enrichment');
+    }
+    if (description.includes('person data')) {
+      capabilities.push('data_person_enrichment');
+    }
+    if (description.includes('website visitor')) {
+      capabilities.push('data_website_visitor_identification');
+    }
+
+    // Zapier capabilities
+    if (description.includes('zapier') || description.includes('automate') || description.includes('nla action')) {
+      capabilities.push('automation_nla_action');
+    }
+
+    // If specific capabilities are found, use them. Otherwise, default to general financial management.
+    return { useAgents: capabilities.length > 0, capabilities: capabilities.length > 0 ? capabilities : ['financial_portfolio_management'] };
   }
-
-  return {
-    useAgents: false,
-    capabilities: []
-  };
+  return { useAgents: false, capabilities: [] };
 }
 
 export default router;

@@ -1,0 +1,22 @@
+{
+  "id": "clearbit-enrichment-workflow",
+  "description": "A workflow demonstrating Clearbit functionalities: enriching company and person data.",
+  "concurrencyLimit": 1,
+  "steps": [
+    {
+      "id": "enrich-company",
+      "toolId": "mcp_clearbit_enrich_company",
+      "params": {
+        "domain": "stripe.com"
+      }
+    },
+    {
+      "id": "enrich-person",
+      "toolId": "mcp_clearbit_enrich_person",
+      "params": {
+        "email": "brian.damon@stripe.com"
+      },
+      "dependencies": ["enrich-company"]
+    }
+  ]
+} 

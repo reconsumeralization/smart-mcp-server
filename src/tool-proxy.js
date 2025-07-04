@@ -14,6 +14,7 @@ import {
   mcp_stripe_update_subscription,
   mcp_stripe_cancel_subscription,
 } from './tools/stripe-tool.js';
+import { mcp_stripe_capital_get_financing_offers } from './tools/stripe_agents/stripe-capital-agent.js';
 import githubTool from './tools/github-tool.js';
 import databaseTool from './tools/database-tool.js';
 import {
@@ -156,6 +157,10 @@ registerInternalTool(
 registerInternalTool(
   'mcp_stripe_cancel_subscription',
   mcp_stripe_cancel_subscription
+);
+registerInternalTool(
+  'mcp_stripe_capital_get_financing_offers',
+  mcp_stripe_capital_get_financing_offers
 );
 registerInternalTool('updateSubscription', updateSubscription);
 

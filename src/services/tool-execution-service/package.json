@@ -1,0 +1,16 @@
+{
+  "name": "tool-execution-service",
+  "version": "1.0.0",
+  "description": "Executes MCP tools based on requests from the MCP Gateway Service",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "fastify": "^4.27.2",
+    "dotenv": "^16.4.5",
+    "@modelcontextprotocol/sdk": "^0.4.0"
+  }
+} 

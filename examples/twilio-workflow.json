@@ -1,0 +1,24 @@
+{
+  "id": "twilio-workflow",
+  "description": "A workflow demonstrating Twilio functionalities: sending an SMS and verifying a phone number.",
+  "concurrencyLimit": 1,
+  "steps": [
+    {
+      "id": "send-sms",
+      "toolId": "mcp_twilio_send_sms",
+      "params": {
+        "to": "+15551234567",
+        "body": "Hello from Smart MCP! This is a test SMS."
+      }
+    },
+    {
+      "id": "verify-phone-number",
+      "toolId": "mcp_twilio_verify_phone",
+      "params": {
+        "to": "+15551234567",
+        "channel": "sms"
+      },
+      "dependencies": ["send-sms"]
+    }
+  ]
+} 

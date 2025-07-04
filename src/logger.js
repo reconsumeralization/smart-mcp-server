@@ -2,6 +2,7 @@ import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { storage } from './middleware/correlation-id.js'; // Import storage
+import config from './config.js';
 
 // Get directory name (ESM workaround)
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +20,7 @@ const levels = {
 // Define level based on environment
 const level = () => {
   const env = process.env.NODE_ENV || 'development';
-  return env === 'development' ? 'debug' : 'info';
+  return config.logging.level || (env === 'development' ? 'debug' : 'info');
 };
 
 // Define colors for each level
@@ -61,7 +62,7 @@ const format =
         )
       );
 
-// Define file transports
+// Define transports
 const transports = [
   new winston.transports.Console(),
   new winston.transports.File({
@@ -72,6 +73,21 @@ const transports = [
     filename: path.join(__dirname, 'logs', 'all.log'),
   }),
 ];
+
+// Add a transport for centralized logging if enabled
+if (config.logging.centralizedLog) {
+  transports.push(
+    new winston.transports.Http({
+      host: 'localhost',
+      port: 8080,
+      path: '/central-log',
+      headers: { 'Content-Type': 'application/json' },
+      // This is a placeholder for a real centralized logging service
+      // In a real scenario, you'd configure this for Splunk, ELK, etc.
+      // For demonstration, it just sends to a local endpoint.
+    })
+  );
+}
 
 // Create the logger
 const logger = winston.createLogger({

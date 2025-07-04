@@ -1,186 +1,258 @@
 {
-  "id": "smart-mcp-agent",
-  "name": "Smart MCP Agent",
-  "description": "A context-aware agent that manages and executes workflows using the Model Context Protocol (MCP) and interacts with other agents via the Agent2Agent (A2A) protocol.",
-  "version": "1.0.0",
+  "id": "smart-mcp-financial-agent",
+  "name": "Smart MCP Financial Agent",
+  "description": "An intelligent, context-aware agent that provides comprehensive financial services by managing and executing workflows using the Model Context Protocol (MCP) and interacting with other agents via the Agent-to-Agent (A2A) protocol.",
+  "version": "2.0.0",
   "protocol_versions": {
     "mcp": "1.0",
-    "a2a": "1.0"
+    "a2a": "2.0"
   },
   "endpoints": {
-    "tasks": "/a2a/tasks",
-    "workflows": "/api/workflows",
-    "token_management": "/api/tokens",
-    "health": "/health"
+    "agent_discovery": "/a2a/agents",
+    "task_submission": "/a2a/tasks",
+    "task_status": "/a2a/tasks/:taskId",
+    "workflow_management": "/api/workflows",
+    "health_check": "/health"
   },
   "capabilities": [
     {
-      "name": "workflow_execution",
-      "description": "Executes predefined workflows based on task descriptions.",
+      "name": "financial_portfolio_management",
+      "description": "Provides comprehensive portfolio management services, including performance analysis, risk assessment, and rebalancing.",
       "input_schema": {
         "type": "object",
         "properties": {
-          "task_description": {
-            "type": "string",
-            "description": "A natural language description of the task to be performed."
-          }
+          "account_id": { "type": "string", "description": "The unique identifier for the client's account." },
+          "action": { "type": "string", "enum": ["get_portfolio", "get_performance", "rebalance"], "description": "The specific action to perform." }
+        },
+        "required": ["account_id", "action"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "type": "object" } }
+      }
+    },
+    {
+      "name": "trading_execution",
+      "description": "Executes financial trades, manages orders, and provides execution reports.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string", "description": "The account to execute the trade for." },
+          "symbol": { "type": "string", "description": "The stock symbol to trade." },
+          "side": { "type": "string", "enum": ["buy", "sell"], "description": "The side of the trade." },
+          "quantity": { "type": "number", "description": "The number of shares to trade." },
+          "order_type": { "type": "string", "enum": ["market", "limit"], "description": "The type of order to place." }
+        },
+        "required": ["account_id", "symbol", "side", "quantity", "order_type"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "order_id": { "type": "string" } }
+      }
+    },
+    {
+      "name": "risk_management",
+      "description": "Calculates risk metrics, performs stress testing, and monitors compliance.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "account_id": { "type": "string", "description": "The account to analyze." },
+          "risk_type": { "type": "string", "enum": ["var", "stress_test", "compliance_check"], "description": "The type of risk analysis to perform." }
+        },
+        "required": ["account_id", "risk_type"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "type": "object" } }
+      }
+    },
+    {
+      "name": "workflow_execution",
+      "description": "Executes complex, predefined workflows based on natural language task descriptions.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_description": { "type": "string", "description": "A natural language description of the task to be performed." }
         },
         "required": ["task_description"]
       },
       "output_schema": {
         "type": "object",
-        "properties": {
-          "workflowId": {
-            "type": "string",
-            "description": "The ID of the workflow that will be executed."
-          },
-          "context": {
-            "type": "object",
-            "description": "Initial context for the workflow execution."
-          }
-        }
+        "properties": { "executionId": { "type": "string" }, "statusUrl": { "type": "string" } }
       }
     },
     {
-      "name": "token_management",
-      "description": "Manages MCP/A2A compliant API tokens with automatic refresh and validation.",
+      "name": "communication_sms",
+      "description": "Sends SMS messages to recipients.",
       "input_schema": {
         "type": "object",
         "properties": {
-          "action": {
-            "type": "string",
-            "enum": ["generate", "refresh", "validate", "info"],
-            "description": "The token management action to perform."
-          },
-          "token_id": {
-            "type": "string",
-            "description": "Optional token identifier (defaults to 'gemini_primary')."
-          }
+          "to": { "type": "string", "description": "The recipient's phone number." },
+          "body": { "type": "string", "description": "The message body." }
+        },
+        "required": ["to", "body"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" } }
+      }
+    },
+    {
+      "name": "communication_voice",
+      "description": "Initiates voice calls.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "description": "The recipient's phone number." },
+          "twiml": { "type": "string", "description": "The TwiML to execute for the call." }
+        },
+        "required": ["to", "twiml"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" } }
+      }
+    },
+    {
+      "name": "identity_phone_verification",
+      "description": "Verifies phone numbers using a verification service.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string", "description": "The phone number to verify." },
+          "channel": { "type": "string", "enum": ["sms", "call"], "description": "The verification channel." }
+        },
+        "required": ["to", "channel"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" } }
+      }
+    },
+    {
+      "name": "data_phone_lookup",
+      "description": "Retrieves information about a phone number.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "phoneNumber": { "type": "string", "description": "The phone number to look up." }
+        },
+        "required": ["phoneNumber"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" }, "data": { "type": "object" } }
+      }
+    },
+    {
+      "name": "data_company_enrichment",
+      "description": "Enriches company data based on a domain.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "domain": { "type": "string", "description": "The company domain." }
+        },
+        "required": ["domain"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" }, "data": { "type": "object" } }
+      }
+    },
+    {
+      "name": "data_person_enrichment",
+      "description": "Enriches person data based on an email address.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "description": "The person's email address." }
+        },
+        "required": ["email"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" }, "data": { "type": "object" } }
+      }
+    },
+    {
+      "name": "data_website_visitor_identification",
+      "description": "Identifies an anonymous website visitor based on their IP address.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "ip": { "type": "string", "description": "The IP address of the visitor." }
+        },
+        "required": ["ip"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" }, "data": { "type": "object" } }
+      }
+    },
+    {
+      "name": "financial_treasury_management",
+      "description": "Manages financial accounts, transfers, payments, and balances via Stripe Treasury.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["create_account", "retrieve_account", "list_accounts", "create_transfer", "cancel_transfer", "create_payment", "cancel_payment", "retrieve_transaction", "list_transactions", "create_received_credit", "list_received_credits", "create_received_debit", "list_received_debits"], "description": "The specific action to perform." }
         },
         "required": ["action"]
       },
       "output_schema": {
         "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "Whether the operation was successful."
-          },
-          "token_info": {
-            "type": "object",
-            "description": "Token metadata and compliance information."
-          },
-          "message": {
-            "type": "string",
-            "description": "Human-readable status message."
-          }
-        }
+        "properties": { "success": { "type": "boolean" }, "data": { "type": "object" } }
       }
     },
     {
-      "name": "model_interaction",
-      "description": "Interacts with AI models through MCP-compliant drivers with automatic token management.",
+      "name": "financial_card_issuing",
+      "description": "Creates, manages, and authorizes Stripe Issuing cards and cardholders.",
       "input_schema": {
         "type": "object",
         "properties": {
-          "model": {
-            "type": "string",
-            "description": "Model identifier (e.g., 'gemini-2.5-pro', 'gpt-4', 'claude-3')."
-          },
-          "prompt": {
-            "type": "string",
-            "description": "The prompt to send to the model."
-          },
-          "parameters": {
-            "type": "object",
-            "description": "Model-specific parameters."
-          }
+          "action": { "type": "string", "enum": ["create_card", "retrieve_card", "update_card", "list_cards", "create_cardholder", "retrieve_cardholder", "retrieve_authorization", "list_authorizations", "approve_authorization", "decline_authorization", "create_dispute", "retrieve_dispute", "retrieve_transaction", "list_transactions"], "description": "The specific action to perform." }
         },
-        "required": ["model", "prompt"]
+        "required": ["action"]
       },
       "output_schema": {
         "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "type": "object" } }
+      }
+    },
+    {
+      "name": "automation_nla_action",
+      "description": "Executes a Zapier Natural Language Action (NLA) based on a natural language prompt.",
+      "input_schema": {
+        "type": "object",
         "properties": {
-          "response": {
-            "type": "string",
-            "description": "The model's response."
-          },
-          "metadata": {
-            "type": "object",
-            "description": "Response metadata including compliance information."
-          }
-        }
+          "prompt": { "type": "string", "description": "The natural language prompt for the action." }
+        },
+        "required": ["prompt"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "message": { "type": "string" }, "data": { "type": "object" } }
       }
     }
   ],
   "compliance": {
     "mcp": {
       "version": "1.0",
-      "features": [
-        "tool_discovery",
-        "context_management",
-        "error_handling",
-        "streaming_support"
-      ]
+      "features": ["tool_discovery", "context_management", "error_handling", "streaming_support"]
     },
     "a2a": {
-      "version": "1.0",
-      "features": [
-        "agent_discovery",
-        "task_delegation",
-        "workflow_coordination",
-        "secure_communication"
-      ]
+      "version": "2.0",
+      "features": ["agent_discovery", "task_delegation", "workflow_coordination", "secure_communication"]
     },
     "security": {
-      "token_encryption": "aes-256-gcm",
-      "secure_storage": true,
-      "automatic_refresh": true,
-      "compliance_validation": true
+      "authentication": ["jwt", "api-key"],
+      "encryption_in_transit": "TLS 1.3",
+      "encryption_at_rest": "AES-256"
     }
   },
-  "supported_models": [
-    {
-      "provider": "google",
-      "models": ["gemini-2.5-pro", "gemini-pro", "text-embedding-004"],
-      "capabilities": ["text_generation", "embeddings", "streaming"]
-    },
-    {
-      "provider": "openai",
-      "models": ["gpt-4", "gpt-3.5-turbo", "text-embedding-ada-002"],
-      "capabilities": ["text_generation", "embeddings", "streaming"]
-    },
-    {
-      "provider": "anthropic",
-      "models": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
-      "capabilities": ["text_generation", "streaming"]
-    }
-  ],
-  "tools": [
-    {
-      "name": "mcp_github_tool",
-      "description": "GitHub repository management and analytics",
-      "compliance": "mcp_1.0"
-    },
-    {
-      "name": "mcp_stripe_tool",
-      "description": "Payment processing and subscription management",
-      "compliance": "mcp_1.0"
-    },
-    {
-      "name": "mcp_documentation_tool",
-      "description": "Documentation consolidation and management",
-      "compliance": "mcp_1.0"
-    },
-    {
-      "name": "mcp_system_health_tool",
-      "description": "System monitoring and health checks",
-      "compliance": "mcp_1.0"
-    }
-  ],
   "contact": {
-    "email": "support@example.com"
+    "email": "support@smart-mcp.com"
   },
   "license": "MIT",
-  "last_updated": "2025-01-07T23:37:00Z"
+  "last_updated": "2025-01-08T10:00:00Z"
 }

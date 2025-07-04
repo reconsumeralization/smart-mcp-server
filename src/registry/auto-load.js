@@ -13,6 +13,17 @@ export async function autoLoadTools() {
     try {
       const moduleUrl = pathToFileURL(path.join(toolsDir, file)).href;
       const mod = await import(moduleUrl);
+
+      // Check for default export (e.g., class instances)
+      if (mod.default && typeof mod.default === 'object') {
+        Object.entries(mod.default).forEach(([key, fn]) => {
+          if (typeof fn === 'function' && key.startsWith('mcp_')) {
+            registerTool({ id: key, description: `${file}:${key}`, handler: fn.bind(mod.default) });
+          }
+        });
+      }
+
+      // Also check for named exports (existing logic)
       Object.entries(mod).forEach(([key, fn]) => {
         if (typeof fn === 'function' && key.startsWith('mcp_')) {
           registerTool({ id: key, description: `${file}:${key}`, handler: fn });
