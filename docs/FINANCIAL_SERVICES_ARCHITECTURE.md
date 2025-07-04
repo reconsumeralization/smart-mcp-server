@@ -250,13 +250,15 @@ Generate comprehensive execution reports.
 ```json
 {
   "id": "financial-trading-execution",
-  "description": "Complete trading workflow with risk checks",
+  "description": "Automated trading execution workflow",
   "steps": [
-    "pre-trade-analysis",
+    "place-order",
+    "get-order-book-data",
+    "generate-execution-report"
+     "pre-trade-analysis",
     "risk-validation",
     "order-placement",
     "execution-monitoring",
-    "post-trade-analysis"
   ]
 }
 ```
@@ -371,3 +373,80 @@ The system includes comprehensive mock data and simulation capabilities:
 - **Compliance Testing**: Validate regulatory compliance workflows
 
 This architecture provides a complete financial services platform capable of handling institutional-grade trading, risk management, and compliance requirements while maintaining the flexibility and extensibility of the MCP protocol. 
+
+## Security and Compliance Best Practices
+
+Given the sensitive nature of financial operations, the Smart MCP Server adheres to strict security and compliance best practices. This section outlines key considerations and measures to ensure data integrity, privacy, and regulatory adherence.
+
+### Data Encryption
+- All sensitive data, both in transit and at rest, must be encrypted using industry-standard protocols (e.g., TLS 1.3 for transit, AES-256 for at rest).
+- Encryption keys must be securely managed and rotated regularly.
+
+### Access Control
+- Implement strict Role-Based Access Control (RBAC) to ensure that users and agents only have access to the resources and functionalities required for their roles.
+- Utilize multi-factor authentication (MFA) for all administrative and sensitive access.
+- Regularly review and audit access logs for suspicious activities.
+
+### Audit Trails and Logging
+- Maintain comprehensive audit trails for all financial transactions, system access, and configuration changes.
+- Logs should be immutable, time-stamped, and stored in a centralized, secure location for regulatory compliance and forensic analysis.
+- Implement real-time monitoring and alerting for critical security events.
+
+### Regulatory Compliance
+- Ensure all financial operations comply with relevant regulations, including but not limited to:
+  - **FINTRAC MSB registration in Canada**: Required for Money Services Businesses, with penalties up to $500,000 for non-compliance. [[memory:1799744]]
+  - **CFPB consumer protection violations**: Can lead to fines exceeding $1M. [[memory:1799744]]
+  - **PCI DSS compliance**: Essential for handling cardholder data, with breaches costing $50,000-$500,000+ per incident. [[memory:1799744]]
+  - **AML (Anti-Money Laundering) regulations**: Non-compliance can result in criminal penalties, including fines up to $500,000 and 5+ years imprisonment for executives. [[memory:1799744]]
+  - **OFAC sanctions screening**: Mandatory for international transfers to prevent transactions with sanctioned entities. [[memory:1799744]]
+- Conduct regular legal reviews and engage compliance officers to ensure ongoing adherence to evolving regulatory landscapes.
+
+### Resilience and Disaster Recovery
+- Implement robust backup and disaster recovery plans to ensure business continuity and data availability in the event of unforeseen incidents.
+- Regularly test recovery procedures to verify their effectiveness.
+
+### AI Agent Liability and Ethical Considerations
+- Given the use of AI agents for autonomous payment handling and financial workflows, establish clear guidelines for liability in case of unauthorized transactions or errors. [[memory:1799744]]
+- Incorporate ethical AI principles in the design and deployment of agents, focusing on fairness, transparency, and accountability.
+
+## Deployment and Setup
+
+To run the Smart MCP Server, follow these steps:
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/KnightArcher/KnightArcher.git
+    cd KnightArcher/external/smart-mcp-server
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Configure Environment Variables**:
+    Create a `.env` file in the `external/smart-mcp-server` directory with the necessary configurations, such as API keys for external services (Stripe, market data providers) and database connection strings. Refer to `external/smart-mcp-server/.env.example` for required variables.
+
+4.  **Start the Server**:
+    ```bash
+    npm start
+    ```
+    This will start the core MCP servers on their respective ports (e.g., Financial Core on 3010, Market Data on 3011, etc.).
+
+5.  **Access the API Documentation**:
+    Once the server is running, you can access the interactive API documentation (Swagger UI) typically at `http://localhost:[PORT]/api-docs`, where `[PORT]` is the main gateway port (e.g., 3000 if configured as gateway).
+
+## Integration with Stripe
+
+The platform integrates with Stripe for enhanced payment processing capabilities. This includes leveraging advanced features such as:
+
+- **Stripe Agent Toolkit**: Enables AI agents to autonomously handle payments, subscriptions, and refunds with usage-based billing. [[memory:1799745]]
+- **Stripe Treasury**: Provides FDIC-insured business accounts for insurance brokers/agents. [[memory:1799745]]
+- **Order Intents API**: Facilitates agentic commerce for insurance product purchases. [[memory:1799745]]
+- **Global Payouts**: Supports sending payments to 58 countries for affiliate commissions. [[memory:1799745]]
+- **Smart Disputes**: Uses AI to automatically respond to chargebacks with tailored evidence. [[memory:1799745]]
+- **Stripe Workflows**: Provides no-code automation for payment operations. [[memory:1799745]]
+- **Stripe Scripts**: Offers a programmable revenue engine with conditional logic. [[memory:1799745]]
+- **Stablecoin Financial Accounts**: Supports crypto/fiat payment rails in 100+ countries. [[memory:1799745]]
+- **Consumer Issuing**: Enables building credit card programs for customers. [[memory:1799745]]
+- **Stripe Orchestration**: Manages multiple payment processors from one interface. [[memory:1799745]] 

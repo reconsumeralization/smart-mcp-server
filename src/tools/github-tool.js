@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 
 // Initialize Octokit with environment variable
 const octokit = new Octokit({

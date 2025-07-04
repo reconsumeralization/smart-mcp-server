@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import config from '../config.js';
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 
 if (!config.stripe.secretKey) {
   logger.warn('STRIPE_SECRET_KEY is not set. Stripe tools will not function.');

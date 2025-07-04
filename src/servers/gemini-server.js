@@ -5,16 +5,24 @@
  * allowing it to be used as a tool and to call other tools.
  */
 
-import express from 'express';
-import cors from 'cors';
-import bodyParser from 'json-body-parser';
-import geminiClient, { GeminiClient } from '../lib/gemini-client.js';
-import { executeToolProxy } from '../tool-proxy.js';
 import dotenv from 'dotenv';
-import logger from '../logger.js';
+import config from '../config.js';
+import { initializeLogger, logger } from '../logger.js';
 
 // Load environment variables
 dotenv.config();
+
+// Initialize logger
+initializeLogger(config);
+
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import geminiClient, { GeminiClient } from '../lib/gemini-client.js';
+import { executeToolProxy, initializeTools } from '../tool-proxy.js';
+
+// Initialize tools
+initializeTools(logger);
 
 const app = express();
 const PORT = process.env.GEMINI_SERVER_PORT || 3006;

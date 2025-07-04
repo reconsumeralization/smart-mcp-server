@@ -1,5 +1,5 @@
 import { query } from './db-client.js';
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 
 export async function createSubscriptionsTable() {
   try {

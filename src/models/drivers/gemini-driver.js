@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import ModelDriver from '../ModelDriver.js';
 import tokenManager from '../../lib/token-manager.js';
-import logger from '../../logger.js';
+import { logger } from '../../logger.js';
 
 /**
  * Helper function to safely get environment variables with proper error handling

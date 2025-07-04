@@ -1,5 +1,5 @@
 import { pool } from '../lib/db-client.js';
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 
 /**
  * 🚀 DatabaseTool: SOTA AI Database Optimization & Management 🚀

@@ -1,6 +1,7 @@
 import EventEmitter from 'events';
 import os from 'os';
 import logger from '../logger.js';
+import { emitEvent } from '../web-socket-manager.js'; // Import the emitEvent function
 
 class SystemMonitor extends EventEmitter {
   constructor(options = {}) {
@@ -91,8 +92,9 @@ class SystemMonitor extends EventEmitter {
       performance: performanceMetrics
     };
 
-    // Emit metrics event
+    // Emit metrics event to local EventEmitter and WebSocket
     this.emit('metrics', this.metrics);
+    emitEvent('systemMetrics', this.metrics); // Broadcast metrics via WebSocket
 
     // Check for alerts
     this.checkAlerts(this.metrics);
@@ -171,6 +173,7 @@ class SystemMonitor extends EventEmitter {
 
     if (alerts.length > 0) {
       this.emit('alerts', alerts);
+      emitEvent('systemAlerts', alerts); // Broadcast alerts via WebSocket
       alerts.forEach(alert => {
         logger.warn(`ALERT [${alert.category}]: ${alert.message}`);
       });

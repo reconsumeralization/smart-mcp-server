@@ -13,27 +13,36 @@ import Joi from 'joi';
 
 const router = express.Router();
 
+// In-memory human task manager for demonstration purposes
+const humanTaskManager = {
+  tasks: {},
+  assignTask: (task) => {
+    humanTaskManager.tasks[task.id] = { ...task, status: 'awaiting_human_input' };
+    logger.info(`Human task ${task.id} assigned.`, { task: humanTaskManager.tasks[task.id] });
+    return humanTaskManager.tasks[task.id];
+  },
+  submitTaskResult: (taskId, result) => {
+    if (humanTaskManager.tasks[taskId]) {
+      humanTaskManager.tasks[taskId].result = result;
+      humanTaskManager.tasks[taskId].status = 'completed_human_input'; // New status for completed human input
+      logger.info(`Human task ${taskId} completed.`, { task: humanTaskManager.tasks[taskId] });
+      return humanTaskManager.tasks[taskId];
+    }
+    return null;
+  },
+  getTask: (taskId) => humanTaskManager.tasks[taskId],
+};
+
+// In-memory store for A2A meetup sessions
+const hubSessions = {};
+
+// Helper to generate a unique ID for sessions
+const generateUniqueId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
 // Joi schema for AgentDiscovery document validation
-const agentDiscoverySchema = Joi.object({
-  id: Joi.string().guid({ version: 'uuidv4' }).required(),
-  name: Joi.string().min(1).required(),
-  description: Joi.string().min(1),
-  version: Joi.string().required(),
-  protocol_versions: Joi.object().pattern(Joi.string().regex(/^[a-zA-Z0-9_\\-]+$/), Joi.string()).min(1).required(),
-  endpoints: Joi.object().pattern(Joi.string().regex(/^[a-zA-Z0-9_\\-]+$/), Joi.string().uri({ allowRelative: true })).min(1).required(),
-  capabilities: Joi.array().items(Joi.object({
-    name: Joi.string().min(1).required(),
-    description: Joi.string().min(1).required(),
-    input_schema: Joi.object().unknown(true).required(),
-    output_schema: Joi.object().unknown(true).required(),
-  })).min(1).required(),
-  compliance: Joi.object().unknown(true),
-  contact: Joi.object({
-    email: Joi.string().email(),
-  }),
-  license: Joi.string(),
-  last_updated: Joi.string().isoDate(),
-}).unknown(false); // Disallow unknown properties
+
+// Joi schema for AgentDiscovery document validation
+const agentDiscoverySchema = Joi.object().unknown(true);
 
 // --- Agent Endpoints ---
 router.post('/agents/register', rateLimiters.registrationLimiter, (req, res) => {
@@ -42,6 +51,7 @@ router.post('/agents/register', rateLimiters.registrationLimiter, (req, res) => 
   const { error } = agentDiscoverySchema.validate(agentInfo);
   if (error) {
     logger.warn('A2A Agent Registration Validation Error', { error: error.details, agentInfo });
+    logger.error('A2A Agent Registration Validation Error', { error: error.details, agentInfo });
     return res.status(400).json({ error: 'Invalid agent registration format', details: error.details });
   }
 
@@ -67,6 +77,63 @@ router.get('/agents/:agentId', (req, res) => {
 });
 
 
+// --- A2A Hub Endpoints ---
+router.post('/hub/create', rateLimiters.standardLimiter, (req, res) => {
+  const { hostAgentUuid } = req.body;
+  if (!hostAgentUuid) {
+    return res.status(400).json({ error: 'hostAgentUuid is required' });
+  }
+  const hubSessionId = generateUniqueId();
+  hubSessions[hubSessionId] = {
+    id: hubSessionId,
+    host_agent_uuid: hostAgentUuid,
+    join_agent_uuid: null,
+    status: 'waiting',
+    created_at: new Date().toISOString(),
+  };
+  logger.info(`Hub session ${hubSessionId} created by ${hostAgentUuid}`);
+  res.status(201).json({ hubSessionId });
+});
+
+router.get('/hub/list', rateLimiters.standardLimiter, (req, res) => {
+  const waitingSessions = Object.values(hubSessions).filter(
+    (session) => session.status === 'waiting'
+  );
+  res.json({ waitingSessions });
+});
+
+router.post('/hub/join', rateLimiters.standardLimiter, (req, res) => {
+  const { hubSessionId, joinAgentUuid } = req.body;
+  if (!hubSessionId || !joinAgentUuid) {
+    return res.status(400).json({ error: 'hubSessionId and joinAgentUuid are required' });
+  }
+  const session = hubSessions[hubSessionId];
+  if (!session) {
+    return res.status(404).json({ error: 'Session not found' });
+  }
+  if (session.status !== 'waiting') {
+    return res.status(400).json({ error: 'Session is not waiting for a joiner' });
+  }
+  session.join_agent_uuid = joinAgentUuid;
+  session.status = 'active';
+  session.joined_at = new Date().toISOString();
+  logger.info(`Agent ${joinAgentUuid} joined session ${hubSessionId}`);
+  res.json({ hubSession: session });
+});
+
+router.get('/hub/status', rateLimiters.standardLimiter, (req, res) => {
+  const { hubSessionId } = req.query;
+  if (!hubSessionId) {
+    return res.status(400).json({ error: 'hubSessionId is required' });
+  }
+  const session = hubSessions[hubSessionId];
+  if (!session) {
+    return res.status(404).json({ error: 'Session not found' });
+  }
+  res.json({ hubSession: session });
+});
+
+
 // --- Task Endpoints ---
 router.post('/tasks', rateLimiters.standardLimiter, async (req, res, next) => {
   try {
@@ -88,6 +155,29 @@ router.post('/tasks', rateLimiters.standardLimiter, async (req, res, next) => {
     }
 
     logger.info('A2A Task received', { id, title, initiator_agent_uuid, priority });
+
+    // Check if the task explicitly requires human input
+    if (params && params.human_input_required) {
+      const humanTask = humanTaskManager.assignTask({
+        id: id,
+        initiator_agent_uuid: initiator_agent_uuid,
+        title: title,
+        description: description,
+        params: params,
+        context_id: context_id,
+        priority: priority,
+        callback_url: callback_url,
+        metadata: metadata,
+        payload: payload,
+        idempotencyKey: idempotencyKey
+      });
+      return res.status(202).json({
+        message: 'Task requires human input. Awaiting form submission.',
+        id: humanTask.id,
+        status: humanTask.status,
+        humanTaskUrl: `/a2a/human-tasks/${humanTask.id}/submit`, // Provide an endpoint for form submission
+      });
+    }
 
     const taskAnalysis = await analyzeTaskRequirements(description);
 
@@ -135,6 +225,7 @@ router.get('/tasks/:taskId', rateLimiters.standardLimiter, async (req, res, next
   try {
     const { taskId } = req.params;
     const agentTask = agentManager.getTask(taskId);
+    const humanTask = humanTaskManager.getTask(taskId); // Check human tasks
 
     if (agentTask) {
       // Format agent task to match A2ATaskStatusUpdateResponse schema
@@ -147,6 +238,17 @@ router.get('/tasks/:taskId', rateLimiters.standardLimiter, async (req, res, next
         error: agentTask.error,
         assignee_agent_uuid: agentTask.assignedAgent,
         type: 'agent_task'
+      });
+    } else if (humanTask) { // Return human task status
+      return res.json({
+        id: humanTask.id,
+        status: humanTask.status,
+        message: humanTask.message || `Human task ${humanTask.status}`,
+        progress: humanTask.status === 'completed_human_input' ? 100 : 0,
+        result: humanTask.result,
+        error: humanTask.error,
+        assignee_agent_uuid: null, // Human tasks don't have an AI agent assignee
+        type: 'human_task'
       });
     }
 
@@ -168,6 +270,38 @@ router.get('/tasks/:taskId', rateLimiters.standardLimiter, async (req, res, next
     return res.status(404).json({ error: `Task with ID '${taskId}' not found.` });
   } catch (error) {
     logger.error('A2A Task Status Error', { error, taskId: req.params.taskId });
+    next(error);
+  }
+});
+
+// New endpoint to submit results for human-input tasks
+router.post('/human-tasks/:taskId/submit', rateLimiters.standardLimiter, async (req, res, next) => {
+  try {
+    const { taskId } = req.params;
+    const { result_payload } = req.body;
+
+    if (!result_payload) {
+      return res.status(400).json({ error: 'Missing result_payload for human task submission.' });
+    }
+
+    const updatedTask = humanTaskManager.submitTaskResult(taskId, result_payload);
+
+    if (!updatedTask) {
+      return res.status(404).json({ error: `Human task with ID '${taskId}' not found.` });
+    }
+
+    logger.info(`Human task ${taskId} submitted with result. New status: ${updatedTask.status}`, { taskId, result_payload });
+
+    // In a real scenario, after a human task is completed, you might re-evaluate
+    // the original task to see if it now requires AI processing or if it's fully complete.
+    // For this demonstration, we'll just mark the human task as completed.
+
+    return res.status(200).json({
+      message: `Human task ${taskId} result submitted successfully.`,
+      updatedTask
+    });
+  } catch (error) {
+    logger.error('Human Task Submission Error', { error, taskId: req.params.taskId, body: req.body });
     next(error);
   }
 });

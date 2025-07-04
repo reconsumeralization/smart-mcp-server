@@ -1,5 +1,5 @@
 import memoryStore from '../lib/memory-store.js';
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 
 /**
  * Creates a new entity or updates an existing one in the memory store (upsert).

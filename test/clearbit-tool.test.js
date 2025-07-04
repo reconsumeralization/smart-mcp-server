@@ -16,7 +16,7 @@ describe('ClearbitTool', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    clearbitTool = new ClearbitTool();
+    clearbitTool = new ClearbitTool();https://github.com/reconsumeralization/smart-mcp-server
   });
 
   describe('mcp_clearbit_enrich_company', () => {

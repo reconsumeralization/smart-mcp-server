@@ -1,7 +1,10 @@
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
-import logger from '../logger.js';
+import { logger, initializeLogger } from '../logger.js';
+
+// Initialize logger with a default configuration
+initializeLogger({ logging: {} });
 
 /**
  * Enhanced Token Manager for MCP and A2A Protocol Compliance

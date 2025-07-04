@@ -10,7 +10,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import dotenv from 'dotenv';
 import config from '../config.js';
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 
 // Load environment variables
 dotenv.config();

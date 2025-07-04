@@ -1,7 +1,7 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 import config from '../config.js';
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 
 let pool;
 

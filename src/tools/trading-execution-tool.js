@@ -9,7 +9,7 @@
  * - Trade blotter
  */
 
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 import config from '../config.js';
 import { v4 as uuidv4 } from 'uuid';
 

@@ -3,7 +3,7 @@ import { writeFileSync, existsSync, unlink } from 'fs';
 import os from 'os';
 import path from 'path';
 import ModelDriver from '../ModelDriver.js';
-import logger from '../../logger.js';
+import { logger } from '../../logger.js';
 
 /**
  * Driver that wraps the official / open-source `gemini` CLI.

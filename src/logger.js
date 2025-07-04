@@ -1,8 +1,11 @@
 import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs'; // Added fs import
 import { storage } from './middleware/correlation-id.js'; // Import storage
-import config from './config.js';
+let logger;
+
+export function initializeLogger(config) {
 
 // Get directory name (ESM workaround)
 const __filename = fileURLToPath(import.meta.url);
@@ -90,23 +93,23 @@ if (config.logging.centralizedLog) {
 }
 
 // Create the logger
-const logger = winston.createLogger({
-  level: level(),
-  levels,
-  format,
-  transports,
-});
 
-// Ensure logs directory exists
-import fs from 'fs';
-try {
-  if (!fs.existsSync(path.join(__dirname, 'logs'))) {
-    fs.mkdirSync(path.join(__dirname, 'logs'));
+  logger = winston.createLogger({
+    level: level(),
+    levels,
+    format,
+    transports,
+  });
+
+  // Ensure logs directory exists
+  try {
+    if (!fs.existsSync(path.join(__dirname, 'logs'))) {
+      fs.mkdirSync(path.join(__dirname, 'logs'));
+    }
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Error creating logs directory:', error);
   }
-} catch (error) {
-  // eslint-disable-next-line no-console
-  console.error('Error creating logs directory:', error);
 }
 
-// Export the logger
-export default logger;
+export { logger };

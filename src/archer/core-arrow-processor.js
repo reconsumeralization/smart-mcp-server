@@ -1,13 +1,18 @@
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 import { getDriver, listDrivers } from '../models/index.js';
-import { callTool, listTools } from '../registry/index.js';
 
 /**
- * Handle an incoming {{companyName}} "arrow".
- * @param {import('./types').Arrow} arrow
- * @returns {Promise<import('./types').Arrow>}
+ * Handles the core logic for different arrow types (generateText, streamText, embedding, capabilities).
+ * This module is designed to be consumed by other services (e.g., MCP Gateway Service).
+ * It does not run as a standalone server.
  */
-export async function handleArrow(arrow) {
+
+/**
+ * Process an incoming {{companyName}} "arrow" for core functionalities.
+ * @param {object} arrow - The arrow object.
+ * @returns {Promise<object>}
+ */
+export async function processArrow(arrow) {
   try {
     switch (arrow.type) {
       case 'generateText': {
@@ -31,34 +36,34 @@ export async function handleArrow(arrow) {
         const vector = await driver.embedding(arrow.payload);
         return { type: 'result', payload: { vector } };
       }
-      case 'tool.call': {
-        const result = await callTool(arrow.payload.toolName, arrow.payload.args);
-        return { type: 'result', payload: result };
-      }
       case 'capabilities': {
         return {
           type: 'result',
           payload: {
             drivers: listDrivers(),
-            tools: listTools()
+            // tools: listTools() // Tools are now managed by the Tool Execution Service
           }
         };
       }
       default:
-        return { type: 'error', payload: { message: `Unknown arrow type ${arrow.type}` } };
+        return { type: 'error', payload: { message: `Unknown arrow type ${arrow.type} for core processor.` } };
     }
   } catch (err) {
-    logger.error('Arrow error', err);
+    logger.error('Core Arrow Processor error', err);
     return { type: 'error', payload: { message: err.message } };
   }
 }
 
-export function getCapabilities() {
+/**
+ * Get core capabilities provided by this processor.
+ * @returns {object}
+ */
+export function getCoreCapabilities() {
   return {
-    name: 'smart-mcp-server',
+    name: 'core-arrow-processor',
     capabilities: {
       generateText: listDrivers(),
-      toolCall: listTools().map(t => t.id)
+      // toolCall: listTools().map(t => t.id) // Tools are managed externally
     }
   };
 } 

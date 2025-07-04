@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import logger from './logger.js';
+import logger from './pre-config-logger.js';
 import convict from 'convict';
 
 dotenv.config();
@@ -40,7 +40,7 @@ const schema = {
     level: {
       doc: 'Log level',
       format: ['fatal','error','warn','info','debug','trace','silent'],
-      default: 'info',
+      default: 'debug',
       env: 'LOG_LEVEL'
     },
     centralizedLog: {

@@ -9,7 +9,7 @@
  * - Financial calculations
  */
 
-import logger from '../logger.js';
+import { logger } from '../logger.js';
 import config from '../config.js';
 
 // Mock financial data store - in production, this would connect to your financial database
