@@ -62,7 +62,7 @@
     "my-v0-project": "file:../..",
     "natural": "^6.10.4",
     "node-fetch": "^3.3.2",
-    "openai": "^4.25.0",
+    "openai": "^5.8.3",
     "pg": "^8.16.3",
     "pino": "^8.19.0",
     "pino-http": "^9.0.0",
