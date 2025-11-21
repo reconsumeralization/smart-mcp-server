@@ -57,7 +57,7 @@
     "joi": "^17.9.0",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.0",
-    "mime-types": "^2.1.35",
+    "mime-types": "^3.0.2",
     "morgan": "^1.10.0",
     "my-v0-project": "file:../..",
     "natural": "^6.10.4",
