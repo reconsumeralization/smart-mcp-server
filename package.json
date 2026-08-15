@@ -55,7 +55,7 @@
     "fastify": "^4.27.2",
     "helmet": "^7.1.0",
     "joi": "^17.9.0",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^5.3.0",
     "jsonwebtoken": "^9.0.0",
     "mime-types": "^2.1.35",
     "morgan": "^1.10.0",
