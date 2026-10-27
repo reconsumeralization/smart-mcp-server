@@ -60,7 +60,7 @@
     "mime-types": "^2.1.35",
     "morgan": "^1.10.0",
     "my-v0-project": "file:../..",
-    "natural": "^6.10.4",
+    "natural": "^8.2.6",
     "node-fetch": "^3.3.2",
     "openai": "^4.25.0",
     "pg": "^8.16.3",
